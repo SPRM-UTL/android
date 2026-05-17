@@ -24,7 +24,7 @@
                 android:layout_height="64dp"
                 android:layout_marginBottom="12dp"
                 android:contentDescription="@null"
-                android:src="@drawable/frame_427321847__1_"
+                android:src="@drawable/ic_manordomo"
                 app:tint="@color/white" />
 
             <TextView
