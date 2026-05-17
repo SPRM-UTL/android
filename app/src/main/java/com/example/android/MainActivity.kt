@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import com.example.android.db.AppDatabase
 import com.example.android.db.Usuario
@@ -22,20 +23,41 @@ class MainActivity : AppCompatActivity() {
     private lateinit var promptInfo: BiometricPrompt.PromptInfo
     private lateinit var db: AppDatabase
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    private var manteniendoSplash = true
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
+        super.onCreate(savedInstanceState)
+        splashScreen.setKeepOnScreenCondition {
+            manteniendoSplash
+        }
+        db = AppDatabase.getDatabase(this)
+
+        lifecycleScope.launch {
+            usuarioPruebaBd()
+
+            val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+            val estaLogueado = sharedPref.getBoolean("isLoggedIn", false)
+
+            if (estaLogueado) {
+                irAHome()
+                return@launch
+            }
+
+            manteniendoSplash = false
+        }
         val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
         val estaLogueado = sharedPref.getBoolean("isLoggedIn", false)
 
         if (estaLogueado) {
             irAHome()
+            finish()
             return
         }
 
         setContentView(R.layout.activity_main)
 
-        db = AppDatabase.getDatabase(this)
+
 
         usuarioPruebaBd()
 
