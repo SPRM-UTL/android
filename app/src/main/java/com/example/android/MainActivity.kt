@@ -2,17 +2,21 @@ package com.example.android
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.drawable.Animatable
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricPrompt
+import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import com.example.android.db.AppDatabase
 import com.example.android.db.Usuario
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.concurrent.Executor
 
@@ -28,10 +32,16 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+
         splashScreen.setKeepOnScreenCondition {
             manteniendoSplash
         }
+
         db = AppDatabase.getDatabase(this)
+        setContentView(R.layout.activity_main)
+
+        val motionLayout = findViewById<MotionLayout>(R.id.motionLayout)
+        val imgLogo = findViewById<ImageView>(R.id.imgLogo)
 
         lifecycleScope.launch {
             usuarioPruebaBd()
@@ -44,22 +54,18 @@ class MainActivity : AppCompatActivity() {
                 return@launch
             }
 
+            // Terminamos el splash
             manteniendoSplash = false
+
+            // Iniciamos la animación del logo (AVD)
+            (imgLogo.drawable as? Animatable)?.start()
+
+            // Esperamos a que termine la animación del logo antes de subirlo
+            delay(2000)
+
+            // Iniciamos la transición de MotionLayout para mostrar la interfaz
+            motionLayout.transitionToEnd()
         }
-        val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
-        val estaLogueado = sharedPref.getBoolean("isLoggedIn", false)
-
-        if (estaLogueado) {
-            irAHome()
-            finish()
-            return
-        }
-
-        setContentView(R.layout.activity_main)
-
-
-
-        usuarioPruebaBd()
 
         val etUsuario = findViewById<EditText>(R.id.etUsuario)
         val etContrasena = findViewById<EditText>(R.id.etContrasena)
