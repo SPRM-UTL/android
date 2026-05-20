@@ -15,9 +15,17 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.video.FileOutputOptions
+import androidx.camera.video.Quality
+import androidx.camera.video.QualitySelector
+import androidx.camera.video.Recorder
+import androidx.camera.video.Recording
+import androidx.camera.video.VideoCapture
+import androidx.camera.video.VideoRecordEvent
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import com.google.android.material.progressindicator.CircularProgressIndicator
+import java.io.File
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -31,6 +39,9 @@ class GestureActivity : AppCompatActivity() {
     private lateinit var btnIniciarContador: Button
 
     private lateinit var cameraExecutor: ExecutorService
+
+    private var videoCapture: VideoCapture<Recorder>? = null
+    private var recording: Recording? = null
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -71,14 +82,15 @@ class GestureActivity : AppCompatActivity() {
             pbContadorLineal.progress = 0
             pbContadorCircular.progress = 0
 
-            val tiempoTotalMs = 3000L
+            val tiempoPreparacionMs = 3000L
+            pbContadorLineal.max = tiempoPreparacionMs.toInt()
 
-            object : CountDownTimer(tiempoTotalMs, 20) {
+            object : CountDownTimer(tiempoPreparacionMs, 20) {
                 override fun onTick(millisUntilFinished: Long) {
-                    val tiempoTranscurrido = tiempoTotalMs - millisUntilFinished
+                    val tiempoTranscurrido = tiempoPreparacionMs - millisUntilFinished
                     pbContadorLineal.progress = tiempoTranscurrido.toInt()
 
-                    val porcentajeCompletado = (tiempoTranscurrido.toFloat() / tiempoTotalMs.toFloat()) * 100
+                    val porcentajeCompletado = (tiempoTranscurrido.toFloat() / tiempoPreparacionMs.toFloat()) * 100
                     pbContadorCircular.progress = porcentajeCompletado.toInt()
 
                     val segundosRestantes = (millisUntilFinished / 1000) + 1
@@ -87,20 +99,15 @@ class GestureActivity : AppCompatActivity() {
 
                 override fun onFinish() {
                     tvContador.text = "Ya!"
-                    pbContadorLineal.progress = 3000
+                    pbContadorLineal.progress = tiempoPreparacionMs.toInt()
                     pbContadorCircular.progress = 100
 
                     tvContador.postDelayed({
                         tvContador.text = ""
-                        pbContadorLineal.visibility = View.INVISIBLE
                         flContadorCircular.visibility = View.INVISIBLE
-                        btnIniciarContador.isEnabled = true
 
-                        Toast.makeText(this@GestureActivity, "Iniciando detección de gestos...", Toast.LENGTH_SHORT).show()
-
-                        // Aqui ira la logica para detectar los gestos o movimientos
-
-                    }, 800)
+                        startVideoRecording()
+                    }, 600)
                 }
             }.start()
         }
@@ -112,25 +119,81 @@ class GestureActivity : AppCompatActivity() {
         cameraProviderFuture.addListener({
             val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
 
-            val preview = Preview.Builder()
+            val preview = Preview.Builder().build().also {
+                it.setSurfaceProvider(viewFinder.surfaceProvider)
+            }
+
+            val recorder = Recorder.Builder()
+                .setQualitySelector(QualitySelector.from(Quality.SD))
                 .build()
-                .also {
-                    it.setSurfaceProvider(viewFinder.surfaceProvider)
-                }
+            videoCapture = VideoCapture.withOutput(recorder)
 
             val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
 
             try {
                 cameraProvider.unbindAll()
                 cameraProvider.bindToLifecycle(
-                    this, cameraSelector, preview
+                    this, cameraSelector, preview, videoCapture
                 )
 
             } catch(exc: Exception) {
-                Toast.makeText(this, "Ocurrió un error al abrir la cámara frontal", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Error al configurar los componentes de la cámara", Toast.LENGTH_SHORT).show()
             }
 
         }, ContextCompat.getMainExecutor(this))
+    }
+
+    private fun startVideoRecording() {
+        val videoCaptureLocal = videoCapture ?: return
+
+        // Solo creamos un archivo temporal para guardar el video
+        val archivoVideo = File(cacheDir, "captura_gesto.mp4")
+        val outputOptions = FileOutputOptions.Builder(archivoVideo).build()
+
+        recording = videoCaptureLocal.output
+            .prepareRecording(this, outputOptions)
+            .start(ContextCompat.getMainExecutor(this)) { recordEvent ->
+                when(recordEvent) {
+                    is VideoRecordEvent.Start -> {
+                        val duracionGrabacionMs = 5000L
+                        pbContadorLineal.max = duracionGrabacionMs.toInt()
+                        pbContadorLineal.progress = 0
+                        pbContadorLineal.visibility = View.VISIBLE
+
+                        iniciarTemporizadorBarraGrabacion(duracionGrabacionMs)
+                    }
+                    is VideoRecordEvent.Finalize -> {
+                        pbContadorLineal.visibility = View.INVISIBLE
+                        btnIniciarContador.isEnabled = true
+
+                        if (!recordEvent.hasError()) {
+                            Toast.makeText(this, "Video guardado con éxito", Toast.LENGTH_SHORT).show()
+                            // Aqui seguira la logica para enviar el video al back o algun analizador
+                        } else {
+                            Toast.makeText(this, "Error en la captura del archivo", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            }
+    }
+
+    private fun iniciarTemporizadorBarraGrabacion(duracionMs: Long) {
+        object : CountDownTimer(duracionMs, 20) {
+            override fun onTick(millisUntilFinished: Long) {
+                val transcurrido = duracionMs - millisUntilFinished
+                pbContadorLineal.progress = transcurrido.toInt()
+            }
+
+            override fun onFinish() {
+                pbContadorLineal.progress = duracionMs.toInt()
+                stopVideoRecording()
+            }
+        }.start()
+    }
+
+    private fun stopVideoRecording() {
+        recording?.stop()
+        recording = null
     }
 
     override fun onDestroy() {
