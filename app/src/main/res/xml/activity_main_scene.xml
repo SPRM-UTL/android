@@ -5,7 +5,7 @@
     <Transition
         app:constraintSetEnd="@+id/end"
         app:constraintSetStart="@+id/start"
-        app:duration="2000"
+        app:duration="1200"
         app:motionInterpolator="easeInOut">
     </Transition>
 
@@ -14,10 +14,26 @@
             android:id="@+id/imgLogo"
             android:layout_width="160dp"
             android:layout_height="160dp"
+            android:scaleX="1.2"
+            android:scaleY="1.2"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
+
+        <Constraint
+            android:id="@+id/tvTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:alpha="0"
+            app:layout_constraintTop_toBottomOf="parent" />
+
+        <Constraint
+            android:id="@+id/tvSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:alpha="0"
+            app:layout_constraintTop_toBottomOf="parent" />
 
         <Constraint
             android:id="@+id/scrollContent"
@@ -30,21 +46,44 @@
     <ConstraintSet android:id="@+id/end">
         <Constraint
             android:id="@+id/imgLogo"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
-            android:layout_marginTop="68dp"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:layout_marginTop="56dp"
+            android:scaleX="1.0"
+            android:scaleY="1.0"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <Constraint
+            android:id="@+id/tvTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="32dp"
+            android:layout_marginTop="24dp"
+            android:alpha="1"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/imgLogo" />
+
+        <Constraint
+            android:id="@+id/tvSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="32dp"
+            android:layout_marginTop="8dp"
+            android:alpha="1"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvTitle" />
+
+        <Constraint
             android:id="@+id/scrollContent"
             android:layout_width="match_parent"
             android:layout_height="0dp"
+            android:layout_marginTop="40dp"
             android:alpha="1"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/imgLogo" />
+            app:layout_constraintTop_toBottomOf="@id/tvSubtitle" />
     </ConstraintSet>
 </MotionScene>
