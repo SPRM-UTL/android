@@ -16,6 +16,8 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import com.example.android.db.AppDatabase
 import com.example.android.db.Usuario
+import com.example.android.network.LoginRequest
+import com.example.android.network.RetrofitClient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.concurrent.Executor
@@ -82,12 +84,20 @@ class MainActivity : AppCompatActivity() {
             }
 
             lifecycleScope.launch {
-                val userEncontrado = db.usuarioDao().login(usuarioInput, contrasenaInput)
+                try {
+                    val peticion =
+                        LoginRequest(correo = usuarioInput, contrasenia = contrasenaInput)
 
-                if (userEncontrado != null) {
-                    guardarSesionExitosa()
-                } else {
-                    Toast.makeText(this@MainActivity, "Usuario o contraseña incorrectos", Toast.LENGTH_SHORT).show()
+                    val response = RetrofitClient.apiService.login(peticion)
+
+                    if (response.isSuccessful && response.body() != null) {
+                        val tokenApi = response.body()!!.data.token
+                        guardarSesionExitosa(tokenApi)
+                    } else {
+                        Toast.makeText(this@MainActivity, "Credenciales incorrectas", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(this@MainActivity, "Error de red: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -123,10 +133,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun guardarSesionExitosa() {
+    private fun guardarSesionExitosa(token: String = "") {
         val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
         with(sharedPref.edit()) {
             putBoolean("isLoggedIn", true)
+            putString("apiToken", token)
             apply()
         }
         Toast.makeText(this, "Bienvenido", Toast.LENGTH_SHORT).show()
