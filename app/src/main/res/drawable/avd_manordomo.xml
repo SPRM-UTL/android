@@ -140,7 +140,6 @@
         </aapt:attr>
     </target>
 
-    <!-- #000000 → #3aafa9 (teal) -->
     <target android:name="path_2">
         <aapt:attr name="android:animation">
             <objectAnimator

@@ -35,6 +35,9 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
+    buildFeatures {
+        viewBinding = true
+    }
 }
 
 ksp {
@@ -47,6 +50,8 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.fragment)
+    //implementation(libs.cardview.v7)
+    implementation("com.google.android.material:material:1.12.0")
     implementation(libs.material)
     implementation(libs.androidx.biometric)
 
@@ -70,7 +75,6 @@ dependencies {
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.constraintlayout:constraintlayout:2.2.1")
     implementation("androidx.constraintlayout:constraintlayout-compose:1.1.1")
-
-
+    implementation("me.tankery.lib:circularSeekBar:1.4.2")
 
 }

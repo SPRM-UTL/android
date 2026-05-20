@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="white">#FFFFFF</color>
+    <color name="teal_primary">#3aafa9</color>
+    <color name="teal_medium">#2b7a78</color>
+    <color name="teal_card">#DEF2F1</color>
+    <color name="text_grey">#6F7EA8</color>
+    <color name="white">#FEFFFF</color>
     <color name="black">#000000</color>
-    <color name="teal_3aafa9">#3aafa9</color>
 </resources>
