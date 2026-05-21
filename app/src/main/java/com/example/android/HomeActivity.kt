@@ -21,6 +21,7 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.switchmaterial.SwitchMaterial
 import kotlinx.coroutines.launch
+import kotlin.jvm.java
 
 class HomeActivity : AppCompatActivity() {
 
@@ -31,11 +32,16 @@ class HomeActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_home)
 
-        val mainHome = findViewById<View>(R.id.mainHome)
+        val mainHome = findViewById<androidx.constraintlayout.motion.widget.MotionLayout>(R.id.mainHome)
         ViewCompat.setOnApplyWindowInsetsListener(mainHome) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
+        }
+
+        // Ejecutar animación con un pequeño retraso para asegurar fluidez
+        mainHome.post {
+            mainHome.transitionToEnd()
         }
 
         if (intent.getBooleanExtra("SHOW_WELCOME", false)) {
@@ -47,6 +53,11 @@ class HomeActivity : AppCompatActivity() {
         val ivProfile = findViewById<ImageView>(R.id.ivProfile)
         ivProfile.setOnClickListener {
             showProfileMenu(it)
+        }
+
+        findViewById<View>(R.id.btnEscenas).setOnClickListener {
+            val intent = Intent(this, GestureActivity::class.java)
+            startActivity(intent)
         }
 
         cargarDispositivos()
@@ -98,8 +109,8 @@ class HomeActivity : AppCompatActivity() {
         sw.setOnCheckedChangeListener { _, isChecked ->
             actualizarEstiloTarjeta(materialCard, iconBg, tvName, tvStatus, sw, isChecked)
             val mensaje = if (isChecked) "$nombre Encendido" else "$nombre Apagado"
-            val mainHomeView = findViewById<View>(R.id.mainHome)
-            Snackbar.make(mainHomeView, mensaje, Snackbar.LENGTH_SHORT).show()
+            val mainHome = findViewById<View>(R.id.mainHome)
+            Snackbar.make(mainHome, mensaje, Snackbar.LENGTH_SHORT).show()
         }
 
         vistaDispositivos.addView(card)
@@ -148,13 +159,13 @@ class HomeActivity : AppCompatActivity() {
         popup.show()
     }
 
-    // [MANTENIDO] Tu lógica de logout conectada a la API
     private fun logout() {
         val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
         val tokenGuardado = sharedPref.getString("apiToken", "") ?: ""
 
         if (tokenGuardado.isEmpty()) {
-            Toast.makeText(this, "Aviso: No hay un token guardado localmente", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Aviso: No hay un token guardado localmente", Toast.LENGTH_LONG)
+                .show()
         }
 
         lifecycleScope.launch {
@@ -162,15 +173,27 @@ class HomeActivity : AppCompatActivity() {
                 val response = RetrofitClient.apiService.logout(tokenGuardado)
 
                 if (response.isSuccessful) {
-                    Toast.makeText(this@HomeActivity, "Sesión cerrada en el servidor", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this@HomeActivity,
+                        "Sesión cerrada en el servidor",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 } else {
                     val codigoError = response.code()
                     val cuerpoError = response.errorBody()?.string() ?: ""
-                    Toast.makeText(this@HomeActivity, "Error API $codigoError: $cuerpoError", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        this@HomeActivity,
+                        "Error API $codigoError: $cuerpoError",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
 
             } catch (e: Exception) {
-                Toast.makeText(this@HomeActivity, "Error de conexión: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this@HomeActivity,
+                    "Error de conexión: ${e.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
 
             with(sharedPref.edit()) {
@@ -180,6 +203,7 @@ class HomeActivity : AppCompatActivity() {
             }
 
             val intent = Intent(this@HomeActivity, MainActivity::class.java)
+            intent.putExtra("FROM_LOGOUT", true)
             startActivity(intent)
             finish()
         }

@@ -39,9 +39,10 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
-
         WindowCompat.setDecorFitsSystemWindows(window, false)
+
         window.statusBarColor = android.graphics.Color.TRANSPARENT
+
         WindowInsetsControllerCompat(window, window.decorView)
             .isAppearanceLightStatusBars = false
 
@@ -54,27 +55,33 @@ class MainActivity : AppCompatActivity() {
             if (iconView is ImageView) {
                 (iconView.drawable as? Animatable)?.start()
             }
+
             lifecycleScope.launch {
                 delay(2000)
                 splashProvider.remove()
+
+                val motionLayout = findViewById<MotionLayout>(R.id.motionLayout)
+                motionLayout.transitionToEnd()
             }
         }
 
         db = AppDatabase.getDatabase(this)
         setContentView(R.layout.activity_main)
 
-        val rootView = findViewById<View>(android.R.id.content)
         val btnLoginHuella = findViewById<MaterialButton>(R.id.btnLoginHuella)
-
         val biometricManager = BiometricManager.from(this)
+
+        if (intent.getBooleanExtra("FROM_LOGOUT", false)) {
+            findViewById<MotionLayout>(R.id.motionLayout).post {
+                findViewById<MotionLayout>(R.id.motionLayout).transitionToEnd()
+            }
+        }
+
         if(biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) == BiometricManager.BIOMETRIC_SUCCESS){
             btnLoginHuella.visibility = View.VISIBLE
         }else{
             btnLoginHuella.visibility = View.GONE
         }
-
-        val motionLayout = findViewById<MotionLayout>(R.id.motionLayout)
-        val imgLogo = findViewById<ImageView>(R.id.imgLogo)
 
         lifecycleScope.launch {
             usuarioPruebaBd()
@@ -86,10 +93,9 @@ class MainActivity : AppCompatActivity() {
                 irAHome()
                 return@launch
             }
-            manteniendoSplash = false
 
-            delay(2000)
-            motionLayout.transitionToEnd()
+            delay(500)
+            manteniendoSplash = false
         }
 
         val etUsuario = findViewById<EditText>(R.id.etUsuario)
@@ -128,17 +134,17 @@ class MainActivity : AppCompatActivity() {
             object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
-                    guardarSesionExitosa(rootView)
+                    guardarSesionExitosa(findViewById(android.R.id.content))
                 }
 
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     super.onAuthenticationError(errorCode, errString)
-                    Snackbar.make(rootView, "Error biométrico: $errString", Snackbar.LENGTH_SHORT).show()
+                    Snackbar.make(findViewById(android.R.id.content), "Error biométrico: $errString", Snackbar.LENGTH_SHORT).show()
                 }
 
                 override fun onAuthenticationFailed() {
                     super.onAuthenticationFailed()
-                    Snackbar.make(rootView, "Huella no reconocida", Snackbar.LENGTH_SHORT).show()
+                    Snackbar.make(findViewById(android.R.id.content), "Huella no reconocida", Snackbar.LENGTH_SHORT).show()
                 }
             })
 

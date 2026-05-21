@@ -74,17 +74,18 @@
                 app:boxCornerRadiusBottomStart="16dp"
                 app:boxCornerRadiusTopEnd="16dp"
                 app:boxCornerRadiusTopStart="16dp"
-                app:boxStrokeColor="#2E9E8F"
-                app:hintTextColor="#2E9E8F"
+                app:boxStrokeColor="@color/teal_primary"
+                app:hintTextColor="@color/teal_primary"
                 app:startIconDrawable="@drawable/user"
-                app:startIconTint="#2E9E8F">
+                app:startIconTint="@color/teal_primary">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etUsuario"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="text"
-                    android:textColor="#000000" />
+                    android:textColor="#000000"
+                    android:textColorLink="@color/teal_primary" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -100,19 +101,20 @@
                 app:boxCornerRadiusBottomStart="16dp"
                 app:boxCornerRadiusTopEnd="16dp"
                 app:boxCornerRadiusTopStart="16dp"
-                app:boxStrokeColor="#2E9E8F"
+                app:boxStrokeColor="@color/teal_primary"
                 app:endIconMode="password_toggle"
-                app:endIconTint="#2E9E8F"
-                app:hintTextColor="#2E9E8F"
+                app:endIconTint="@color/teal_primary"
+                app:hintTextColor="@color/teal_primary"
                 app:startIconDrawable="@drawable/lock"
-                app:startIconTint="#2E9E8F">
+                app:startIconTint="@color/teal_primary">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etContrasena"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textPassword"
-                    android:textColor="#000000" />
+                    android:textColor="#000000"
+                    android:textColorLink="@color/teal_primary" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -126,7 +128,7 @@
                 android:textColor="@color/white"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                app:backgroundTint="#2E9E8F"
+                app:backgroundTint="@color/teal_primary"
                 app:cornerRadius="16dp"
                 app:elevation="2dp" />
 
@@ -136,7 +138,7 @@
                 android:layout_gravity="center_horizontal"
                 android:layout_marginBottom="28dp"
                 android:text="@string/or_login_with"
-                android:textColor="#757575"
+                android:textColor="@color/text_grey"
                 android:textSize="14sp" />
 
             <com.google.android.material.button.MaterialButton
@@ -146,7 +148,7 @@
                 android:layout_height="56dp"
                 android:text="@string/btn_fingerprint"
                 android:textAllCaps="false"
-                android:textColor="#2E9E8F"
+                android:textColor="@color/teal_primary"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 app:cornerRadius="16dp"
@@ -154,8 +156,8 @@
                 app:iconGravity="textStart"
                 app:iconPadding="12dp"
                 app:iconSize="24dp"
-                app:iconTint="#2E9E8F"
-                app:strokeColor="#2E9E8F"
+                app:iconTint="@color/teal_primary"
+                app:strokeColor="@color/teal_primary"
                 app:strokeWidth="1.5dp" />
 
             <com.google.android.material.button.MaterialButton
@@ -165,7 +167,7 @@
                 android:layout_height="56dp"
                 android:text="inicia sesion con Google"
                 android:textAllCaps="false"
-                android:textColor="#2E9E8F"
+                android:textColor="@color/teal_primary"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 app:cornerRadius="16dp"
@@ -173,8 +175,8 @@
                 app:iconGravity="textStart"
                 app:iconPadding="12dp"
                 app:iconSize="24dp"
-                app:iconTint="#2E9E8F"
-                app:strokeColor="#2E9E8F"
+                app:iconTint="@color/teal_primary"
+                app:strokeColor="@color/teal_primary"
                 app:strokeWidth="1.5dp" />
 
         </LinearLayout>

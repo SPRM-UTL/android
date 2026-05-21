@@ -16,11 +16,16 @@ class DeviceActivity : AppCompatActivity(){
         enableEdgeToEdge()
         setContentView(R.layout.activity_add_device)
 
+        val motionLayout = findViewById<androidx.constraintlayout.motion.widget.MotionLayout>(R.id.mainAddDevice)
+        motionLayout.post {
+            motionLayout.transitionToEnd()
+        }
+
         val btnBack = findViewById<ImageView>(R.id.btnBack)
         val contentLayout = findViewById<View>(R.id.contentLayout)
         val searchingState = findViewById<View>(R.id.searchingState)
 
-        val itemAsistente = findViewById<View>(R.id.iconContainer1).parent as View
+        val itemAsistente = findViewById<View>(R.id.itemAsistente)
 
         btnBack.setOnClickListener {
             onBackPressedDispatcher.onBackPressed()
