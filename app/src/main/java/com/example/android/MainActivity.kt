@@ -4,20 +4,25 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Animatable
 import android.os.Bundle
+import androidx.biometric.BiometricManager
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricPrompt
 import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.android.db.AppDatabase
 import com.example.android.db.Usuario
 import com.example.android.network.LoginRequest
 import com.example.android.network.RetrofitClient
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.concurrent.Executor
@@ -35,12 +40,38 @@ class MainActivity : AppCompatActivity() {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
 
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
+        WindowInsetsControllerCompat(window, window.decorView)
+            .isAppearanceLightStatusBars = false
+
         splashScreen.setKeepOnScreenCondition {
             manteniendoSplash
         }
 
+        splashScreen.setOnExitAnimationListener { splashProvider ->
+            val iconView = splashProvider.iconView
+            if (iconView is ImageView) {
+                (iconView.drawable as? Animatable)?.start()
+            }
+            lifecycleScope.launch {
+                delay(2000)
+                splashProvider.remove()
+            }
+        }
+
         db = AppDatabase.getDatabase(this)
         setContentView(R.layout.activity_main)
+
+        val rootView = findViewById<View>(android.R.id.content)
+        val btnLoginHuella = findViewById<MaterialButton>(R.id.btnLoginHuella)
+
+        val biometricManager = BiometricManager.from(this)
+        if(biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) == BiometricManager.BIOMETRIC_SUCCESS){
+            btnLoginHuella.visibility = View.VISIBLE
+        }else{
+            btnLoginHuella.visibility = View.GONE
+        }
 
         val motionLayout = findViewById<MotionLayout>(R.id.motionLayout)
         val imgLogo = findViewById<ImageView>(R.id.imgLogo)
@@ -55,49 +86,38 @@ class MainActivity : AppCompatActivity() {
                 irAHome()
                 return@launch
             }
-
-            // Terminamos el splash
             manteniendoSplash = false
 
-            // Iniciamos la animación del logo (AVD)
-            (imgLogo.drawable as? Animatable)?.start()
-
-            // Esperamos a que termine la animación del logo antes de subirlo
             delay(2000)
-
-            // Iniciamos la transición de MotionLayout para mostrar la interfaz
             motionLayout.transitionToEnd()
         }
 
         val etUsuario = findViewById<EditText>(R.id.etUsuario)
         val etContrasena = findViewById<EditText>(R.id.etContrasena)
         val btnLoginTradicional = findViewById<Button>(R.id.btnLogin)
-        val btnLoginHuella = findViewById<Button>(R.id.btnLoginHuella)
 
-        btnLoginTradicional.setOnClickListener {
+        btnLoginTradicional.setOnClickListener { view ->
             val usuarioInput = etUsuario.text.toString()
             val contrasenaInput = etContrasena.text.toString()
 
             if (usuarioInput.isEmpty() || contrasenaInput.isEmpty()) {
-                Toast.makeText(this, "Por favor llena ambos campos", Toast.LENGTH_SHORT).show()
+                Snackbar.make(view, "Por favor llena ambos campos", Snackbar.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
             lifecycleScope.launch {
                 try {
-                    val peticion =
-                        LoginRequest(correo = usuarioInput, contrasenia = contrasenaInput)
-
+                    val peticion = LoginRequest(correo = usuarioInput, contrasenia = contrasenaInput)
                     val response = RetrofitClient.apiService.login(peticion)
 
                     if (response.isSuccessful && response.body() != null) {
                         val tokenApi = response.body()!!.data.token
-                        guardarSesionExitosa(tokenApi)
+                        guardarSesionExitosa(view, tokenApi)
                     } else {
-                        Toast.makeText(this@MainActivity, "Credenciales incorrectas", Toast.LENGTH_SHORT).show()
+                        Snackbar.make(view, "Credenciales incorrectas", Snackbar.LENGTH_SHORT).show()
                     }
                 } catch (e: Exception) {
-                    Toast.makeText(this@MainActivity, "Error de red: ${e.message}", Toast.LENGTH_LONG).show()
+                    Snackbar.make(view, "Error de red: ${e.message}", Snackbar.LENGTH_LONG).show()
                 }
             }
         }
@@ -108,17 +128,17 @@ class MainActivity : AppCompatActivity() {
             object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
-                    guardarSesionExitosa()
+                    guardarSesionExitosa(rootView)
                 }
 
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     super.onAuthenticationError(errorCode, errString)
-                    Toast.makeText(applicationContext, "Error biométrico: $errString", Toast.LENGTH_SHORT).show()
+                    Snackbar.make(rootView, "Error biométrico: $errString", Snackbar.LENGTH_SHORT).show()
                 }
 
                 override fun onAuthenticationFailed() {
                     super.onAuthenticationFailed()
-                    Toast.makeText(applicationContext, "Huella no reconocida", Toast.LENGTH_SHORT).show()
+                    Snackbar.make(rootView, "Huella no reconocida", Snackbar.LENGTH_SHORT).show()
                 }
             })
 
@@ -133,19 +153,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun guardarSesionExitosa(token: String = "") {
+    private fun guardarSesionExitosa(view: View, token: String = "") {
         val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
         with(sharedPref.edit()) {
             putBoolean("isLoggedIn", true)
             putString("apiToken", token)
             apply()
         }
-        Toast.makeText(this, "Bienvenido", Toast.LENGTH_SHORT).show()
-        irAHome()
+        irAHome(true)
     }
 
-    private fun irAHome() {
+    private fun irAHome(mostrarBienvenida: Boolean = false) {
         val intent = Intent(this, HomeActivity::class.java)
+        if (mostrarBienvenida) {
+            intent.putExtra("SHOW_WELCOME", true)
+        }
         startActivity(intent)
         finish()
     }
