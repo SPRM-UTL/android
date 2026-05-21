@@ -30,9 +30,6 @@
             android:name=".MusicActivity"
             android:exported="false" />
         <activity
-            android:name=".ConfigureDeviceActivity"
-            android:exported="false" />
-        <activity
             android:name=".ActionsActivity"
             android:exported="false" />
         <activity
