@@ -9,7 +9,6 @@
     android:background="#F5F7FA"
     tools:context=".HomeActivity">
 
-    <!-- Tarjeta Superior -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardSuperior"
         android:layout_width="match_parent"
@@ -75,7 +74,6 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Sección de Dispositivos -->
     <TextView
         android:id="@+id/tvTituloDispositivos"
         android:layout_width="wrap_content"
@@ -105,7 +103,6 @@
             android:useDefaultMargins="true" />
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Tarjeta Inferior (Estado de Red) -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardInferior"
         android:layout_width="match_parent"
@@ -189,7 +186,6 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Navegación Inferior -->
     <LinearLayout
         android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
