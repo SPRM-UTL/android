@@ -35,11 +35,6 @@ class HomeActivity : AppCompatActivity() {
             insets
         }
 
-        val btnCapturarGesto = findViewById<Button>(R.id.btnCapturarGesto)
-        btnCapturarGesto.setOnClickListener {
-            startActivity(Intent(this, GestureActivity::class.java))
-        }
-
         if (intent.getBooleanExtra("SHOW_WELCOME", false)) {
             Snackbar.make(                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               mainHome, "Bienvenido", Snackbar.LENGTH_SHORT).show()
         }
@@ -91,6 +86,7 @@ class HomeActivity : AppCompatActivity() {
             true
         )
 
+
         val cardAdd = inflater.inflate(R.layout.item_add_device, vistaDispositivos, false)
         cardAdd.setOnClickListener {
             Snackbar.make(it, "Abriendo panel de dispositivos", Snackbar.LENGTH_SHORT).show()
@@ -115,54 +111,43 @@ class HomeActivity : AppCompatActivity() {
         val tvStatus = card.findViewById<TextView>(R.id.tvDeviceStatus)
         val ivIcon = card.findViewById<ImageView>(R.id.ivDeviceIcon)
         val sw = card.findViewById<SwitchMaterial>(R.id.switchDevice)
-        val materialCard = card.findViewById<com.google.android.material.card.MaterialCardView>(R.id.deviceCard)
+        val materialCard = card.findViewById<MaterialCardView>(R.id.deviceCard)
+        val iconBg = card.findViewById<MaterialCardView>(R.id.iconBg)
 
         tvName.text = nombre
         tvStatus.text = estado
         ivIcon.setImageResource(iconRes)
         sw.isChecked = estaEncendido
 
-        if (estaEncendido) {
-            materialCard.setCardBackgroundColor(getColor(R.color.teal_primary))
-            tvName.setTextColor(getColor(android.R.color.white))
-            tvStatus.setTextColor(getColor(R.color.teal_card))
-            ivIcon.setColorFilter(getColor(android.R.color.white))
-            sw.thumbTintList = getColorStateList(android.R.color.white)
-            sw.trackTintList = getColorStateList(R.color.teal_card)
-        }else{
-            materialCard.setCardBackgroundColor(getColor(R.color.white))
-            tvName.setTextColor(getColor(R.color.text_grey))
-            tvStatus.setTextColor(getColor(R.color.text_grey))
-            ivIcon.setColorFilter(getColor(R.color.text_grey))
-            sw.thumbTintList = getColorStateList(android.R.color.white)
-            sw.trackTintList = getColorStateList(R.color.text_grey)
-        }
+        actualizarEstiloTarjeta(materialCard, iconBg, tvName, tvStatus, sw, estaEncendido)
 
         sw.setOnCheckedChangeListener { _, isChecked ->
-            var mensaje = ""
-            if(isChecked){
-                materialCard.setCardBackgroundColor(getColor(R.color.teal_primary))
-                tvName.setTextColor(getColor(android.R.color.white))
-                tvStatus.setTextColor(getColor(R.color.teal_card))
-                ivIcon.setColorFilter(getColor(android.R.color.white))
-                sw.thumbTintList = getColorStateList(android.R.color.white)
-                sw.trackTintList = getColorStateList(R.color.teal_card)
-                mensaje = "$nombre Encendido"
-
-            }else{
-                materialCard.setCardBackgroundColor(getColor(R.color.white))
-                tvName.setTextColor(getColor(R.color.text_grey))
-                tvStatus.setTextColor(getColor(R.color.text_grey))
-                ivIcon.setColorFilter(getColor(R.color.text_grey))
-                sw.thumbTintList = getColorStateList(android.R.color.white)
-                sw.trackTintList = getColorStateList(R.color.text_grey)
-                mensaje = "$nombre Apagado"
-            }
+            actualizarEstiloTarjeta(materialCard, iconBg, tvName, tvStatus, sw, isChecked)
+            val mensaje = if (isChecked) "$nombre Encendido" else "$nombre Apagado"
             val mainHome = findViewById<View>(R.id.mainHome)
             Snackbar.make(mainHome, mensaje, Snackbar.LENGTH_SHORT).show()
         }
 
         vistaDispositivos.addView(card)
+    }
+
+    private fun actualizarEstiloTarjeta(
+        card: MaterialCardView,
+        iconBg: MaterialCardView,
+        tvName: TextView,
+        tvStatus: TextView,
+        sw: SwitchMaterial,
+        estaEncendido: Boolean
+    ) {
+        if (estaEncendido) {
+            iconBg.setCardBackgroundColor(getColor(R.color.teal_primary))
+            sw.trackTintList = getColorStateList(R.color.teal_primary)
+            sw.thumbTintList = getColorStateList(android.R.color.white)
+        } else {
+            iconBg.setCardBackgroundColor(getColor(R.color.teal_primary))
+            sw.trackTintList = getColorStateList(R.color.teal_card)
+            sw.thumbTintList = getColorStateList(android.R.color.white)
+        }
     }
 
     private fun showProfileMenu(view: View) {
