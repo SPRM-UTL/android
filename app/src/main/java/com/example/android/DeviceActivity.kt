@@ -31,7 +31,7 @@ class DeviceActivity : AppCompatActivity(){
             searchingState.visibility = View.VISIBLE
 
             Handler(Looper.getMainLooper()).postDelayed({
-                val intent = Intent(this, ConfigureDeviceActivity::class.java)
+                val intent = Intent(this, GestureActivity::class.java)
                 startActivity(intent)
 
                 searchingState.visibility = View.GONE
