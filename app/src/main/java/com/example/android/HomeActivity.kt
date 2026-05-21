@@ -28,11 +28,16 @@ class HomeActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_home)
 
-        val mainHome = findViewById<View>(R.id.mainHome)
+        val mainHome = findViewById<androidx.constraintlayout.motion.widget.MotionLayout>(R.id.mainHome)
         ViewCompat.setOnApplyWindowInsetsListener(mainHome) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
+        }
+
+        // Ejecutar animación con un pequeño retraso para asegurar fluidez
+        mainHome.post {
+            mainHome.transitionToEnd()
         }
 
         if (intent.getBooleanExtra("SHOW_WELCOME", false)) {
@@ -52,6 +57,11 @@ class HomeActivity : AppCompatActivity() {
         val ivProfile = findViewById<ImageView>(R.id.ivProfile)
         ivProfile.setOnClickListener {
             showProfileMenu(it)
+        }
+
+        findViewById<View>(R.id.btnEscenas).setOnClickListener {
+            val intent = Intent(this, Gestos::class.java)
+            startActivity(intent)
         }
 
         cargarDispositivos()
@@ -182,6 +192,7 @@ class HomeActivity : AppCompatActivity() {
         }
 
         val intent = Intent(this, MainActivity::class.java)
+        intent.putExtra("FROM_LOGOUT", true)
         startActivity(intent)
         finish()
     }

@@ -45,39 +45,44 @@ class MainActivity : AppCompatActivity() {
         WindowInsetsControllerCompat(window, window.decorView)
             .isAppearanceLightStatusBars = false
 
-
         splashScreen.setKeepOnScreenCondition {
             manteniendoSplash
         }
 
+        // Configurar la salida del Splash para que inicie la animación del Login
         splashScreen.setOnExitAnimationListener { splashProvider ->
             val iconView = splashProvider.iconView
             if (iconView is ImageView) {
                 (iconView.drawable as? Animatable)?.start()
             }
-            // Retrasar la salida un poco para ver la animación
+            
             lifecycleScope.launch {
-                delay(2000)
+                delay(2000) // Tiempo para ver el logo animado
                 splashProvider.remove()
+                
+                // RESTAURAR ANIMACIÓN DE LOGIN: Iniciar la transición del MotionLayout
+                val motionLayout = findViewById<MotionLayout>(R.id.motionLayout)
+                motionLayout.transitionToEnd()
             }
         }
 
         db = AppDatabase.getDatabase(this)
         setContentView(R.layout.activity_main)
 
-        val rootView = findViewById<View>(android.R.id.content)
-
         val btnLoginHuella = findViewById<MaterialButton>(R.id.btnLoginHuella)
-
         val biometricManager = BiometricManager.from(this)
+
+        if (intent.getBooleanExtra("FROM_LOGOUT", false)) {
+            findViewById<MotionLayout>(R.id.motionLayout).post {
+                findViewById<MotionLayout>(R.id.motionLayout).transitionToEnd()
+            }
+        }
 
         if(biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)== BiometricManager.BIOMETRIC_SUCCESS){
             btnLoginHuella.visibility = View.VISIBLE
         }else{
             btnLoginHuella.visibility = View.GONE
         }
-        val motionLayout = findViewById<MotionLayout>(R.id.motionLayout)
-        val imgLogo = findViewById<ImageView>(R.id.imgLogo)
 
         lifecycleScope.launch {
             usuarioPruebaBd()
@@ -89,11 +94,9 @@ class MainActivity : AppCompatActivity() {
                 irAHome()
                 return@launch
             }
+            
+            delay(500) // Breve espera antes de permitir que el Splash se retire
             manteniendoSplash = false
-
-            delay(2000)
-
-            motionLayout.transitionToEnd()
         }
 
         val etUsuario = findViewById<EditText>(R.id.etUsuario)
@@ -106,7 +109,7 @@ class MainActivity : AppCompatActivity() {
             val contrasenaInput = etContrasena.text.toString()
 
             if (usuarioInput.isEmpty() || contrasenaInput.isEmpty()) {
-                Snackbar.make(it, "Por favor llena ambos campos", Toast.LENGTH_SHORT).show()
+                Snackbar.make(it, "Por favor llena ambos campos", Snackbar.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -127,17 +130,17 @@ class MainActivity : AppCompatActivity() {
             object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
-                    guardarSesionExitosa(rootView)
+                    guardarSesionExitosa(findViewById(android.R.id.content))
                 }
 
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     super.onAuthenticationError(errorCode, errString)
-                    Snackbar.make(rootView, "Error biométrico: $errString", Toast.LENGTH_SHORT).show()
+                    Snackbar.make(findViewById(android.R.id.content), "Error biométrico: $errString", Snackbar.LENGTH_SHORT).show()
                 }
 
                 override fun onAuthenticationFailed() {
                     super.onAuthenticationFailed()
-                    Snackbar.make(rootView, "Huella no reconocida", Toast.LENGTH_SHORT).show()
+                    Snackbar.make(findViewById(android.R.id.content), "Huella no reconocida", Snackbar.LENGTH_SHORT).show()
                 }
             })
 

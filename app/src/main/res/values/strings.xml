@@ -18,13 +18,26 @@
     <string name="device_bombilla_desc">Enciende las luces de tu habitación.</string>
     <string name="searching_title">Buscando Dispositivo</string>
     <string name="searching_desc">Asegurate de que el dispositivo este cerca y enchufado y en modo configuración.</string>
-    <string name="loading_text">Cargando ...</string>
+    <string name="loading_text">Cargando …</string>
     <string name="desc_back">Regresar</string>
     <string name="desc_add">Agregar dispositivo</string>
+    <string name="title_agregar_dispositivo">Agregar dispositivo</string>
+    <string name="hero_title">Conecta tu hogar</string>
+    <string name="hero_subtitle">Agrega nuevos dispositivos para controlarlos desde Manordomo.</string>
+    <string name="section_opciones_rapidas">Opciones rápidas</string>
+    <string name="section_mas_categorias">Más categorías</string>
+    <string name="cat_wifi">Wi-Fi Routers</string>
+    <string name="cat_enchufes">Enchufes inteligentes</string>
+    <string name="cat_iluminacion">Iluminación</string>
+    <string name="cat_ver_todas">Ver todas</string>
+    <string name="help_title">¿No encuentras tu dispositivo?</string>
+    <string name="help_desc">Consulta nuestra guía de compatibilidad para más información.</string>
+
     <string name="desc_device_icon">Icono del dispositivo</string>
     <string name="config_device_title">Configura el Dispositivo</string>
     <string name="config_device_desc">Levanta los brazos para configurar el dispositivo. Asegúrate de que tu torso y todo lo que está por encima esté dentro del encuadre.</string>
     <string name="desc_config_illustration">Ilustración de configuración</string>
+
     <string name="title_acciones">Acciones</string>
     <string name="subtitle_acciones">Agrega algun gesto para ejecutar acciones.</string>
     <string name="action_encender_bombilla">Ecender Bombilla</string>
@@ -34,6 +47,23 @@
     <string name="label_nombre_accion">Nombre de la acción</string>
     <string name="label_seleccionar_dispositivo">Seleccionar Dispositivo</string>
     <string name="btn_guardar">Guardar</string>
-    <string name="action_agregar_title">Agregr acción</string>
+    <string name="action_agregar_title">Agregar acción</string>
     <string name="action_conexion_establecida">Conexión establecida</string>
+
+    <string name="title_gestos">Gestos</string>
+    <string name="hero_actions_title">Gestiona tus Acciones</string>
+    <string name="section_saved_actions">Acciones guardadas</string>
+    <string name="hero_gestos_title">Configura tus gestos</string>
+    <string name="hero_gestos_subtitle">Asigna movimientos para controlar tus dispositivos de forma rápida.</string>
+    <string name="section_gestos_rapidos">Gestos rápidos</string>
+    <string name="gesture_brazos_title">Levantar brazos</string>
+    <string name="gesture_brazos_desc">Activa dispositivos levantando ambos brazos.</string>
+    <string name="gesture_circulo_title">Dibujar círculo</string>
+    <string name="gesture_circulo_desc">Realiza un círculo con la mano para encender.</string>
+    <string name="gesture_saludo_title">Saludar</string>
+    <string name="gesture_saludo_desc">Mueve la mano de lado a lado para apagar.</string>
+    <string name="section_categorias_gestos">Categorías de gestos</string>
+    <string name="cat_manos">Manos</string>
+    <string name="cat_brazos">Brazos</string>
+    <string name="cat_cuerpo">Cuerpo completo</string>
 </resources>
