@@ -24,11 +24,15 @@ class Gestos : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_gestos)
 
-        val mainGestos = findViewById<View>(R.id.mainGestos)
+        val mainGestos = findViewById<androidx.constraintlayout.motion.widget.MotionLayout>(R.id.mainGestos)
         ViewCompat.setOnApplyWindowInsetsListener(mainGestos) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
+        }
+
+        mainGestos.post {
+            mainGestos.transitionToEnd()
         }
 
         vistaGestos = findViewById(R.id.vistaGestos)
@@ -46,13 +50,16 @@ class Gestos : AppCompatActivity() {
         val inflater = LayoutInflater.from(this)
         vistaGestos.removeAllViews()
 
+        val pantallaDestiono = GestureActivity::class.java
+
         agregarTarjetaGesto(
             inflater,
             "Saludo",
             "Enciende las luces de la sala",
             "Bombillas (Sala)",
             android.R.drawable.ic_menu_camera,
-            true
+            true,
+            pantallaDestiono
         )
 
         agregarTarjetaGesto(
@@ -61,7 +68,8 @@ class Gestos : AppCompatActivity() {
             "Enciende el Smart TV",
             "Smart TV (Sala)",
             android.R.drawable.ic_menu_slideshow,
-            true
+            true,
+            pantallaDestiono
         )
 
         agregarTarjetaGesto(
@@ -70,7 +78,8 @@ class Gestos : AppCompatActivity() {
             "Activa la escena Relax",
             "Escena Relax",
             android.R.drawable.btn_star,
-            false
+            false,
+            pantallaDestiono
         )
 
         agregarTarjetaGesto(
@@ -79,7 +88,8 @@ class Gestos : AppCompatActivity() {
             "Apaga todas las luces",
             "Bombillas (Todas)",
             android.R.drawable.ic_lock_power_off,
-            true
+            true,
+            pantallaDestiono
         )
 
         vistaGestos.scheduleLayoutAnimation()
@@ -91,7 +101,8 @@ class Gestos : AppCompatActivity() {
         descripcion: String,
         objetivo: String,
         iconRes: Int,
-        estaActivo: Boolean
+        estaActivo: Boolean,
+        destino: Class<*>
     ) {
         val card = inflater.inflate(R.layout.item_gesture_active, vistaGestos, false)
 
@@ -109,6 +120,8 @@ class Gestos : AppCompatActivity() {
         ivIcon.setImageResource(iconRes)
         sw.isChecked = estaActivo
 
+        val contexto = card.context;
+
         sw.setOnCheckedChangeListener { _, isChecked ->
             val mensaje = if (isChecked) "Gesto $nombre activado" else "Gesto $nombre desactivado"
             Snackbar.make(findViewById(R.id.mainGestos), mensaje, Snackbar.LENGTH_SHORT).show()
@@ -116,6 +129,8 @@ class Gestos : AppCompatActivity() {
 
         btnEdit.setOnClickListener {
             Snackbar.make(it, "Editar gesto: $nombre", Snackbar.LENGTH_SHORT).show()
+            val intent = Intent(this, GestureActivity::class.java)
+            startActivity(intent)
         }
 
         btnMore.setOnClickListener {

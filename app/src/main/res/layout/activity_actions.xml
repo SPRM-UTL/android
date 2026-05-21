@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.motion.widget.MotionLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://tools.android.com/tools"
+    android:id="@+id/mainActions"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F5F7FA"
+    app:layoutDescription="@xml/activity_actions_scene"
     tools:context=".ActionsActivity">
 
-    <!-- Header -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/header"
         android:layout_width="match_parent"
@@ -24,7 +25,7 @@
             android:contentDescription="@string/desc_back"
             android:focusable="true"
             android:padding="12dp"
-            android:src="@drawable/arrow_left"
+            android:src="@android:drawable/ic_menu_revert"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -45,6 +46,7 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollContainerActions"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:fillViewport="true"
@@ -57,7 +59,6 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Hero Card (Similar to Add Device) -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/btnAddAction"
                 android:layout_width="match_parent"
@@ -131,7 +132,6 @@
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
-            <!-- Action 1 -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -161,7 +161,7 @@
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:layout_gravity="center"
-                            android:src="@drawable/lightbulb"
+                            android:src="@android:drawable/btn_star"
                             app:tint="@color/white" />
                     </com.google.android.material.card.MaterialCardView>
 
@@ -201,7 +201,6 @@
                 </androidx.constraintlayout.widget.ConstraintLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Action 2 -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -231,7 +230,7 @@
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:layout_gravity="center"
-                            android:src="@drawable/tv_minimal"
+                            android:src="@android:drawable/ic_menu_slideshow"
                             app:tint="@color/white" />
                     </com.google.android.material.card.MaterialCardView>
 
@@ -271,7 +270,6 @@
                 </androidx.constraintlayout.widget.ConstraintLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Action 3 -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -301,7 +299,7 @@
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:layout_gravity="center"
-                            android:src="@drawable/lamp_floor"
+                            android:src="@android:drawable/btn_star"
                             app:tint="@color/white" />
                     </com.google.android.material.card.MaterialCardView>
 
@@ -311,7 +309,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="16dp"
                         android:layout_marginEnd="8dp"
-                        android:text="Encender Lampara"
+                        android:text="@string/action_encender_bombilla"
                         android:textColor="#17252A"
                         android:textSize="16sp"
                         android:textStyle="bold"
@@ -322,7 +320,7 @@
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:text="Ensender laparas de la sala"
+                        android:text="@string/desc_bombilla_cuarto"
                         android:textColor="#6F7EA8"
                         android:textSize="12sp"
                         app:layout_constraintEnd_toEndOf="@id/title3"
@@ -344,4 +342,4 @@
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.constraintlayout.motion.widget.MotionLayout>

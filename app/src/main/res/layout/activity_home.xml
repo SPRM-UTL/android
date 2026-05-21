@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.motion.widget.MotionLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://tools.android.com/tools"
-    xmlns:tools2="http://schemas.android.com/tools"
     android:id="@+id/mainHome"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F5F7FA"
+    app:layoutDescription="@xml/activity_home_scene"
     tools:context=".HomeActivity">
 
     <com.google.android.material.card.MaterialCardView
@@ -88,6 +88,7 @@
         app:layout_constraintTop_toBottomOf="@id/cardSuperior" />
 
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollContainer"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
@@ -136,7 +137,7 @@
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:layout_gravity="center"
-                    android:src="@android:drawable/ic_dialog_info"
+                    android:src="@drawable/wifi"
                     app:tint="@color/teal_primary" />
             </com.google.android.material.card.MaterialCardView>
 
@@ -189,7 +190,7 @@
     <LinearLayout
         android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
-        android:layout_height="80dp"
+        android:layout_height="wrap_content"
         android:background="@color/white"
         android:orientation="horizontal"
         android:paddingVertical="8dp"
@@ -206,7 +207,7 @@
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_myplaces"
+                android:src="@drawable/house"
                 app:tint="@color/teal_primary" />
 
             <TextView
@@ -232,7 +233,7 @@
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_compass"
+                android:src="@drawable/pointer"
                 app:tint="#9E9E9E" />
 
             <TextView
@@ -244,4 +245,4 @@
         </LinearLayout>
     </LinearLayout>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.constraintlayout.motion.widget.MotionLayout>

@@ -13,6 +13,9 @@ class ActionsActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_actions)
 
+        val motionLayout = findViewById<androidx.constraintlayout.motion.widget.MotionLayout>(R.id.mainActions)
+        motionLayout.transitionToEnd()
+
         findViewById<ImageView>(R.id.btnBack).setOnClickListener {
             onBackPressedDispatcher.onBackPressed()
         }
