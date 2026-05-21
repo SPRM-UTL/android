@@ -18,6 +18,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Android">
         <activity
+            android:name=".Gestos"
+            android:exported="false" />
+        <activity
             android:name=".GestureActivity"
             android:exported="false" />
         <activity
@@ -34,6 +37,9 @@
             android:exported="false" />
         <activity
             android:name=".AddActionActivity"
+            android:exported="false" />
+        <activity
+            android:name=".GestureSelectionActivity"
             android:exported="false" />
         <activity
             android:name=".MainActivity"

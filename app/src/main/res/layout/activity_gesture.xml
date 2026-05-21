@@ -7,7 +7,6 @@
     android:background="#F5F7FA"
     tools:context=".ConfigureDeviceActivity">
 
-    <!-- Top Icon Container -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/iconContainer"
         android:layout_width="64dp"
@@ -27,11 +26,10 @@
             android:layout_height="32dp"
             android:layout_gravity="center"
             android:contentDescription="@string/desc_device_icon"
-            android:src="@android:drawable/ic_menu_camera"
+            android:src="@drawable/cctv"
             app:tint="@color/teal_primary" />
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Title -->
     <TextView
         android:id="@+id/tvTitle"
         android:layout_width="wrap_content"
@@ -46,7 +44,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/iconContainer" />
 
-    <!-- Description -->
     <TextView
         android:id="@+id/tvDescription"
         android:layout_width="0dp"
@@ -62,7 +59,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tvTitle" />
 
-    <!-- Main Workspace Card (Camera & HUD) -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/mainCard"
         android:layout_width="0dp"
@@ -80,12 +76,10 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tvDescription">
 
-        <!-- Contenedor interno esencial para Constraints -->
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <!-- Camera Frame Preview con sutil contorno Teal -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cameraCard"
                 android:layout_width="0dp"
@@ -110,7 +104,6 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent" />
 
-                    <!-- Overlay circular (HUD con tu color primario) -->
                     <FrameLayout
                         android:id="@+id/flContadorCircular"
                         android:layout_width="wrap_content"
@@ -145,7 +138,6 @@
                             android:shadowRadius="8"/>
                     </FrameLayout>
 
-                    <!-- Progreso lineal inferior -->
                     <ProgressBar
                         android:id="@+id/pbContadorLineal"
                         style="?android:attr/progressBarStyleHorizontal"
@@ -163,28 +155,27 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Modern Action Button integrado con tu paleta Teal -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnIniciarContador"
         android:layout_width="0dp"
         android:layout_height="56dp"
         android:layout_marginHorizontal="32dp"
         android:layout_marginBottom="40dp"
-        android:text="Iniciar Captura"
-        android:textSize="16sp"
         android:fontFamily="sans-serif-medium"
-        android:textColor="#FFFFFF"
         android:insetTop="0dp"
         android:insetBottom="0dp"
+        android:text="Iniciar Captura"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
         app:backgroundTint="@color/teal_primary"
         app:cornerRadius="16dp"
-        app:icon="@android:drawable/ic_media_play"
+        app:elevation="4dp"
+        app:icon="@drawable/cctv"
         app:iconGravity="textStart"
         app:iconPadding="8dp"
         app:iconTint="#FFFFFF"
-        app:elevation="4dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

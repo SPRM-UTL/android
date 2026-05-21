@@ -180,7 +180,7 @@
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:layout_gravity="center"
-                    android:src="@android:drawable/ic_media_next"
+                    android:src="@drawable/arrow_right"
                     app:tint="@color/teal_primary" />
             </com.google.android.material.card.MaterialCardView>
         </androidx.constraintlayout.widget.ConstraintLayout>
@@ -224,6 +224,9 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground"
             android:orientation="vertical">
 
             <ImageView
@@ -235,7 +238,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Escenas"
+                android:text="Gestos"
                 android:textColor="#9E9E9E"
                 android:textSize="12sp" />
         </LinearLayout>

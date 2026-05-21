@@ -20,7 +20,7 @@ class DeviceActivity : AppCompatActivity(){
         val contentLayout = findViewById<View>(R.id.contentLayout)
         val searchingState = findViewById<View>(R.id.searchingState)
 
-        val itemAsistente = findViewById<View>(R.id.iconContainer1).parent as View
+        val itemAsistente = findViewById<View>(R.id.itemAsistente)
 
         btnBack.setOnClickListener {
             onBackPressedDispatcher.onBackPressed()

@@ -55,7 +55,6 @@ class MainActivity : AppCompatActivity() {
             if (iconView is ImageView) {
                 (iconView.drawable as? Animatable)?.start()
             }
-            // Retrasar la salida un poco para ver la animación
             lifecycleScope.launch {
                 delay(2000)
                 splashProvider.remove()

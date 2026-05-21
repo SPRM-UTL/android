@@ -54,6 +54,11 @@ class HomeActivity : AppCompatActivity() {
             showProfileMenu(it)
         }
 
+        findViewById<View>(R.id.btnEscenas).setOnClickListener {
+            val intent = Intent(this, Gestos::class.java)
+            startActivity(intent)
+        }
+
         cargarDispositivos()
     }
 
