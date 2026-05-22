@@ -167,6 +167,7 @@
                 app:layout_constraintTop_toBottomOf="@id/tvRedTitulo" />
 
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/btnConfigurarRed"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 app:cardBackgroundColor="@color/white"

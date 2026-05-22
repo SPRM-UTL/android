@@ -15,9 +15,14 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
+import com.example.android.network.BluetoothController
+import com.example.android.network.RetrofitClient
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.switchmaterial.SwitchMaterial
+import kotlinx.coroutines.launch
+import kotlin.jvm.java
 
 class HomeActivity : AppCompatActivity() {
 
@@ -41,18 +46,10 @@ class HomeActivity : AppCompatActivity() {
         }
 
         if (intent.getBooleanExtra("SHOW_WELCOME", false)) {
-            Snackbar.make(                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               mainHome, "Bienvenido", Snackbar.LENGTH_SHORT).show()
+            Snackbar.make(mainHome, "Bienvenido", Snackbar.LENGTH_SHORT).show()
         }
 
         vistaDispositivos = findViewById(R.id.vistaDispositivos)
-
-        /*
-        val tabMusica = findViewById<TextView>(R.id.tabMusica)
-        tabMusica.setOnClickListener {
-            val intent = Intent(this, MusicActivity::class.java)
-            startActivity(intent)
-        }
-        */
 
         val ivProfile = findViewById<ImageView>(R.id.ivProfile)
         ivProfile.setOnClickListener {
@@ -60,7 +57,12 @@ class HomeActivity : AppCompatActivity() {
         }
 
         findViewById<View>(R.id.btnEscenas).setOnClickListener {
-            val intent = Intent(this, Gestos::class.java)
+            val intent = Intent(this, GestureActivity::class.java)
+            startActivity(intent)
+        }
+
+        findViewById<View>(R.id.btnConfigurarRed).setOnClickListener {
+            val intent = Intent(this@HomeActivity, NetworkActivity::class.java)
             startActivity(intent)
         }
 
@@ -72,30 +74,9 @@ class HomeActivity : AppCompatActivity() {
 
         vistaDispositivos.removeAllViews()
 
-        agregarTarjetaDispositivo(
-            inflater,
-            "Bombillas",
-            "Encendidas 2",
-            android.R.drawable.ic_lock_power_off,
-            true
-        )
-
-        agregarTarjetaDispositivo(
-            inflater,
-            "Smart TV",
-            "Panasonic",
-            android.R.drawable.ic_menu_slideshow,
-            false
-        )
-
-        agregarTarjetaDispositivo(
-            inflater,
-            "Wi-Fi Router",
-            "TP Link",
-            android.R.drawable.stat_sys_phone_call,
-            true
-        )
-
+        agregarTarjetaDispositivo(inflater, "Bombillas", "Encendidas 2", android.R.drawable.ic_lock_power_off, true)
+        agregarTarjetaDispositivo(inflater, "Smart TV", "Panasonic", android.R.drawable.ic_menu_slideshow, false)
+        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", android.R.drawable.stat_sys_phone_call, true)
 
         val cardAdd = inflater.inflate(R.layout.item_add_device, vistaDispositivos, false)
         cardAdd.setOnClickListener {
@@ -175,7 +156,8 @@ class HomeActivity : AppCompatActivity() {
                     true
                 }
                 R.id.action_profile -> {
-                    Snackbar.make(view, "Perfil próximamente", Snackbar.LENGTH_SHORT).show()
+                    val intent = Intent(this@HomeActivity, ProfileActivity::class.java)
+                    startActivity(intent)
                     true
                 }
                 else -> false
@@ -186,14 +168,74 @@ class HomeActivity : AppCompatActivity() {
 
     private fun logout() {
         val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
-        with(sharedPref.edit()) {
-            putBoolean("isLoggedIn", false)
-            apply()
+        val tokenGuardado = sharedPref.getString("apiToken", "") ?: ""
+
+        if (tokenGuardado.isEmpty()) {
+            Toast.makeText(this, "Aviso: No hay un token guardado localmente", Toast.LENGTH_LONG)
+                .show()
         }
 
-        val intent = Intent(this, MainActivity::class.java)
-        intent.putExtra("FROM_LOGOUT", true)
-        startActivity(intent)
-        finish()
+        lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.apiService.logout(tokenGuardado)
+
+                if (response.isSuccessful) {
+                    Toast.makeText(
+                        this@HomeActivity,
+                        "Sesión cerrada en el servidor",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    val codigoError = response.code()
+                    val cuerpoError = response.errorBody()?.string() ?: ""
+                    Toast.makeText(
+                        this@HomeActivity,
+                        "Error API $codigoError: $cuerpoError",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+
+            } catch (e: Exception) {
+                Toast.makeText(
+                    this@HomeActivity,
+                    "Error de conexión: ${e.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+
+            with(sharedPref.edit()) {
+                putBoolean("isLoggedIn", false)
+                putString("apiToken", "")
+                apply()
+            }
+
+            val intent = Intent(this@HomeActivity, MainActivity::class.java)
+            intent.putExtra("FROM_LOGOUT", true)
+            startActivity(intent)
+            finish()
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        verificarEstadoRedVisual()
+    }
+
+    private fun verificarEstadoRedVisual() {
+        // Obtenemos las referencias de la tarjeta en activity_home.xml
+        val tvRedEstado = findViewById<TextView>(R.id.tvRedEstado)
+        val iconWifiContainer = findViewById<com.google.android.material.card.MaterialCardView>(R.id.iconWifiContainer)
+
+        if (BluetoothController.isConnected) {
+            // El socket está abierto
+            tvRedEstado.text = "Hardware Conectado"
+            tvRedEstado.setTextColor(getColor(R.color.teal_primary))
+            iconWifiContainer.setCardBackgroundColor(getColor(R.color.teal_primary))
+        } else {
+            // El socket está cerrado
+            tvRedEstado.text = "Desconectado"
+            tvRedEstado.setTextColor(getColor(R.color.text_grey)) // O usa Color.RED
+            iconWifiContainer.setCardBackgroundColor(getColor(R.color.text_grey))
+        }
     }
 }

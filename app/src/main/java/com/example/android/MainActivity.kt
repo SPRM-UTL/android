@@ -9,7 +9,6 @@ import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricPrompt
 import androidx.constraintlayout.motion.widget.MotionLayout
@@ -20,6 +19,8 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.android.db.AppDatabase
 import com.example.android.db.Usuario
+import com.example.android.network.LoginRequest
+import com.example.android.network.RetrofitClient
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.delay
@@ -49,18 +50,16 @@ class MainActivity : AppCompatActivity() {
             manteniendoSplash
         }
 
-        // Configurar la salida del Splash para que inicie la animación del Login
         splashScreen.setOnExitAnimationListener { splashProvider ->
             val iconView = splashProvider.iconView
             if (iconView is ImageView) {
                 (iconView.drawable as? Animatable)?.start()
             }
-            
+
             lifecycleScope.launch {
-                delay(2000) // Tiempo para ver el logo animado
+                delay(2000)
                 splashProvider.remove()
-                
-                // RESTAURAR ANIMACIÓN DE LOGIN: Iniciar la transición del MotionLayout
+
                 val motionLayout = findViewById<MotionLayout>(R.id.motionLayout)
                 motionLayout.transitionToEnd()
             }
@@ -78,7 +77,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        if(biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)== BiometricManager.BIOMETRIC_SUCCESS){
+        if(biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) == BiometricManager.BIOMETRIC_SUCCESS){
             btnLoginHuella.visibility = View.VISIBLE
         }else{
             btnLoginHuella.visibility = View.GONE
@@ -94,8 +93,8 @@ class MainActivity : AppCompatActivity() {
                 irAHome()
                 return@launch
             }
-            
-            delay(500) // Breve espera antes de permitir que el Splash se retire
+
+            delay(500)
             manteniendoSplash = false
         }
 
@@ -103,23 +102,28 @@ class MainActivity : AppCompatActivity() {
         val etContrasena = findViewById<EditText>(R.id.etContrasena)
         val btnLoginTradicional = findViewById<Button>(R.id.btnLogin)
 
-
-        btnLoginTradicional.setOnClickListener {
+        btnLoginTradicional.setOnClickListener { view ->
             val usuarioInput = etUsuario.text.toString()
             val contrasenaInput = etContrasena.text.toString()
 
             if (usuarioInput.isEmpty() || contrasenaInput.isEmpty()) {
-                Snackbar.make(it, "Por favor llena ambos campos", Snackbar.LENGTH_SHORT).show()
+                Snackbar.make(view, "Por favor llena ambos campos", Snackbar.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
             lifecycleScope.launch {
-                val userEncontrado = db.usuarioDao().login(usuarioInput, contrasenaInput)
+                try {
+                    val peticion = LoginRequest(correo = usuarioInput, contrasenia = contrasenaInput)
+                    val response = RetrofitClient.apiService.login(peticion)
 
-                if (userEncontrado != null) {
-                    guardarSesionExitosa(it)
-                } else {
-                    Snackbar.make(it, "Usuario o contraseña incorrectos", Snackbar.LENGTH_SHORT).show()
+                    if (response.isSuccessful && response.body() != null) {
+                        val tokenApi = response.body()!!.data.token
+                        guardarSesionExitosa(view, tokenApi)
+                    } else {
+                        Snackbar.make(view, "Credenciales incorrectas", Snackbar.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    Snackbar.make(view, "Error de red: ${e.message}", Snackbar.LENGTH_LONG).show()
                 }
             }
         }
@@ -155,10 +159,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun guardarSesionExitosa(view : View) {
+    private fun guardarSesionExitosa(view: View, token: String = "") {
         val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
         with(sharedPref.edit()) {
             putBoolean("isLoggedIn", true)
+            putString("apiToken", token)
             apply()
         }
         irAHome(true)
