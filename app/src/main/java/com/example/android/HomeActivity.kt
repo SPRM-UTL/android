@@ -16,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
+import com.example.android.network.BluetoothController
 import com.example.android.network.RetrofitClient
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.snackbar.Snackbar
@@ -57,6 +58,11 @@ class HomeActivity : AppCompatActivity() {
 
         findViewById<View>(R.id.btnEscenas).setOnClickListener {
             val intent = Intent(this, GestureActivity::class.java)
+            startActivity(intent)
+        }
+
+        findViewById<View>(R.id.btnConfigurarRed).setOnClickListener {
+            val intent = Intent(this@HomeActivity, NetworkActivity::class.java)
             startActivity(intent)
         }
 
@@ -150,7 +156,8 @@ class HomeActivity : AppCompatActivity() {
                     true
                 }
                 R.id.action_profile -> {
-                    Snackbar.make(view, "Perfil próximamente", Snackbar.LENGTH_SHORT).show()
+                    val intent = Intent(this@HomeActivity, ProfileActivity::class.java)
+                    startActivity(intent)
                     true
                 }
                 else -> false
@@ -206,6 +213,29 @@ class HomeActivity : AppCompatActivity() {
             intent.putExtra("FROM_LOGOUT", true)
             startActivity(intent)
             finish()
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        verificarEstadoRedVisual()
+    }
+
+    private fun verificarEstadoRedVisual() {
+        // Obtenemos las referencias de la tarjeta en activity_home.xml
+        val tvRedEstado = findViewById<TextView>(R.id.tvRedEstado)
+        val iconWifiContainer = findViewById<com.google.android.material.card.MaterialCardView>(R.id.iconWifiContainer)
+
+        if (BluetoothController.isConnected) {
+            // El socket está abierto
+            tvRedEstado.text = "Hardware Conectado"
+            tvRedEstado.setTextColor(getColor(R.color.teal_primary))
+            iconWifiContainer.setCardBackgroundColor(getColor(R.color.teal_primary))
+        } else {
+            // El socket está cerrado
+            tvRedEstado.text = "Desconectado"
+            tvRedEstado.setTextColor(getColor(R.color.text_grey)) // O usa Color.RED
+            iconWifiContainer.setCardBackgroundColor(getColor(R.color.text_grey))
         }
     }
 }
