@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/mainProfile"
+    android:id="@+id/mainRegister"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F7FA"
+    android:background="@color/teal_primary"
     android:orientation="vertical">
 
     <com.google.android.material.card.MaterialCardView
@@ -12,7 +12,7 @@
         android:layout_height="wrap_content"
         app:cardBackgroundColor="@color/teal_primary"
         app:cardCornerRadius="0dp"
-        app:cardElevation="4dp"
+        app:cardElevation="0dp"
         app:strokeWidth="0dp">
 
         <LinearLayout
@@ -23,7 +23,7 @@
             android:padding="16dp">
 
             <ImageView
-                android:id="@+id/btnBack"
+                android:id="@+id/btnBackRegister"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@android:drawable/ic_menu_revert"
@@ -33,7 +33,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
-                android:text="Mi Perfil"
+                android:text="Crear una cuenta"
                 android:textColor="@color/white"
                 android:textSize="20sp"
                 android:textStyle="bold" />
@@ -43,6 +43,8 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/bg_login_card"
         android:fillViewport="true">
 
         <LinearLayout
@@ -50,18 +52,11 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingHorizontal="28dp"
-            android:paddingTop="32dp"
+            android:paddingTop="40dp"
             android:paddingBottom="32dp">
 
-            <ImageView
-                android:layout_width="100dp"
-                android:layout_height="100dp"
-                android:layout_gravity="center"
-                android:layout_marginBottom="32dp"
-                android:src="@drawable/ic_manordomo_icono" />
-
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/txtInputNombrePerfil"
+                android:id="@+id/txtInputNombre"
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -78,48 +73,45 @@
                 app:startIconTint="@color/teal_primary">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etNombrePerfil"
+                    android:id="@+id/etNombre"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textPersonName"
-                    android:textColor="#000000"
-                    android:textColorLink="@color/teal_primary" />
+                    android:textColor="#000000" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/txtInputCorreo"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="20dp"
-            android:hint="Correo Electrónico"
-            app:boxBackgroundColor="@android:color/transparent"
-            app:boxCornerRadiusBottomEnd="16dp"
-            app:boxCornerRadiusBottomStart="16dp"
-            app:boxCornerRadiusTopEnd="16dp"
-            app:boxCornerRadiusTopStart="16dp"
-            app:boxStrokeColor="@color/teal_primary"
-            app:hintTextColor="@color/teal_primary"
-            app:startIconDrawable="@drawable/user"
-            app:startIconTint="@color/teal_primary">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etCorreoPerfil"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textEmailAddress"
-                android:textColor="#000000"
-                android:textColorLink="@color/teal_primary" />
-
-        </com.google.android.material.textfield.TextInputLayout>
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/txtInputContrasena"
+                android:id="@+id/txtInputCorreoReg"
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="20dp"
-                android:hint="Nueva Contraseña"
+                android:hint="Correo Electrónico"
+                app:boxBackgroundColor="@android:color/transparent"
+                app:boxCornerRadiusBottomEnd="16dp"
+                app:boxCornerRadiusBottomStart="16dp"
+                app:boxCornerRadiusTopEnd="16dp"
+                app:boxCornerRadiusTopStart="16dp"
+                app:boxStrokeColor="@color/teal_primary"
+                app:hintTextColor="@color/teal_primary"
+                app:startIconDrawable="@android:drawable/ic_dialog_email"
+                app:startIconTint="@color/teal_primary">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etCorreoReg"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textEmailAddress"
+                    android:textColor="#000000" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/txtInputContrasenaReg"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                android:hint="Contraseña"
                 app:boxBackgroundColor="@android:color/transparent"
                 app:boxCornerRadiusBottomEnd="16dp"
                 app:boxCornerRadiusBottomStart="16dp"
@@ -130,21 +122,18 @@
                 app:endIconTint="@color/teal_primary"
                 app:hintTextColor="@color/teal_primary"
                 app:startIconDrawable="@drawable/lock"
-                app:startIconTint="@color/teal_primary"
-                app:helperText="Déjalo en blanco si no deseas cambiarla">
+                app:startIconTint="@color/teal_primary">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etContrasenaPerfil"
+                    android:id="@+id/etContrasenaReg"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textPassword"
-                    android:textColor="#000000"
-                    android:textColorLink="@color/teal_primary" />
-
+                    android:textColor="#000000" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/txtInputConfirmar"
+                android:id="@+id/txtInputConfirmarReg"
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -163,21 +152,19 @@
                 app:startIconTint="@color/teal_primary">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etConfirmarContrasena"
+                    android:id="@+id/etConfirmarReg"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textPassword"
-                    android:textColor="#000000"
-                    android:textColorLink="@color/teal_primary" />
-
+                    android:textColor="#000000" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnGuardarPerfil"
+                android:id="@+id/btnCrearCuenta"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginBottom="28dp"
-                android:text="Guardar Cambios"
+                android:text="Registrarse"
                 android:textAllCaps="false"
                 android:textColor="@color/white"
                 android:textSize="18sp"

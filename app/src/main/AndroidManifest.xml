@@ -29,6 +29,9 @@
             android:name=".ProfileActivity"
             android:exported="false" />
         <activity
+            android:name=".RegisterActivity"
+            android:exported="false"/>
+        <activity
             android:name=".NetworkActivity"
             android:exported="false" />
         <activity
