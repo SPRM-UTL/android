@@ -1,5 +1,6 @@
 package com.example.android.network
 
+import com.example.android.BuildConfig
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.Retrofit
@@ -77,11 +78,9 @@ interface AuthApiService {
 }
 
 object RetrofitClient {
-    private const val BASE_URL = "http://192.168.100.10:5295/"
-
     val apiService: AuthApiService by lazy {
         Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(BuildConfig.BASE_URL)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(AuthApiService::class.java)

@@ -18,7 +18,6 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-
 class ProfileActivity : AppCompatActivity() {
 
     private lateinit var etNombrePerfil: TextInputEditText
@@ -160,6 +159,7 @@ class ProfileActivity : AppCompatActivity() {
         )
 
         btnGuardarPerfil.isEnabled = false
+        Snackbars.info(view, "Datos guardados", Snackbar.LENGTH_SHORT).show()
 
         lifecycleScope.launch {
             try {

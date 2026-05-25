@@ -28,6 +28,7 @@ import com.google.android.material.progressindicator.LinearProgressIndicator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.google.android.material.snackbar.Snackbar
 
 class NetworkActivity : AppCompatActivity() {
 
@@ -47,9 +48,11 @@ class NetworkActivity : AppCompatActivity() {
     private val KEY_MAC = "saved_mac_address"
     private val KEY_NAME = "saved_device_name"
 
+    private lateinit var vistaRaiz: View
+
     private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
         if (permissions.entries.all { it.value }) verificarYEncenderBluetooth()
-        else Toast.makeText(this, "Permisos denegados", Toast.LENGTH_SHORT).show()
+        else Snackbars.info(vistaRaiz, "Permisos denegados", Toast.LENGTH_SHORT).show()
     }
 
     private val enableBluetoothLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -75,6 +78,7 @@ class NetworkActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_network)
+        vistaRaiz = findViewById(android.R.id.content)
 
         tvDispositivoGuardado = findViewById(R.id.tvDispositivoGuardado)
         tvEstadoConexion = findViewById(R.id.tvEstadoConexion)
@@ -133,7 +137,7 @@ class NetworkActivity : AppCompatActivity() {
         bluetoothAdapter?.cancelDiscovery()
         progressCargando.visibility = View.VISIBLE
         btnEscanear.isEnabled = false
-        Toast.makeText(this, "Conectando al Socket Hardware...", Toast.LENGTH_SHORT).show()
+        Snackbars.info(vistaRaiz, "Conectando al Socket Hardware...", Toast.LENGTH_SHORT).show()
 
         // Hacemos la conexión real en un hilo secundario
         lifecycleScope.launch(Dispatchers.IO) {
@@ -150,9 +154,9 @@ class NetworkActivity : AppCompatActivity() {
                         putString(KEY_MAC, device.address)
                         apply()
                     }
-                    Toast.makeText(this@NetworkActivity, "¡Conexión Física Establecida!", Toast.LENGTH_SHORT).show()
+                    Snackbars.info(vistaRaiz, "¡Conexión Física Establecida!", Snackbar.LENGTH_SHORT).show()
                 } else {
-                    Toast.makeText(this@NetworkActivity, "Error: El hardware rechazó la conexión Socket", Toast.LENGTH_LONG).show()
+                    Snackbars.info(vistaRaiz, "Error: El hardware rechazó la conexión Socket", Snackbar.LENGTH_LONG).show()
                 }
                 actualizarUIConexionLocal()
             }

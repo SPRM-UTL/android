@@ -27,11 +27,13 @@ import kotlin.jvm.java
 class HomeActivity : AppCompatActivity() {
 
     private lateinit var vistaDispositivos: GridLayout
+    private lateinit var vistaRaiz: View
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_home)
+        vistaRaiz = findViewById(android.R.id.content)
 
         val mainHome = findViewById<androidx.constraintlayout.motion.widget.MotionLayout>(R.id.mainHome)
         ViewCompat.setOnApplyWindowInsetsListener(mainHome) { v, insets ->
@@ -46,7 +48,7 @@ class HomeActivity : AppCompatActivity() {
         }
 
         if (intent.getBooleanExtra("SHOW_WELCOME", false)) {
-            Snackbar.make(mainHome, "Bienvenido", Snackbar.LENGTH_SHORT).show()
+            Snackbars.info(mainHome, "Bienvenido", Snackbar.LENGTH_SHORT).show()
         }
 
         vistaDispositivos = findViewById(R.id.vistaDispositivos)
@@ -80,7 +82,7 @@ class HomeActivity : AppCompatActivity() {
 
         val cardAdd = inflater.inflate(R.layout.item_add_device, vistaDispositivos, false)
         cardAdd.setOnClickListener {
-            Snackbar.make(it, "Abriendo panel de dispositivos", Snackbar.LENGTH_SHORT).show()
+            Snackbars.info(it, "Abriendo panel de dispositivos", Snackbar.LENGTH_SHORT).show()
             val intent = Intent(this, DeviceActivity::class.java)
             startActivity(intent)
         }
@@ -116,7 +118,7 @@ class HomeActivity : AppCompatActivity() {
             actualizarEstiloTarjeta(materialCard, iconBg, tvName, tvStatus, sw, isChecked)
             val mensaje = if (isChecked) "$nombre Encendido" else "$nombre Apagado"
             val mainHome = findViewById<View>(R.id.mainHome)
-            Snackbar.make(mainHome, mensaje, Snackbar.LENGTH_SHORT).show()
+            Snackbars.info(mainHome, mensaje, Snackbar.LENGTH_SHORT).show()
         }
 
         vistaDispositivos.addView(card)
@@ -152,7 +154,7 @@ class HomeActivity : AppCompatActivity() {
                     true
                 }
                 R.id.action_settings -> {
-                    Snackbar.make(view, "Configuración próximamente", Snackbar.LENGTH_SHORT).show()
+                    Snackbars.info(view, "Configuración próximamente", Snackbar.LENGTH_SHORT).show()
                     true
                 }
                 R.id.action_profile -> {
@@ -171,7 +173,7 @@ class HomeActivity : AppCompatActivity() {
         val tokenGuardado = sharedPref.getString("apiToken", "") ?: ""
 
         if (tokenGuardado.isEmpty()) {
-            Toast.makeText(this, "Aviso: No hay un token guardado localmente", Toast.LENGTH_LONG)
+            Snackbars.info(vistaRaiz, "Aviso: No hay un token guardado localmente", Toast.LENGTH_LONG)
                 .show()
         }
 
