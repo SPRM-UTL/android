@@ -10,6 +10,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricPrompt
 import androidx.constraintlayout.motion.widget.MotionLayout
@@ -120,7 +121,9 @@ class MainActivity : AppCompatActivity() {
 
                     if (response.isSuccessful && response.body() != null) {
                         val tokenApi = response.body()!!.data.token
-                        guardarSesionExitosa(view, tokenApi)
+                        val idApi = response.body()!!.data.id
+
+                        guardarSesionExitosa(view, tokenApi, idApi)
                     } else {
                         Snackbars.info(view, "Credenciales incorrectas", Snackbar.LENGTH_SHORT).show()
                     }
@@ -159,13 +162,25 @@ class MainActivity : AppCompatActivity() {
         btnLoginHuella.setOnClickListener {
             biometricPrompt.authenticate(promptInfo)
         }
+
+        val tvRegistrarse = findViewById<TextView>(R.id.tvRegistrarse)
+        tvRegistrarse.setOnClickListener {
+            val intent = Intent(this@MainActivity, RegisterActivity::class.java)
+            startActivity(intent)
+        }
     }
 
-    private fun guardarSesionExitosa(view: View, token: String = "") {
+    private fun guardarSesionExitosa(view: View, token: String = "", userId: Int = -1) {
         val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
         with(sharedPref.edit()) {
             putBoolean("isLoggedIn", true)
-            putString("apiToken", token)
+
+            if (token.isNotEmpty()) {
+                putString("apiToken", token)
+            }
+            if (userId != -1) {
+                putInt("userId", userId)
+            }
             apply()
         }
         irAHome(true)
