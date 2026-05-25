@@ -15,6 +15,7 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.switchmaterial.SwitchMaterial
 
+
 class Gestos : AppCompatActivity() {
 
     private lateinit var vistaGestos: GridLayout

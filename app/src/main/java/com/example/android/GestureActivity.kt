@@ -30,6 +30,7 @@ import com.google.android.material.progressindicator.CircularProgressIndicator
 import java.io.File
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import com.google.android.material.snackbar.Snackbar
 
 class GestureActivity : AppCompatActivity() {
 
@@ -45,13 +46,14 @@ class GestureActivity : AppCompatActivity() {
     private var videoCapture: VideoCapture<Recorder>? = null
     private var recording: Recording? = null
 
+    private lateinit var vistaRaiz: View
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         if (isGranted) {
             startCamera()
         } else {
-            Toast.makeText(this, "Se requiere permiso de cámara para esta función", Toast.LENGTH_LONG).show()
+            Snackbars.info(vistaRaiz, "Se requiere permiso de cámara para esta función", Toast.LENGTH_LONG).show()
             finish()
         }
     }
@@ -60,6 +62,7 @@ class GestureActivity : AppCompatActivity() {
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_gesture)
+        vistaRaiz = findViewById(android.R.id.content)
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
@@ -148,7 +151,7 @@ class GestureActivity : AppCompatActivity() {
                 )
 
             } catch(exc: Exception) {
-                Toast.makeText(this, "Error al configurar los componentes de la cámara", Toast.LENGTH_SHORT).show()
+                Snackbars.info(vistaRaiz, "Error al configurar los componentes de la cámara", Toast.LENGTH_SHORT).show()
             }
 
         }, ContextCompat.getMainExecutor(this))
@@ -178,10 +181,10 @@ class GestureActivity : AppCompatActivity() {
                         btnIniciarContador.isEnabled = true
 
                         if (!recordEvent.hasError()) {
-                            Toast.makeText(this, "Video guardado con éxito", Toast.LENGTH_SHORT).show()
+                            Snackbars.info(vistaRaiz, "Video guardado con éxito", Toast.LENGTH_SHORT).show()
                             // Aqui seguira la logica para enviar el video al back o algun analizador
                         } else {
-                            Toast.makeText(this, "Error en la captura del archivo", Toast.LENGTH_SHORT).show()
+                            Snackbars.info(vistaRaiz, "Error en la captura del archivo", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
