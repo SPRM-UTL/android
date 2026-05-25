@@ -15,7 +15,6 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-
 class ProfileActivity : AppCompatActivity() {
 
     private lateinit var etCorreoPerfil: TextInputEditText
@@ -117,7 +116,7 @@ class ProfileActivity : AppCompatActivity() {
 
         // Aquí ira la lógica de la API para datos reales
 
-        Snackbar.make(view, "Datos guardados", Snackbar.LENGTH_SHORT).show()
+        Snackbars.info(view, "Datos guardados", Snackbar.LENGTH_SHORT).show()
 
         lifecycleScope.launch {
             delay(1200)

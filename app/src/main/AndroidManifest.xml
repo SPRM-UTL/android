@@ -47,15 +47,6 @@
             android:name=".MusicActivity"
             android:exported="false" />
         <activity
-            android:name=".ActionsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".AddActionActivity"
-            android:exported="false" />
-        <activity
-            android:name=".GestureSelectionActivity"
-            android:exported="false" />
-        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/Theme.AnimatedSplash.MySplash">

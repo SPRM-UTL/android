@@ -1,5 +1,6 @@
 package com.example.android
 
+
 import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Animatable
@@ -26,6 +27,7 @@ import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.concurrent.Executor
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -107,7 +109,7 @@ class MainActivity : AppCompatActivity() {
             val contrasenaInput = etContrasena.text.toString()
 
             if (usuarioInput.isEmpty() || contrasenaInput.isEmpty()) {
-                Snackbar.make(view, "Por favor llena ambos campos", Snackbar.LENGTH_SHORT).show()
+                Snackbars.info(view, "Por favor llena ambos campos", Snackbar.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -120,10 +122,10 @@ class MainActivity : AppCompatActivity() {
                         val tokenApi = response.body()!!.data.token
                         guardarSesionExitosa(view, tokenApi)
                     } else {
-                        Snackbar.make(view, "Credenciales incorrectas", Snackbar.LENGTH_SHORT).show()
+                        Snackbars.info(view, "Credenciales incorrectas", Snackbar.LENGTH_SHORT).show()
                     }
                 } catch (e: Exception) {
-                    Snackbar.make(view, "Error de red: ${e.message}", Snackbar.LENGTH_LONG).show()
+                    Snackbars.info(view, "Error de red: ${e.message}", Snackbar.LENGTH_LONG).show()
                 }
             }
         }
@@ -139,12 +141,12 @@ class MainActivity : AppCompatActivity() {
 
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     super.onAuthenticationError(errorCode, errString)
-                    Snackbar.make(findViewById(android.R.id.content), "Error biométrico: $errString", Snackbar.LENGTH_SHORT).show()
+                    Snackbars.info(findViewById(android.R.id.content), "Error biométrico: $errString", Snackbar.LENGTH_SHORT).show()
                 }
 
                 override fun onAuthenticationFailed() {
                     super.onAuthenticationFailed()
-                    Snackbar.make(findViewById(android.R.id.content), "Huella no reconocida", Snackbar.LENGTH_SHORT).show()
+                    Snackbars.info(findViewById(android.R.id.content), "Huella no reconocida", Snackbar.LENGTH_SHORT).show()
                 }
             })
 
