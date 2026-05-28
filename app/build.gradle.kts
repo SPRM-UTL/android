@@ -4,6 +4,7 @@ import java.io.FileInputStream
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.compose.compiler)
 }
 
 android {
@@ -40,6 +41,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+
         }
     }
     compileOptions {
@@ -50,6 +52,7 @@ android {
     buildFeatures {
         viewBinding = true
         buildConfig = true
+        compose = true
     }
 }
 
@@ -58,14 +61,14 @@ ksp {
 }
 
 dependencies {
+
+    implementation(libs.material)
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.fragment)
     //implementation(libs.cardview.v7)
-    implementation("com.google.android.material:material:1.12.0")
-    implementation(libs.material)
     implementation(libs.androidx.biometric)
 
     val room_version = "2.6.1"
@@ -89,8 +92,21 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
     implementation("androidx.core:core-splashscreen:1.0.1")
-    implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.constraintlayout:constraintlayout:2.2.1")
     implementation("androidx.constraintlayout:constraintlayout-compose:1.1.1")
     implementation("me.tankery.lib:circularSeekBar:1.4.2")
+
+    implementation("io.coil-kt:coil-compose:2.6.0")
+    implementation("io.coil-kt:coil-svg:2.6.0")
+    implementation("io.coil-kt:coil:2.6.0")
+    implementation("com.google.android.material:material:1.12.0")
+
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.ui.graphics)
+    implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.material.icons.extended)
+    debugImplementation(libs.androidx.ui.tooling)
 }

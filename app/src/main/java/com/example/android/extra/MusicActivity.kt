@@ -1,12 +1,12 @@
-package com.example.android
+package com.example.android.extra
 
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import me.tankery.lib.circularseekbar.CircularSeekBar
 import com.example.android.databinding.MusicBinding
+import me.tankery.lib.circularseekbar.CircularSeekBar
 
 class MusicActivity : AppCompatActivity() {
     private lateinit var binding: MusicBinding

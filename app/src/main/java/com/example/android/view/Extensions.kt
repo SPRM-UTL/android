@@ -1,7 +1,8 @@
-package com.example.android
+package com.example.android.view
 
 import android.view.View
 import androidx.core.content.ContextCompat
+import com.example.android.R
 import com.google.android.material.snackbar.Snackbar
 
 object Snackbars {

@@ -26,11 +26,11 @@ import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.example.android.view.Snackbars
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import java.io.File
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import com.google.android.material.snackbar.Snackbar
 
 class GestureActivity : AppCompatActivity() {
 

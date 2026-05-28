@@ -12,8 +12,8 @@
     app:strokeWidth="0dp">
 
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_width="170dp"
+        android:layout_height="170dp"
         android:background="@drawable/bg_dotted_teal"
         android:gravity="center"
         android:orientation="vertical"

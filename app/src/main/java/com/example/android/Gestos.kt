@@ -4,13 +4,17 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
+import android.widget.FrameLayout
 import android.widget.GridLayout
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.ui.platform.ComposeView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.android.ui.components.BottomBarWithFab
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.switchmaterial.SwitchMaterial
@@ -38,13 +42,48 @@ class Gestos : AppCompatActivity() {
 
         vistaGestos = findViewById(R.id.vistaGestos)
 
-        findViewById<View>(R.id.navInicio).setOnClickListener {
-            val intent = Intent(this, HomeActivity::class.java)
-            startActivity(intent)
-            finish()
-        }
-
+        configurarBottomBarCompose()
         cargarGestos()
+    }
+
+    private fun configurarBottomBarCompose() {
+        val composeContainer = findViewById<FrameLayout>(R.id.bottom_bar_container)
+        val composeView = ComposeView(this).apply {
+            setContent {
+                BottomBarWithFab(
+                    onHomeClick = {
+                        val intent = Intent(this@Gestos, HomeActivity::class.java)
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
+                        startActivity(intent)
+                        overridePendingTransition(0, 0)
+                        finish()
+                    },
+                    onGesturesClick = {
+                        // Ya estamos en Gestos
+                    },
+                    onFabClick = {
+                        abrirMenuPrincipal()
+                    }
+                )
+            }
+        }
+        composeContainer.addView(composeView)
+    }
+
+    private fun abrirMenuPrincipal() {
+        val menuSheet = MenuBottomSheetDialog(
+            onProfileClick = {
+                val intent = Intent(this@Gestos, ProfileActivity::class.java)
+                startActivity(intent)
+            },
+            onSettingsClick = {
+                Toast.makeText(this@Gestos, "Configuración próximamente", Toast.LENGTH_SHORT).show()
+            },
+            onLogoutClick = {
+                // Podrías implementar el logout aquí también si es necesario
+            }
+        )
+        menuSheet.show(supportFragmentManager, "MenuBottomSheet")
     }
 
     private fun cargarGestos() {
@@ -62,7 +101,42 @@ class Gestos : AppCompatActivity() {
             true,
             pantallaDestiono
         )
-
+        agregarTarjetaGesto(
+            inflater,
+            "Saludo",
+            "Enciende las luces de la sala",
+            "Bombillas (Sala)",
+            android.R.drawable.ic_menu_camera,
+            true,
+            pantallaDestiono
+        )
+        agregarTarjetaGesto(
+            inflater,
+            "Saludo",
+            "Enciende las luces de la sala",
+            "Bombillas (Sala)",
+            android.R.drawable.ic_menu_camera,
+            true,
+            pantallaDestiono
+        )
+        agregarTarjetaGesto(
+            inflater,
+            "Saludo",
+            "Enciende las luces de la sala",
+            "Bombillas (Sala)",
+            android.R.drawable.ic_menu_camera,
+            true,
+            pantallaDestiono
+        )
+        agregarTarjetaGesto(
+            inflater,
+            "Saludo",
+            "Enciende las luces de la sala",
+            "Bombillas (Sala)",
+            android.R.drawable.ic_menu_camera,
+            true,
+            pantallaDestiono
+        )
         agregarTarjetaGesto(
             inflater,
             "Paz",
@@ -109,15 +183,15 @@ class Gestos : AppCompatActivity() {
 
         val tvName = card.findViewById<TextView>(R.id.tvGestureName)
         val tvDesc = card.findViewById<TextView>(R.id.tvGestureDesc)
-        val tvTarget = card.findViewById<TextView>(R.id.tvDeviceTarget)
+//        val tvTarget = card.findViewById<TextView>(R.id.tvDeviceTarget)
         val ivIcon = card.findViewById<ImageView>(R.id.ivGestureIcon)
         val sw = card.findViewById<SwitchMaterial>(R.id.switchGesture)
-        val btnEdit = card.findViewById<MaterialCardView>(R.id.btnEdit)
-        val btnMore = card.findViewById<MaterialCardView>(R.id.btnMore)
+//        val btnEdit = card.findViewById<MaterialCardView>(R.id.btnEdit)
+//        val btnMore = card.findViewById<MaterialCardView>(R.id.btnMore)
 
         tvName.text = nombre
         tvDesc.text = descripcion
-        tvTarget.text = objetivo
+//        tvTarget.text = objetivo
         ivIcon.setImageResource(iconRes)
         sw.isChecked = estaActivo
 
@@ -128,15 +202,15 @@ class Gestos : AppCompatActivity() {
             Snackbar.make(findViewById(R.id.mainGestos), mensaje, Snackbar.LENGTH_SHORT).show()
         }
 
-        btnEdit.setOnClickListener {
-            Snackbar.make(it, "Editar gesto: $nombre", Snackbar.LENGTH_SHORT).show()
-            val intent = Intent(this, GestureActivity::class.java)
-            startActivity(intent)
-        }
-
-        btnMore.setOnClickListener {
-            Snackbar.make(it, "Más opciones para: $nombre", Snackbar.LENGTH_SHORT).show()
-        }
+//        btnEdit.setOnClickListener {
+//            Snackbar.make(it, "Editar gesto: $nombre", Snackbar.LENGTH_SHORT).show()
+//            val intent = Intent(this, GestureActivity::class.java)
+//            startActivity(intent)
+//        }
+//
+//        btnMore.setOnClickListener {
+//            Snackbar.make(it, "Más opciones para: $nombre", Snackbar.LENGTH_SHORT).show()
+//        }
 
         vistaGestos.addView(card)
     }
