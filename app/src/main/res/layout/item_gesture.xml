@@ -45,7 +45,7 @@
             app:layout_constraintBottom_toBottomOf="@id/iconBg"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@id/iconBg"
-            app:tint="@color/teal_primary" />
+            app:tint="@color/white" />
 
         <TextView
             android:id="@+id/tvGestureName"

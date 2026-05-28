@@ -1,30 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Base theme: Material 3 sin ActionBar -->
     <style name="Base.Theme.Android" parent="Theme.Material3.DayNight.NoActionBar">
-
         <item name="android:statusBarColor">@color/teal_primary</item>
-
         <item name="android:windowLightStatusBar">false</item>
-
     </style>
 
     <style name="Theme.Android" parent="Base.Theme.Android" />
+
+    <!-- Splash Screen -->
     <style name="Theme.AnimatedSplash.MySplash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/white</item>
-
         <item name="postSplashScreenTheme">@style/Theme.Android</item>
-
         <item name="windowSplashScreenAnimatedIcon">@drawable/avd_manordomo</item>
-
         <item name="windowSplashScreenAnimationDuration">2300</item>
     </style>
-    <style name="EsquinasSuperioresRedondeadas" parent="">
+
+    <!-- Estilos personalizados -->
+    <style name="EsquinasSuperioresRedondeadas"
+        parent="ShapeAppearance.Material3.SmallComponent">
         <item name="cornerSizeTopLeft">28dp</item>
         <item name="cornerSizeTopRight">28dp</item>
         <item name="cornerSizeBottomLeft">0dp</item>
         <item name="cornerSizeBottomRight">0dp</item>
     </style>
 
-    <style name="CircleImage" parent="">
+    <style name="CircleImage"
+        parent="ShapeAppearance.Material3.SmallComponent">
         <item name="cornerSize">50%</item>
     </style>
+
+    <!-- Opcional: Estilo personalizado para BottomAppBar (si quieres más control) -->
+    <!-- No es necesario si ya usas Theme.Material3.DayNight.NoActionBar, pero sirve para debug -->
+    <style name="Widget.Custom.BottomAppBar" parent="Widget.Material3.BottomAppBar">
+        <item name="backgroundTint">@color/black</item>
+        <item name="fabCradleMargin">8dp</item>
+        <item name="fabCradleRoundedCornerRadius">28dp</item>
+        <item name="fabCradleVerticalOffset">6dp</item>
+    </style>
+
 </resources>

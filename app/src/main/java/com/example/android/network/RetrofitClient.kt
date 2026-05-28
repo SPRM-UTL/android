@@ -77,10 +77,12 @@ interface AuthApiService {
                               @Body request: UpdateUserRequest): Response<ResponseBody>
 }
 
+
+
 object RetrofitClient {
     val apiService: AuthApiService by lazy {
         Retrofit.Builder()
-            .baseUrl(BuildConfig.BASE_URL)
+            .baseUrl("http://192.168.1.11:5295/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(AuthApiService::class.java)

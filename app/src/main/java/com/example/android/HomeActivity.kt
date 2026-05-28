@@ -2,47 +2,55 @@ package com.example.android
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
-import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.GridLayout
 import android.widget.ImageView
-import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.ui.platform.ComposeView
+import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.android.network.BluetoothController
 import com.example.android.network.RetrofitClient
+import com.example.android.ui.components.BottomBarWithFab
+import com.example.android.view.Snackbars
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.switchmaterial.SwitchMaterial
 import kotlinx.coroutines.launch
-import kotlin.jvm.java
 
 class HomeActivity : AppCompatActivity() {
 
-    private lateinit var vistaDispositivos: GridLayout
     private lateinit var vistaRaiz: View
+    private lateinit var mainHome: MotionLayout
+    private lateinit var vistaDispositivos: GridLayout
+    private lateinit var ivProfile: ImageView
+
+    private lateinit var tvRedEstado: TextView
+    private lateinit var iconWifiContainer: MaterialCardView
+    private lateinit var iconWifi: ImageView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_home)
-        vistaRaiz = findViewById(android.R.id.content)
 
-        val mainHome = findViewById<androidx.constraintlayout.motion.widget.MotionLayout>(R.id.mainHome)
-        ViewCompat.setOnApplyWindowInsetsListener(mainHome) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
 
-        // Ejecutar animación con un pequeño retraso para asegurar fluidez
+        inicializarVistas()
+        configurarInsets()
+        configurarListeners()
+
+        cargarIconosEstaticosEnLinea()
+
         mainHome.post {
             mainHome.transitionToEnd()
         }
@@ -51,34 +59,114 @@ class HomeActivity : AppCompatActivity() {
             Snackbars.info(mainHome, "Bienvenido", Snackbar.LENGTH_SHORT).show()
         }
 
+        cargarDispositivos()
+        configurarBottomBarCompose()
+    }
+
+    private fun configurarBottomBarCompose() {
+        val composeContainer = findViewById<FrameLayout>(R.id.bottom_bar_container)
+        val composeView = ComposeView(this).apply {
+            setContent {
+                BottomBarWithFab(
+                    onHomeClick = {
+                    },
+                    onGesturesClick = {
+                        val intent = Intent(this@HomeActivity, Gestos::class.java)
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
+                        startActivity(intent)
+                        overridePendingTransition(0, 0)
+                    },
+                    onFabClick = {
+                        abrirMenuPrincipal()
+                    }
+                )
+            }
+        }
+        composeContainer.addView(composeView)
+    }
+
+    private fun abrirMenuPrincipal() {
+        val menuSheet = MenuBottomSheetDialog(
+            onProfileClick = {
+                val intent = Intent(this@HomeActivity, ProfileActivity::class.java)
+                startActivity(intent)
+            },
+            onSettingsClick = {
+                Toast.makeText(this@HomeActivity, "Configuración próximamente", Toast.LENGTH_SHORT).show()
+            },
+            onLogoutClick = {
+                logout()
+            }
+        )
+        menuSheet.show(supportFragmentManager, "MenuBottomSheet")
+    }
+
+    override fun onResume() {
+        super.onResume()
+        verificarEstadoRedVisual()
+    }
+
+    private fun inicializarVistas() {
+        vistaRaiz = findViewById(android.R.id.content)
+        mainHome = findViewById(R.id.mainHome)
         vistaDispositivos = findViewById(R.id.vistaDispositivos)
+        ivProfile = findViewById(R.id.ivProfile)
 
-        val ivProfile = findViewById<ImageView>(R.id.ivProfile)
+        tvRedEstado = findViewById(R.id.tvRedEstado)
+        iconWifiContainer = findViewById(R.id.iconWifiContainer)
+        iconWifi = findViewById(R.id.iconWifi)
+    }
+
+    private fun configurarInsets() {
+        ViewCompat.setOnApplyWindowInsetsListener(mainHome) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
+    }
+
+    private fun configurarListeners() {
         ivProfile.setOnClickListener {
-            showProfileMenu(it)
+            abrirMenuPrincipal()
         }
 
-        findViewById<View>(R.id.btnEscenas).setOnClickListener {
-            val intent = Intent(this, GestureActivity::class.java)
-            startActivity(intent)
-        }
+//        findViewById<View>(R.id.btnEscenas).setOnClickListener {
+//            val intent = Intent(this, Gestos::class.java)
+//            startActivity(intent)
+//        }
 
         findViewById<View>(R.id.btnConfigurarRed).setOnClickListener {
             val intent = Intent(this@HomeActivity, NetworkActivity::class.java)
             startActivity(intent)
         }
+    }
 
-        cargarDispositivos()
+    private fun cargarIconosEstaticosEnLinea() {
+        LucideLoader.cargarIcono(iconWifi, "wifi")
+        findViewById<ImageView>(R.id.ivFlechaDerecha)?.let {
+            LucideLoader.cargarIcono(it, "arrow-right")
+        }
+
     }
 
     private fun cargarDispositivos() {
         val inflater = LayoutInflater.from(this)
-
         vistaDispositivos.removeAllViews()
 
-        agregarTarjetaDispositivo(inflater, "Bombillas", "Encendidas 2", android.R.drawable.ic_lock_power_off, true)
-        agregarTarjetaDispositivo(inflater, "Smart TV", "Panasonic", android.R.drawable.ic_menu_slideshow, false)
-        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", android.R.drawable.stat_sys_phone_call, true)
+        agregarTarjetaDispositivo(inflater, "Bombillas", "Encendidas 2", "lightbulb", true)
+        agregarTarjetaDispositivo(inflater, "Smart TV", "Panasonic", "tv", false)
+        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
+        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
+        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
+        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
+        agregarTarjetaDispositivo(inflater, "Bombillas", "Encendidas 2", "lightbulb", true)
+        agregarTarjetaDispositivo(inflater, "Smart TV", "Panasonic", "tv", false)
+        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
+        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
+        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
+        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
+        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
+
 
         val cardAdd = inflater.inflate(R.layout.item_add_device, vistaDispositivos, false)
         cardAdd.setOnClickListener {
@@ -87,7 +175,6 @@ class HomeActivity : AppCompatActivity() {
             startActivity(intent)
         }
         vistaDispositivos.addView(cardAdd)
-
         vistaDispositivos.scheduleLayoutAnimation()
     }
 
@@ -95,7 +182,7 @@ class HomeActivity : AppCompatActivity() {
         inflater: LayoutInflater,
         nombre: String,
         estado: String,
-        iconRes: Int,
+        lucideIconName: String,
         estaEncendido: Boolean
     ) {
         val card = inflater.inflate(R.layout.item_device, vistaDispositivos, false)
@@ -109,7 +196,9 @@ class HomeActivity : AppCompatActivity() {
 
         tvName.text = nombre
         tvStatus.text = estado
-        ivIcon.setImageResource(iconRes)
+
+        LucideLoader.cargarIcono(ivIcon, lucideIconName)
+
         sw.isChecked = estaEncendido
 
         actualizarEstiloTarjeta(materialCard, iconBg, tvName, tvStatus, sw, estaEncendido)
@@ -117,13 +206,11 @@ class HomeActivity : AppCompatActivity() {
         sw.setOnCheckedChangeListener { _, isChecked ->
             actualizarEstiloTarjeta(materialCard, iconBg, tvName, tvStatus, sw, isChecked)
             val mensaje = if (isChecked) "$nombre Encendido" else "$nombre Apagado"
-            val mainHome = findViewById<View>(R.id.mainHome)
             Snackbars.info(mainHome, mensaje, Snackbar.LENGTH_SHORT).show()
         }
 
         vistaDispositivos.addView(card)
     }
-
     private fun actualizarEstiloTarjeta(
         card: MaterialCardView,
         iconBg: MaterialCardView,
@@ -132,40 +219,10 @@ class HomeActivity : AppCompatActivity() {
         sw: SwitchMaterial,
         estaEncendido: Boolean
     ) {
-        if (estaEncendido) {
-            iconBg.setCardBackgroundColor(getColor(R.color.teal_primary))
-            sw.trackTintList = getColorStateList(R.color.teal_primary)
-            sw.thumbTintList = getColorStateList(android.R.color.white)
-        } else {
-            iconBg.setCardBackgroundColor(getColor(R.color.teal_primary))
-            sw.trackTintList = getColorStateList(R.color.teal_card)
-            sw.thumbTintList = getColorStateList(android.R.color.white)
-        }
-    }
-
-    private fun showProfileMenu(view: View) {
-        val popup = PopupMenu(this, view)
-        popup.menuInflater.inflate(R.menu.profile_menu, popup.menu)
-
-        popup.setOnMenuItemClickListener { item ->
-            when (item.itemId) {
-                R.id.action_logout -> {
-                    logout()
-                    true
-                }
-                R.id.action_settings -> {
-                    Snackbars.info(view, "Configuración próximamente", Snackbar.LENGTH_SHORT).show()
-                    true
-                }
-                R.id.action_profile -> {
-                    val intent = Intent(this@HomeActivity, ProfileActivity::class.java)
-                    startActivity(intent)
-                    true
-                }
-                else -> false
-            }
-        }
-        popup.show()
+        val trackColor = if (estaEncendido) R.color.teal_primary else R.color.teal_card
+        iconBg.setCardBackgroundColor(getColor(R.color.teal_primary))
+        sw.trackTintList = getColorStateList(trackColor)
+        sw.thumbTintList = getColorStateList(android.R.color.white)
     }
 
     private fun logout() {
@@ -173,36 +230,19 @@ class HomeActivity : AppCompatActivity() {
         val tokenGuardado = sharedPref.getString("apiToken", "") ?: ""
 
         if (tokenGuardado.isEmpty()) {
-            Snackbars.info(vistaRaiz, "Aviso: No hay un token guardado localmente", Toast.LENGTH_LONG)
-                .show()
+            Snackbars.info(vistaRaiz, "Aviso: No hay un token guardado localmente", Toast.LENGTH_LONG).show()
         }
 
         lifecycleScope.launch {
             try {
                 val response = RetrofitClient.apiService.logout(tokenGuardado)
-
                 if (response.isSuccessful) {
-                    Toast.makeText(
-                        this@HomeActivity,
-                        "Sesión cerrada en el servidor",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(this@HomeActivity, "Sesión cerrada en el servidor", Toast.LENGTH_SHORT).show()
                 } else {
-                    val codigoError = response.code()
-                    val cuerpoError = response.errorBody()?.string() ?: ""
-                    Toast.makeText(
-                        this@HomeActivity,
-                        "Error API $codigoError: $cuerpoError",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    Toast.makeText(this@HomeActivity, "Error API ${response.code()}", Toast.LENGTH_LONG).show()
                 }
-
             } catch (e: Exception) {
-                Toast.makeText(
-                    this@HomeActivity,
-                    "Error de conexión: ${e.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(this@HomeActivity, "Error de conexión: ${e.message}", Toast.LENGTH_SHORT).show()
             }
 
             with(sharedPref.edit()) {
@@ -211,32 +251,23 @@ class HomeActivity : AppCompatActivity() {
                 apply()
             }
 
-            val intent = Intent(this@HomeActivity, MainActivity::class.java)
-            intent.putExtra("FROM_LOGOUT", true)
+            val intent = Intent(this@HomeActivity, MainActivity::class.java).apply {
+                putExtra("FROM_LOGOUT", true)
+            }
             startActivity(intent)
             finish()
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        verificarEstadoRedVisual()
-    }
-
     private fun verificarEstadoRedVisual() {
-        // Obtenemos las referencias de la tarjeta en activity_home.xml
-        val tvRedEstado = findViewById<TextView>(R.id.tvRedEstado)
-        val iconWifiContainer = findViewById<com.google.android.material.card.MaterialCardView>(R.id.iconWifiContainer)
-
         if (BluetoothController.isConnected) {
-            // El socket está abierto
             tvRedEstado.text = "Hardware Conectado"
             tvRedEstado.setTextColor(getColor(R.color.teal_primary))
             iconWifiContainer.setCardBackgroundColor(getColor(R.color.teal_primary))
         } else {
-            // El socket está cerrado
             tvRedEstado.text = "Desconectado"
-            tvRedEstado.setTextColor(getColor(R.color.text_grey)) // O usa Color.RED
+            tvRedEstado.setTextColor(getColor(R.color.text_grey))
+            iconWifi.imageTintList = ColorStateList.valueOf(getColor(R.color.white))
             iconWifiContainer.setCardBackgroundColor(getColor(R.color.text_grey))
         }
     }

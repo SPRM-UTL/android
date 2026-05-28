@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/text_grey"
-    tools:context=".MusicActivity">
+    tools:context=".extra.MusicActivity">
 
     <ImageButton
         android:id="@+id/btnBack"
