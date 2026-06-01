@@ -73,7 +73,7 @@ class MainActivity : AppCompatActivity() {
         db = AppDatabase.getDatabase(this)
         setContentView(R.layout.activity_main)
 
-        CustomDialog.LoadingDialog(this)
+        CustomDialog.loadingDialog(this)
 
         val btnLoginHuella = findViewById<MaterialButton>(R.id.btnLoginHuella)
         val biometricManager = BiometricManager.from(this)
@@ -120,7 +120,13 @@ class MainActivity : AppCompatActivity() {
 
             lifecycleScope.launch {
                 try {
-                    CustomDialog.startLoadingDialog("Verificando", "Por favor espera...")
+                    CustomDialog.loadingDialog(this@MainActivity)
+
+                    CustomDialog.showDialog(
+                        "Verificando",
+                        "Por favor espera...",
+                        CustomDialog.DialogType.LOADING
+                    )
                     val peticion = LoginRequest(correo = usuarioInput, contrasenia = contrasenaInput)
                     val response = RetrofitClient.apiService.login(peticion)
 

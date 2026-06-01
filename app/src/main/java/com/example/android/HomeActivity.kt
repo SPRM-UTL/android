@@ -90,6 +90,8 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun abrirMenuPrincipal() {
+        if (supportFragmentManager.findFragmentByTag("MenuBottomSheet") != null) return
+
         val menuSheet = MenuBottomSheetDialog(
             onProfileClick = {
                 val intent = Intent(this@HomeActivity, ProfileActivity::class.java)
@@ -150,14 +152,8 @@ class HomeActivity : AppCompatActivity() {
                 }finally {
                     configuracion.isEnabled = true;
                 }
-
             }
-
-
         }
-
-
-
     }
 
     private fun cargarIconosEstaticosEnLinea() {

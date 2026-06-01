@@ -29,8 +29,10 @@ fun BottomBarWithFab(
 ) {
     val density = LocalDensity.current
     val fabSize = 64.dp
-
     val activeColor = colorResource(id = R.color.teal_primary)
+
+    var lastClickTime by remember { mutableLongStateOf(0L) }
+    val debounceTime = 800L
 
     val customShape = remember(density) {
         GenericShape { size, _ ->
@@ -85,7 +87,13 @@ fun BottomBarWithFab(
                             .size(42.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        IconButton(onClick = onHomeClick) {
+                        IconButton(onClick = {
+                            val currentTime = System.currentTimeMillis()
+                            if (currentTime - lastClickTime > debounceTime) {
+                                lastClickTime = currentTime
+                                onHomeClick()
+                            }
+                        }) {
                             Icon(Icons.Outlined.Home, "Inicio", tint = activeColor, modifier = Modifier.size(24.dp))
                         }
                     }
@@ -104,7 +112,13 @@ fun BottomBarWithFab(
                             .size(42.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        IconButton(onClick = onGesturesClick) {
+                        IconButton(onClick = {
+                            val currentTime = System.currentTimeMillis()
+                            if (currentTime - lastClickTime > debounceTime) {
+                                lastClickTime = currentTime
+                                onGesturesClick()
+                            }
+                        }) {
                             Icon(Icons.Outlined.BackHand, "Gestos", tint = activeColor, modifier = Modifier.size(24.dp))
                         }
                     }
@@ -115,7 +129,13 @@ fun BottomBarWithFab(
         }
 
         FloatingActionButton(
-            onClick = onFabClick,
+            onClick = {
+                val currentTime = System.currentTimeMillis()
+                if (currentTime - lastClickTime > debounceTime) {
+                    lastClickTime = currentTime
+                    onFabClick()
+                }
+            },
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 10.dp)
