@@ -27,6 +27,8 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.switchmaterial.SwitchMaterial
 import kotlinx.coroutines.launch
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.delay
 
 class HomeActivity : AppCompatActivity() {
 
@@ -38,6 +40,8 @@ class HomeActivity : AppCompatActivity() {
     private lateinit var tvRedEstado: TextView
     private lateinit var iconWifiContainer: MaterialCardView
     private lateinit var iconWifi: ImageView
+
+    private lateinit var configuracion : View
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -92,10 +96,7 @@ class HomeActivity : AppCompatActivity() {
                 startActivity(intent)
             },
             onSettingsClick = {
-                Toast.makeText(this@HomeActivity, "Configuración próximamente", Toast.LENGTH_SHORT).show()
-            },
-            onLogoutClick = {
-                logout()
+                Snackbars.info(findViewById(android.R.id.content), "Configuración próximamente", Snackbar.LENGTH_SHORT).show()
             }
         )
         menuSheet.show(supportFragmentManager, "MenuBottomSheet")
@@ -126,19 +127,37 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun configurarListeners() {
-        ivProfile.setOnClickListener {
-            abrirMenuPrincipal()
-        }
+//        ivProfile.setOnClickListener {
+//            abrirMenuPrincipal()
+//        }
 
 //        findViewById<View>(R.id.btnEscenas).setOnClickListener {
 //            val intent = Intent(this, Gestos::class.java)
 //            startActivity(intent)
 //        }
 
-        findViewById<View>(R.id.btnConfigurarRed).setOnClickListener {
-            val intent = Intent(this@HomeActivity, NetworkActivity::class.java)
-            startActivity(intent)
+        configuracion = findViewById<View>(R.id.btnConfigurarRed);
+        configuracion.setOnClickListener {
+            configuracion.isEnabled = false
+            lifecycleScope.launch {
+                try{
+                    val intent = Intent(this@HomeActivity, NetworkActivity::class.java)
+                    startActivity(intent)
+                    delay(1000)
+                } catch (e: Exception){
+                    Snackbars.error(vistaRaiz,e.message.toString(), Snackbar.LENGTH_SHORT).show()
+
+                }finally {
+                    configuracion.isEnabled = true;
+                }
+
+            }
+
+
         }
+
+
+
     }
 
     private fun cargarIconosEstaticosEnLinea() {
@@ -153,21 +172,6 @@ class HomeActivity : AppCompatActivity() {
         val inflater = LayoutInflater.from(this)
         vistaDispositivos.removeAllViews()
 
-        agregarTarjetaDispositivo(inflater, "Bombillas", "Encendidas 2", "lightbulb", true)
-        agregarTarjetaDispositivo(inflater, "Smart TV", "Panasonic", "tv", false)
-        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
-        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
-        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
-        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
-        agregarTarjetaDispositivo(inflater, "Bombillas", "Encendidas 2", "lightbulb", true)
-        agregarTarjetaDispositivo(inflater, "Smart TV", "Panasonic", "tv", false)
-        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
-        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
-        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
-        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
-        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
-
-
         val cardAdd = inflater.inflate(R.layout.item_add_device, vistaDispositivos, false)
         cardAdd.setOnClickListener {
             Snackbars.info(it, "Abriendo panel de dispositivos", Snackbar.LENGTH_SHORT).show()
@@ -175,6 +179,21 @@ class HomeActivity : AppCompatActivity() {
             startActivity(intent)
         }
         vistaDispositivos.addView(cardAdd)
+
+        agregarTarjetaDispositivo(inflater, "Bombillas", "Encendidas 2", "lightbulb", true)
+        agregarTarjetaDispositivo(inflater, "Smart TV", "Panasonic", "tv", false)
+        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
+        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
+        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
+        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
+        agregarTarjetaDispositivo(inflater, "Bombillas", "Encendidas 2", "lightbulb", true)
+        agregarTarjetaDispositivo(inflater, "Smart TV", "Panasonic", "tv", false)
+        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
+        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
+        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
+        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
+        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
+
         vistaDispositivos.scheduleLayoutAnimation()
     }
 
@@ -223,40 +242,6 @@ class HomeActivity : AppCompatActivity() {
         iconBg.setCardBackgroundColor(getColor(R.color.teal_primary))
         sw.trackTintList = getColorStateList(trackColor)
         sw.thumbTintList = getColorStateList(android.R.color.white)
-    }
-
-    private fun logout() {
-        val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
-        val tokenGuardado = sharedPref.getString("apiToken", "") ?: ""
-
-        if (tokenGuardado.isEmpty()) {
-            Snackbars.info(vistaRaiz, "Aviso: No hay un token guardado localmente", Toast.LENGTH_LONG).show()
-        }
-
-        lifecycleScope.launch {
-            try {
-                val response = RetrofitClient.apiService.logout(tokenGuardado)
-                if (response.isSuccessful) {
-                    Toast.makeText(this@HomeActivity, "Sesión cerrada en el servidor", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this@HomeActivity, "Error API ${response.code()}", Toast.LENGTH_LONG).show()
-                }
-            } catch (e: Exception) {
-                Toast.makeText(this@HomeActivity, "Error de conexión: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
-
-            with(sharedPref.edit()) {
-                putBoolean("isLoggedIn", false)
-                putString("apiToken", "")
-                apply()
-            }
-
-            val intent = Intent(this@HomeActivity, MainActivity::class.java).apply {
-                putExtra("FROM_LOGOUT", true)
-            }
-            startActivity(intent)
-            finish()
-        }
     }
 
     private fun verificarEstadoRedVisual() {
