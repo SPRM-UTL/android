@@ -1,10 +1,16 @@
 package com.example.android
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.util.Patterns
 import android.view.View
+import android.widget.Button
+import com.example.android.view.cambiarColorStatusBar;
+import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -19,6 +25,7 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
 class ProfileActivity : AppCompatActivity() {
 
     private lateinit var etNombrePerfil: TextInputEditText
@@ -31,6 +38,10 @@ class ProfileActivity : AppCompatActivity() {
     private lateinit var txtInputContrasena: TextInputLayout
     private lateinit var txtInputConfirmar: TextInputLayout
     private lateinit var btnGuardarPerfil: MaterialButton
+    private lateinit var tvHola: TextView
+
+    private lateinit var vistaRaiz : View
+    private lateinit var btnLogout : Button
 
     private var userIdGuardado: Int = -1
     private var tokenGuardado: String = ""
@@ -40,6 +51,7 @@ class ProfileActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_profile)
 
+        cambiarColorStatusBar(R.color.teal_primary, true)
         val mainProfile = findViewById<View>(R.id.mainProfile)
         ViewCompat.setOnApplyWindowInsetsListener(mainProfile) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -47,19 +59,11 @@ class ProfileActivity : AppCompatActivity() {
             insets
         }
 
-        etNombrePerfil = findViewById(R.id.etNombrePerfil)
-        txtInputNombrePerfil = findViewById(R.id.txtInputNombrePerfil)
-        etCorreoPerfil = findViewById(R.id.etCorreoPerfil)
-        etContrasenaPerfil = findViewById(R.id.etContrasenaPerfil)
-        etConfirmarContrasena = findViewById(R.id.etConfirmarContrasena)
+        inicializarVistas()
 
-        txtInputCorreo = findViewById(R.id.txtInputCorreo)
-        txtInputContrasena = findViewById(R.id.txtInputContrasena)
-        txtInputConfirmar = findViewById(R.id.txtInputConfirmar)
+        cargarIconosPerfil()
 
-        btnGuardarPerfil = findViewById(R.id.btnGuardarPerfil)
-        val btnBack = findViewById<ImageView>(R.id.btnBack)
-
+        val btnBack = findViewById<ImageButton>(R.id.btnBack)
         btnBack.setOnClickListener { finish() }
 
         val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
@@ -72,10 +76,102 @@ class ProfileActivity : AppCompatActivity() {
             Snackbar.make(mainProfile, "Error de sesión local", Snackbar.LENGTH_SHORT).show()
         }
 
+        cargarBoton()
+    }
+
+    private fun inicializarVistas() {
+        vistaRaiz = findViewById(android.R.id.content)
+        etNombrePerfil = findViewById(R.id.etNombrePerfil)
+        txtInputNombrePerfil = findViewById(R.id.txtInputNombrePerfil)
+        etCorreoPerfil = findViewById(R.id.etCorreoPerfil)
+        etContrasenaPerfil = findViewById(R.id.etContrasenaPerfil)
+        etConfirmarContrasena = findViewById(R.id.etConfirmarContrasena)
+
+        txtInputCorreo = findViewById(R.id.txtInputCorreo)
+        txtInputContrasena = findViewById(R.id.txtInputContrasena)
+        txtInputConfirmar = findViewById(R.id.txtInputConfirmar)
+
+        btnGuardarPerfil = findViewById(R.id.btnGuardarPerfil)
+        tvHola = findViewById(R.id.tvHola)
+    }
+
+    private fun cargarIconosPerfil() {
+        findViewById<ImageButton>(R.id.btnBack)?.let {
+            LucideLoader.cargarIcono(it, "arrow-left")
+        }
+
+        findViewById<ImageView>(R.id.ivIconUser)?.let { icono ->
+            LucideLoader.cargarIcono(icono, "user")
+        }
+        findViewById<ImageView>(R.id.ivIconEmail)?.let { icono ->
+            LucideLoader.cargarIcono(icono, "mail")
+        }
+        findViewById<ImageView>(R.id.ivIconPassword)?.let { icono ->
+            LucideLoader.cargarIcono(icono, "lock")
+        }
+        findViewById<ImageView>(R.id.ivIconConfirmPassword)?.let { icono ->
+            LucideLoader.cargarIcono(icono, "shield-check")
+        }
+
+        findViewById<com.google.android.material.button.MaterialButton>(R.id.btnGuardarPerfil)?.let { botonGuardar ->
+            val ivTemporal = ImageView(this)
+            LucideLoader.cargarIcono(ivTemporal, "save")
+            ivTemporal.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+                botonGuardar.icon = ivTemporal.drawable
+            }
+        }
+
+        findViewById<com.google.android.material.button.MaterialButton>(R.id.logout)?.let { botonLogout ->
+            val ivTemporal = ImageView(this)
+            LucideLoader.cargarIcono(ivTemporal, "log-out")
+            ivTemporal.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+                botonLogout.icon = ivTemporal.drawable
+            }
+        }
+    }
+    private fun cargarBoton(){
+        btnLogout = findViewById<MaterialButton>(R.id.logout)
+        btnLogout.setOnClickListener {
+            logout()
+        }
         btnGuardarPerfil.setOnClickListener { view ->
             if (validarEntradas()) {
                 actualizarDatosAPI(view)
             }
+        }
+    }
+
+    private fun logout() {
+        val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+        val tokenGuardado = sharedPref.getString("apiToken", "") ?: ""
+
+        if (tokenGuardado.isEmpty()) {
+            Snackbars.info(vistaRaiz, "Aviso: No hay un token guardado localmente", Toast.LENGTH_LONG).show()
+        }
+
+        lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.apiService.logout(tokenGuardado)
+                if (response.isSuccessful) {
+                    Snackbars.success(vistaRaiz, "Sesión cerrada correctamente", Toast.LENGTH_SHORT).show()
+                } else {
+                    Snackbars.error(vistaRaiz, "Error al cerrar sesión (API ${response.code()})", Toast.LENGTH_LONG).show()
+                }
+            } catch (e: Exception) {
+                Snackbars.error(vistaRaiz, "Error de conexión: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+
+            with(sharedPref.edit()) {
+                putBoolean("isLoggedIn", false)
+                putString("apiToken", "")
+                apply()
+            }
+
+            val intent = Intent(this@ProfileActivity, MainActivity::class.java).apply {
+                putExtra("FROM_LOGOUT", true)
+            }
+            startActivity(intent)
+            finish()
         }
     }
 
@@ -137,12 +233,15 @@ class ProfileActivity : AppCompatActivity() {
                     etNombrePerfil.setText(datosUsuario.nombre)
                     etCorreoPerfil.setText(datosUsuario.correo)
 
+                    val primerNombre = datosUsuario.nombre?.split(" ")?.firstOrNull() ?: ""
+                    tvHola.text = "¡Hola, $primerNombre! 👋"
+
                     btnGuardarPerfil.isEnabled = true
                 } else {
-                    Snackbar.make(findViewById(android.R.id.content), "No se pudieron cargar tus datos", Snackbar.LENGTH_LONG).show()
+                    Snackbars.error(vistaRaiz, "No se pudieron cargar tus datos", Snackbar.LENGTH_LONG).show()
                 }
             } catch (e: Exception) {
-                Snackbar.make(findViewById(android.R.id.content), "Error de red: ${e.message}", Snackbar.LENGTH_LONG).show()
+                Snackbars.error(vistaRaiz, "Error de red: ${e.message}", Snackbar.LENGTH_LONG).show()
             }
         }
     }
@@ -167,12 +266,12 @@ class ProfileActivity : AppCompatActivity() {
                 val response = RetrofitClient.apiService.updateUsuario(tokenGuardado, userIdGuardado, request)
 
                 if (response.isSuccessful) {
-                    Snackbar.make(view, "Perfil actualizado correctamente", Snackbar.LENGTH_SHORT).show()
+                    Snackbars.success(view, "Perfil actualizado correctamente", Snackbar.LENGTH_SHORT).show()
                     delay(1200)
                     finish()
                 } else {
                     val errorMsg = response.errorBody()?.string() ?: "Error al actualizar"
-                    Snackbar.make(view, errorMsg, Snackbar.LENGTH_LONG).show()
+                    Snackbars.error(view, errorMsg, Snackbar.LENGTH_LONG).show()
                     btnGuardarPerfil.isEnabled = true
                 }
             } catch (e: Exception) {

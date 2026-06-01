@@ -9,8 +9,7 @@ import com.google.android.material.button.MaterialButton
 
 class MenuBottomSheetDialog(
     private val onProfileClick: () -> Unit,
-    private val onSettingsClick: () -> Unit,
-    private val onLogoutClick: () -> Unit
+    private val onSettingsClick: () -> Unit
 ) : BottomSheetDialogFragment() {
 
     override fun onCreateView(
@@ -33,9 +32,6 @@ class MenuBottomSheetDialog(
             dismiss()
         }
 
-        view.findViewById<MaterialButton>(R.id.logout).setOnClickListener {
-            onLogoutClick()
-            dismiss()
-        }
+
     }
 }

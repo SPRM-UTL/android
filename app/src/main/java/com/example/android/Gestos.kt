@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.android.ui.components.BottomBarWithFab
+import com.example.android.view.Snackbars
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.switchmaterial.SwitchMaterial
@@ -34,10 +35,6 @@ class Gestos : AppCompatActivity() {
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
-        }
-
-        mainGestos.post {
-            mainGestos.transitionToEnd()
         }
 
         vistaGestos = findViewById(R.id.vistaGestos)
@@ -77,10 +74,7 @@ class Gestos : AppCompatActivity() {
                 startActivity(intent)
             },
             onSettingsClick = {
-                Toast.makeText(this@Gestos, "Configuración próximamente", Toast.LENGTH_SHORT).show()
-            },
-            onLogoutClick = {
-                // Podrías implementar el logout aquí también si es necesario
+                Snackbars.info(findViewById<View>(android.R.id.content), "Configuración próximamente", Snackbar.LENGTH_SHORT).show()
             }
         )
         menuSheet.show(supportFragmentManager, "MenuBottomSheet")
