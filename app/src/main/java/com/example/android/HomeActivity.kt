@@ -18,6 +18,10 @@ import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.ConcatAdapter
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.example.android.db.AppDatabase
 import com.example.android.network.BluetoothController
 import com.example.android.network.RetrofitClient
 import com.example.android.ui.components.BottomBarWithFab
@@ -26,14 +30,20 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.switchmaterial.SwitchMaterial
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import com.example.android.ui.DeviceAdapter
+import com.example.android.ui.AddDeviceAdapter
 
 class HomeActivity : AppCompatActivity() {
 
     private lateinit var vistaRaiz: View
     private lateinit var mainHome: MotionLayout
-    private lateinit var vistaDispositivos: GridLayout
+    private lateinit var rvDispositivos: RecyclerView
+    private lateinit var deviceAdapter: DeviceAdapter
+    private lateinit var db: AppDatabase
     private lateinit var ivProfile: ImageView
+    private var isLoggingOut = false
 
     private lateinit var tvRedEstado: TextView
     private lateinit var iconWifiContainer: MaterialCardView
@@ -44,6 +54,7 @@ class HomeActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_home)
 
+        db = AppDatabase.getDatabase(this)
 
         inicializarVistas()
         configurarInsets()
@@ -61,6 +72,35 @@ class HomeActivity : AppCompatActivity() {
 
         cargarDispositivos()
         configurarBottomBarCompose()
+        sincronizarDatosServidor()
+    }
+
+    private fun sincronizarDatosServidor() {
+        val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+        val token = sharedPref.getString("apiToken", "") ?: ""
+        if (token.isEmpty()) return
+        val bearer = "Bearer $token"
+
+        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                // Sincronizar Dispositivos
+                val responseDisp = RetrofitClient.deviceService.getDispositivos(bearer)
+                if (responseDisp.isSuccessful) {
+                    val apiDevices = responseDisp.body()?.data ?: emptyList()
+                    db.dispositivoDao().deleteAllDispositivos()
+                    db.dispositivoDao().insertAll(apiDevices)
+                }
+
+                // Sincronizar Gestos
+                val responseGest = RetrofitClient.gestureService.getGestos(bearer)
+                if (responseGest.isSuccessful) {
+                    val apiGestos = responseGest.body()?.data ?: emptyList()
+                    db.gestoDao().deleteAllGestos()
+                    db.gestoDao().insertAll(apiGestos)
+                }
+            } catch (e: Exception) {
+            }
+        }
     }
 
     private fun configurarBottomBarCompose() {
@@ -109,7 +149,7 @@ class HomeActivity : AppCompatActivity() {
     private fun inicializarVistas() {
         vistaRaiz = findViewById(android.R.id.content)
         mainHome = findViewById(R.id.mainHome)
-        vistaDispositivos = findViewById(R.id.vistaDispositivos)
+        rvDispositivos = findViewById(R.id.rvDispositivosHome)
         ivProfile = findViewById(R.id.ivProfile)
 
         tvRedEstado = findViewById(R.id.tvRedEstado)
@@ -150,84 +190,50 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun cargarDispositivos() {
-        val inflater = LayoutInflater.from(this)
-        vistaDispositivos.removeAllViews()
+        deviceAdapter = DeviceAdapter(
+            onEditClick = { disp ->
+                val intent = Intent(this, DeviceActivity::class.java)
+                startActivity(intent)
+            },
+            onDeleteClick = { disp -> },
+            onToggleClick = { disp, isChecked ->
+                Snackbars.info(mainHome, "${disp.nombre} " + (if(isChecked) "Encendido" else "Apagado"), Snackbar.LENGTH_SHORT).show()
+            }
+        )
 
-        agregarTarjetaDispositivo(inflater, "Bombillas", "Encendidas 2", "lightbulb", true)
-        agregarTarjetaDispositivo(inflater, "Smart TV", "Panasonic", "tv", false)
-        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
-        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
-        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
-        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
-        agregarTarjetaDispositivo(inflater, "Bombillas", "Encendidas 2", "lightbulb", true)
-        agregarTarjetaDispositivo(inflater, "Smart TV", "Panasonic", "tv", false)
-        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
-        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
-        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
-        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
-        agregarTarjetaDispositivo(inflater, "Wi-Fi Router", "TP Link", "router", true)
-
-
-        val cardAdd = inflater.inflate(R.layout.item_add_device, vistaDispositivos, false)
-        cardAdd.setOnClickListener {
-            Snackbars.info(it, "Abriendo panel de dispositivos", Snackbar.LENGTH_SHORT).show()
+        val addDeviceAdapter = AddDeviceAdapter {
+            Snackbars.info(mainHome, "Abriendo panel de dispositivos", Snackbar.LENGTH_SHORT).show()
             val intent = Intent(this, DeviceActivity::class.java)
             startActivity(intent)
         }
-        vistaDispositivos.addView(cardAdd)
-        vistaDispositivos.scheduleLayoutAnimation()
-    }
 
-    private fun agregarTarjetaDispositivo(
-        inflater: LayoutInflater,
-        nombre: String,
-        estado: String,
-        lucideIconName: String,
-        estaEncendido: Boolean
-    ) {
-        val card = inflater.inflate(R.layout.item_device, vistaDispositivos, false)
+        val concatAdapter = ConcatAdapter(deviceAdapter, addDeviceAdapter)
 
-        val tvName = card.findViewById<TextView>(R.id.tvDeviceName)
-        val tvStatus = card.findViewById<TextView>(R.id.tvDeviceStatus)
-        val ivIcon = card.findViewById<ImageView>(R.id.ivDeviceIcon)
-        val sw = card.findViewById<SwitchMaterial>(R.id.switchDevice)
-        val materialCard = card.findViewById<MaterialCardView>(R.id.deviceCard)
-        val iconBg = card.findViewById<MaterialCardView>(R.id.iconBg)
+        rvDispositivos.layoutManager = GridLayoutManager(this, 2)
+        rvDispositivos.adapter = concatAdapter
 
-        tvName.text = nombre
-        tvStatus.text = estado
-
-        LucideLoader.cargarIcono(ivIcon, lucideIconName)
-
-        sw.isChecked = estaEncendido
-
-        actualizarEstiloTarjeta(materialCard, iconBg, tvName, tvStatus, sw, estaEncendido)
-
-        sw.setOnCheckedChangeListener { _, isChecked ->
-            actualizarEstiloTarjeta(materialCard, iconBg, tvName, tvStatus, sw, isChecked)
-            val mensaje = if (isChecked) "$nombre Encendido" else "$nombre Apagado"
-            Snackbars.info(mainHome, mensaje, Snackbar.LENGTH_SHORT).show()
+        lifecycleScope.launch {
+            db.dispositivoDao().getAllDispositivos().collectLatest { dispositivos ->
+                if (!isLoggingOut) {
+                    deviceAdapter.submitList(dispositivos)
+                }
+                findViewById<TextView>(R.id.tvUsuario)?.let {
+                    val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+                    val userName = sharedPref.getString("userName", "Manordomo")
+                    it.text = userName
+                }
+                // Actualizar contador
+                // Por ejemplo, se buscará tvStatus pero se requiere un ID
+                // Por ahora lo ignoramos o lo actualizamos si tiene un ID.
+            }
         }
-
-        vistaDispositivos.addView(card)
-    }
-    private fun actualizarEstiloTarjeta(
-        card: MaterialCardView,
-        iconBg: MaterialCardView,
-        tvName: TextView,
-        tvStatus: TextView,
-        sw: SwitchMaterial,
-        estaEncendido: Boolean
-    ) {
-        val trackColor = if (estaEncendido) R.color.teal_primary else R.color.teal_card
-        iconBg.setCardBackgroundColor(getColor(R.color.teal_primary))
-        sw.trackTintList = getColorStateList(trackColor)
-        sw.thumbTintList = getColorStateList(android.R.color.white)
     }
 
     private fun logout() {
         val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
         val tokenGuardado = sharedPref.getString("apiToken", "") ?: ""
+
+        isLoggingOut = true
 
         if (tokenGuardado.isEmpty()) {
             Snackbars.info(vistaRaiz, "Aviso: No hay un token guardado localmente", Toast.LENGTH_LONG).show()

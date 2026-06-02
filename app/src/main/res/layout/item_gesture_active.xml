@@ -2,9 +2,8 @@
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/gestureCard"
-    android:layout_width="0dp"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_columnWeight="1"
     android:layout_margin="8dp"
     app:cardBackgroundColor="@color/white"
     app:cardCornerRadius="24dp"
@@ -12,7 +11,7 @@
     app:strokeWidth="0dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="170dp"
+        android:layout_width="match_parent"
         android:layout_height="170dp"
         android:padding="16dp">
 
