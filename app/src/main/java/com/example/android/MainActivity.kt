@@ -23,6 +23,7 @@ import com.example.android.db.AppDatabase
 import com.example.android.db.Usuario
 import com.example.android.network.LoginRequest
 import com.example.android.network.RetrofitClient
+import com.example.android.view.CustomDialog
 import com.example.android.view.Snackbars
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
@@ -71,6 +72,8 @@ class MainActivity : AppCompatActivity() {
 
         db = AppDatabase.getDatabase(this)
         setContentView(R.layout.activity_main)
+
+        CustomDialog.loadingDialog(this)
 
         val btnLoginHuella = findViewById<MaterialButton>(R.id.btnLoginHuella)
         val biometricManager = BiometricManager.from(this)
@@ -121,19 +124,29 @@ class MainActivity : AppCompatActivity() {
 
             lifecycleScope.launch {
                 try {
+                    CustomDialog.loadingDialog(this@MainActivity)
+
+                    CustomDialog.showDialog(
+                        "Verificando",
+                        "Por favor espera...",
+                        CustomDialog.DialogType.LOADING
+                    )
                     val peticion = LoginRequest(correo = usuarioInput, contrasenia = contrasenaInput)
                     val response = RetrofitClient.apiService.login(peticion)
 
-                    if (response.isSuccessful && response.body() != null) {
+                    if (response.isSuccessful && response.body() != null && response.body()!!.success) {
                         val tokenApi = response.body()!!.data.token
                         val idApi = response.body()!!.data.id
 
                         guardarSesionExitosa(view, tokenApi, idApi)
+                        CustomDialog.dismissDialog()
                     } else {
-                        Snackbars.info(view, "Credenciales incorrectas", Snackbar.LENGTH_SHORT).show()
+                        CustomDialog.dismissDialog()
+                        Snackbars.error(view, "Credenciales incorrectas", Snackbar.LENGTH_SHORT).show()
                     }
                 } catch (e: Exception) {
-                    Snackbars.info(view, "Error de red: ${e.message}", Snackbar.LENGTH_LONG).show()
+                    CustomDialog.dismissDialog()
+                    Snackbars.error(view, "Error de red: ${e.message}", Snackbar.LENGTH_LONG).show()
                 }
             }
         }
@@ -144,7 +157,15 @@ class MainActivity : AppCompatActivity() {
             object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
-                    guardarSesionExitosa(findViewById(android.R.id.content))
+                    
+                    val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+                    val tokenExistente = sharedPref.getString("apiToken", "")
+                    
+                    if (!tokenExistente.isNullOrEmpty()) {
+                        guardarSesionExitosa(findViewById(android.R.id.content))
+                    } else {
+                        Snackbars.warning(findViewById(android.R.id.content), "Primero inicia sesión con tu contraseña", Snackbar.LENGTH_LONG).show()
+                    }
                 }
 
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {

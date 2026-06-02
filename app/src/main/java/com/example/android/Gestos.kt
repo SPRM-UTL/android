@@ -32,6 +32,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.example.android.view.Snackbars
+import com.google.android.material.card.MaterialCardView
+import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.switchmaterial.SwitchMaterial
 
 class Gestos : AppCompatActivity() {
 
@@ -269,13 +273,15 @@ class Gestos : AppCompatActivity() {
     }
 
     private fun abrirMenuPrincipal() {
+        if (supportFragmentManager.findFragmentByTag("MenuBottomSheet") != null) return
+
         val menuSheet = MenuBottomSheetDialog(
             onProfileClick = {
                 val intent = Intent(this@Gestos, ProfileActivity::class.java)
                 startActivity(intent)
             },
             onSettingsClick = {
-                Toast.makeText(this@Gestos, "Configuración próximamente", Toast.LENGTH_SHORT).show()
+                Snackbars.info(findViewById<View>(android.R.id.content), "Configuración próximamente", Snackbar.LENGTH_SHORT).show()
             },
             onLogoutClick = { }
         )

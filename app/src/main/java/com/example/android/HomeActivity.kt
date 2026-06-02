@@ -34,6 +34,8 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import com.example.android.ui.DeviceAdapter
 import com.example.android.ui.AddDeviceAdapter
+import android.app.ActivityManager
+import kotlinx.coroutines.delay
 
 class HomeActivity : AppCompatActivity() {
 
@@ -49,6 +51,8 @@ class HomeActivity : AppCompatActivity() {
     private lateinit var iconWifiContainer: MaterialCardView
     private lateinit var iconWifi: ImageView
 
+    private lateinit var configuracion : View
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -62,8 +66,13 @@ class HomeActivity : AppCompatActivity() {
 
         cargarIconosEstaticosEnLinea()
 
-        mainHome.post {
-            mainHome.transitionToEnd()
+        val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        if (!am.isLowRamDevice) {
+            mainHome.post {
+                mainHome.transitionToEnd()
+            }
+        } else {
+            mainHome.progress = 1.0f
         }
 
         if (intent.getBooleanExtra("SHOW_WELCOME", false)) {
@@ -126,16 +135,15 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun abrirMenuPrincipal() {
+        if (supportFragmentManager.findFragmentByTag("MenuBottomSheet") != null) return
+
         val menuSheet = MenuBottomSheetDialog(
             onProfileClick = {
                 val intent = Intent(this@HomeActivity, ProfileActivity::class.java)
                 startActivity(intent)
             },
             onSettingsClick = {
-                Toast.makeText(this@HomeActivity, "Configuración próximamente", Toast.LENGTH_SHORT).show()
-            },
-            onLogoutClick = {
-                logout()
+                Snackbars.info(findViewById(android.R.id.content), "Configuración próximamente", Snackbar.LENGTH_SHORT).show()
             }
         )
         menuSheet.show(supportFragmentManager, "MenuBottomSheet")
@@ -166,18 +174,30 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun configurarListeners() {
-        ivProfile.setOnClickListener {
-            abrirMenuPrincipal()
-        }
+//        ivProfile.setOnClickListener {
+//            abrirMenuPrincipal()
+//        }
 
 //        findViewById<View>(R.id.btnEscenas).setOnClickListener {
 //            val intent = Intent(this, Gestos::class.java)
 //            startActivity(intent)
 //        }
 
-        findViewById<View>(R.id.btnConfigurarRed).setOnClickListener {
-            val intent = Intent(this@HomeActivity, NetworkActivity::class.java)
-            startActivity(intent)
+        configuracion = findViewById<View>(R.id.btnConfigurarRed);
+        configuracion.setOnClickListener {
+            configuracion.isEnabled = false
+            lifecycleScope.launch {
+                try{
+                    val intent = Intent(this@HomeActivity, NetworkActivity::class.java)
+                    startActivity(intent)
+                    delay(1000)
+                } catch (e: Exception){
+                    Snackbars.error(vistaRaiz,e.message.toString(), Snackbar.LENGTH_SHORT).show()
+
+                }finally {
+                    configuracion.isEnabled = true;
+                }
+            }
         }
     }
 
@@ -264,7 +284,6 @@ class HomeActivity : AppCompatActivity() {
             finish()
         }
     }
-
     private fun verificarEstadoRedVisual() {
         if (BluetoothController.isConnected) {
             tvRedEstado.text = "Hardware Conectado"

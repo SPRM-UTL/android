@@ -1,58 +1,80 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mainRegister"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/teal_primary"
-    android:orientation="vertical">
+    android:background="@color/teal_primary">
 
-    <com.google.android.material.card.MaterialCardView
-        android:layout_width="match_parent"
+    <ImageView
+        android:id="@+id/btnBackRegister"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:padding="12dp"
+        android:src="@drawable/arrow_left"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/white" />
+
+    <ImageView
+        android:id="@+id/imgLogo"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_marginTop="16dp"
+        android:contentDescription="Manordomo Logo"
+        android:src="@drawable/ic_manordomo"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:cardBackgroundColor="@color/teal_primary"
-        app:cardCornerRadius="0dp"
-        app:cardElevation="0dp"
-        app:strokeWidth="0dp">
+        android:layout_marginHorizontal="32dp"
+        android:layout_marginTop="16dp"
+        android:text="Crear una cuenta"
+        android:textAlignment="center"
+        android:textColor="@color/white"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/imgLogo" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:padding="16dp">
-
-            <ImageView
-                android:id="@+id/btnBackRegister"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_revert"
-                app:tint="@color/white" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:text="Crear una cuenta"
-                android:textColor="@color/white"
-                android:textSize="20sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
+    <TextView
+        android:id="@+id/tvSubtitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="32dp"
+        android:layout_marginTop="4dp"
+        android:text="Introduce tus datos para continuar"
+        android:textAlignment="center"
+        android:textColor="#E0F2F1"
+        android:textSize="14sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle" />
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="16dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="32dp"
         android:background="@drawable/bg_login_card"
-        android:fillViewport="true">
+        android:fillViewport="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvSubtitle">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingHorizontal="28dp"
-            android:paddingTop="40dp"
+            android:paddingTop="48dp"
             android:paddingBottom="32dp">
 
             <com.google.android.material.textfield.TextInputLayout
@@ -68,6 +90,10 @@
                 app:boxCornerRadiusTopEnd="16dp"
                 app:boxCornerRadiusTopStart="16dp"
                 app:boxStrokeColor="@color/teal_primary"
+                app:boxStrokeErrorColor="@color/red"
+                app:cursorColor="@color/teal_primary"
+                app:errorIconTint="@color/red"
+                app:errorTextColor="@color/red"
                 app:hintTextColor="@color/teal_primary"
                 app:startIconDrawable="@drawable/user"
                 app:startIconTint="@color/teal_primary">
@@ -77,6 +103,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textPersonName"
+                    android:textCursorDrawable="@drawable/cursor_custom"
                     android:textColor="#000000" />
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -93,6 +120,10 @@
                 app:boxCornerRadiusTopEnd="16dp"
                 app:boxCornerRadiusTopStart="16dp"
                 app:boxStrokeColor="@color/teal_primary"
+                app:boxStrokeErrorColor="@color/red"
+                app:cursorColor="@color/teal_primary"
+                app:errorIconTint="@color/red"
+                app:errorTextColor="@color/red"
                 app:hintTextColor="@color/teal_primary"
                 app:startIconDrawable="@android:drawable/ic_dialog_email"
                 app:startIconTint="@color/teal_primary">
@@ -102,6 +133,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textEmailAddress"
+                    android:textCursorDrawable="@drawable/cursor_custom"
                     android:textColor="#000000" />
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -118,8 +150,12 @@
                 app:boxCornerRadiusTopEnd="16dp"
                 app:boxCornerRadiusTopStart="16dp"
                 app:boxStrokeColor="@color/teal_primary"
+                app:boxStrokeErrorColor="@color/red"
+                app:cursorColor="@color/teal_primary"
                 app:endIconMode="password_toggle"
                 app:endIconTint="@color/teal_primary"
+                app:errorIconTint="@color/red"
+                app:errorTextColor="@color/red"
                 app:hintTextColor="@color/teal_primary"
                 app:startIconDrawable="@drawable/lock"
                 app:startIconTint="@color/teal_primary">
@@ -129,6 +165,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textPassword"
+                    android:textCursorDrawable="@drawable/cursor_custom"
                     android:textColor="#000000" />
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -145,8 +182,12 @@
                 app:boxCornerRadiusTopEnd="16dp"
                 app:boxCornerRadiusTopStart="16dp"
                 app:boxStrokeColor="@color/teal_primary"
+                app:boxStrokeErrorColor="@color/red"
+                app:cursorColor="@color/teal_primary"
                 app:endIconMode="password_toggle"
                 app:endIconTint="@color/teal_primary"
+                app:errorIconTint="@color/red"
+                app:errorTextColor="@color/red"
                 app:hintTextColor="@color/teal_primary"
                 app:startIconDrawable="@drawable/lock"
                 app:startIconTint="@color/teal_primary">
@@ -156,6 +197,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textPassword"
+                    android:textCursorDrawable="@drawable/cursor_custom"
                     android:textColor="#000000" />
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -173,6 +215,30 @@
                 app:cornerRadius="16dp"
                 app:elevation="2dp" />
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="¿Ya tienes cuenta? "
+                    android:textColor="#9E9E9E"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/tvVolverLogin"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Inicia Sesión"
+                    android:textColor="@color/teal_primary"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
         </LinearLayout>
     </ScrollView>
-</LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
