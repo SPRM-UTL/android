@@ -6,7 +6,7 @@ import android.os.Bundle
 import android.util.Patterns
 import android.view.View
 import android.widget.Button
-import com.example.android.view.cambiarColorStatusBar;
+import com.example.android.view.cambiarColorStatusBar
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
@@ -18,6 +18,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.android.network.RetrofitClient
 import com.example.android.network.UpdateUserRequest
+import com.example.android.view.CustomDialog
 import com.example.android.view.Snackbars
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
@@ -60,8 +61,9 @@ class ProfileActivity : AppCompatActivity() {
         }
 
         inicializarVistas()
-
         cargarIconosPerfil()
+
+        CustomDialog.loadingDialog(this)
 
         val btnBack = findViewById<ImageButton>(R.id.btnBack)
         btnBack.setOnClickListener { finish() }
@@ -113,7 +115,7 @@ class ProfileActivity : AppCompatActivity() {
             LucideLoader.cargarIcono(icono, "shield-check")
         }
 
-        findViewById<com.google.android.material.button.MaterialButton>(R.id.btnGuardarPerfil)?.let { botonGuardar ->
+        findViewById<MaterialButton>(R.id.btnGuardarPerfil)?.let { botonGuardar ->
             val ivTemporal = ImageView(this)
             LucideLoader.cargarIcono(ivTemporal, "save")
             ivTemporal.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
@@ -121,7 +123,7 @@ class ProfileActivity : AppCompatActivity() {
             }
         }
 
-        findViewById<com.google.android.material.button.MaterialButton>(R.id.logout)?.let { botonLogout ->
+        findViewById<MaterialButton>(R.id.logout)?.let { botonLogout ->
             val ivTemporal = ImageView(this)
             LucideLoader.cargarIcono(ivTemporal, "log-out")
             ivTemporal.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
@@ -129,7 +131,8 @@ class ProfileActivity : AppCompatActivity() {
             }
         }
     }
-    private fun cargarBoton(){
+
+    private fun cargarBoton() {
         btnLogout = findViewById<MaterialButton>(R.id.logout)
         btnLogout.setOnClickListener {
             logout()
@@ -224,6 +227,7 @@ class ProfileActivity : AppCompatActivity() {
         btnGuardarPerfil.isEnabled = false
 
         lifecycleScope.launch {
+            CustomDialog.showDialog("Cargando", "Obteniendo datos del perfil...", CustomDialog.DialogType.LOADING)
             try {
                 val response = RetrofitClient.apiService.getUsuario(tokenGuardado, userIdGuardado)
 
@@ -237,11 +241,54 @@ class ProfileActivity : AppCompatActivity() {
                     tvHola.text = "¡Hola, $primerNombre! 👋"
 
                     btnGuardarPerfil.isEnabled = true
-                } else {
-                    Snackbars.error(vistaRaiz, "No se pudieron cargar tus datos", Snackbar.LENGTH_LONG).show()
+                    CustomDialog.dismissDialog()
+                }else if (response.code() == 401) {
+
+                    CustomDialog.showErrorDialog(
+                        titleDialog = "Sesión expirada",
+                        subtitleDialog = "Tu sesión ha expirado. Inicia sesión nuevamente.",
+                        positiveText = "Ir al Login",
+                        negativeText = "Cerrar",
+                        retryAction = {
+                            val sharedPref = getSharedPreferences(
+                                "SesionApp",
+                                Context.MODE_PRIVATE
+                            )
+
+                            sharedPref.edit()
+                                .clear()
+                                .apply()
+
+                            val intent = Intent(
+                                this@ProfileActivity,
+                                MainActivity::class.java
+                            ).apply {
+                                putExtra("FROM_LOGOUT", true)
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                                        Intent.FLAG_ACTIVITY_CLEAR_TASK
+                            }
+
+                            startActivity(intent)
+                            finish()
+                        },
+                        backAction = { finish() }
+                    )
+                }
+                else {
+                    CustomDialog.showErrorDialog(
+                        "Error al cargar",
+                        "No se pudieron cargar tus datos desde el servidor.",
+                        retryAction = { cargarDatosAPI() },
+                        backAction = { finish() }
+                    )
                 }
             } catch (e: Exception) {
-                Snackbars.error(vistaRaiz, "Error de red: ${e.message}", Snackbar.LENGTH_LONG).show()
+                CustomDialog.showErrorDialog(
+                    "Error de red",
+                    "No fue posible conectar con el servidor. Inténtalo de nuevo.",
+                    retryAction = { cargarDatosAPI() },
+                    backAction = { finish() }
+                )
             }
         }
     }
@@ -259,25 +306,54 @@ class ProfileActivity : AppCompatActivity() {
         )
 
         btnGuardarPerfil.isEnabled = false
-        Snackbars.info(view, "Datos guardados", Snackbar.LENGTH_SHORT).show()
 
         lifecycleScope.launch {
+            CustomDialog.showDialog("Guardando", "Actualizando tu información...", CustomDialog.DialogType.LOADING)
+            
+            val startTime = System.currentTimeMillis()
+            var success = false
+            var errorTitle = ""
+            var errorMessage = ""
+
             try {
                 val response = RetrofitClient.apiService.updateUsuario(tokenGuardado, userIdGuardado, request)
 
                 if (response.isSuccessful) {
-                    Snackbars.success(view, "Perfil actualizado correctamente", Snackbar.LENGTH_SHORT).show()
-                    delay(1200)
-                    finish()
+                    success = true
                 } else {
-                    val errorMsg = response.errorBody()?.string() ?: "Error al actualizar"
-                    Snackbars.error(view, errorMsg, Snackbar.LENGTH_LONG).show()
-                    btnGuardarPerfil.isEnabled = true
+                    errorTitle = "Error al actualizar"
+                    errorMessage = response.errorBody()?.string() ?: "Hubo un problema al guardar los cambios."
                 }
             } catch (e: Exception) {
-                Snackbar.make(view, "Error de red: ${e.message}", Snackbar.LENGTH_LONG).show()
+                errorTitle = "Error de red"
+                errorMessage = "No se pudo conectar con el servidor. Inténtalo de nuevo más tarde."
+                android.util.Log.e("ProfileActivity", "Error al actualizar perfil", e)
+            }
+
+            val elapsedTime = System.currentTimeMillis() - startTime
+            if (elapsedTime < 1000) {
+                delay(1000 - elapsedTime)
+            }
+
+            if (success) {
+                CustomDialog.dismissDialog()
+                Snackbars.success(view, "Perfil actualizado correctamente", Snackbar.LENGTH_SHORT).show()
+                delay(1200)
+                finish()
+            } else {
+                CustomDialog.showErrorDialog(
+                    titleDialog = errorTitle,
+                    subtitleDialog = errorMessage,
+                    retryAction = { actualizarDatosAPI(view) },
+                    backAction = { finish() }
+                )
                 btnGuardarPerfil.isEnabled = true
             }
         }
+    }
+
+    override fun onDestroy() {
+        CustomDialog.dismissDialog()
+        super.onDestroy()
     }
 }

@@ -6,6 +6,6 @@
     <color name="text_grey">#8A8A8A</color>
     <color name="white">#FEFEFE</color>
     <color name="black">#000000</color>
-    <color name="red">#FF5D5D</color>
-    <color name="background">#F5F6FA</color>
+    <color name="red">#E53935</color>
+    <color name="background">#F8FFFF</color>
 </resources>

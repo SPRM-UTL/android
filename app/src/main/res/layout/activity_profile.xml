@@ -162,6 +162,10 @@
                             app:boxBackgroundColor="#FFFFFF"
                             app:boxStrokeWidth="0dp"
                             app:boxStrokeWidthFocused="0dp"
+                            app:boxStrokeErrorColor="@color/red"
+                            app:cursorColor="@color/teal_primary"
+                            app:errorIconTint="@color/red"
+                            app:errorTextColor="@color/red"
                             app:hintTextColor="@color/teal_primary">
 
                             <com.google.android.material.textfield.TextInputEditText
@@ -170,6 +174,7 @@
                                 android:layout_height="wrap_content"
                                 android:background="@android:color/transparent"
                                 android:inputType="textPersonName"
+                                android:textCursorDrawable="@drawable/cursor_custom"
                                 android:textColor="#1A1A1A" />
                         </com.google.android.material.textfield.TextInputLayout>
                     </LinearLayout>
@@ -206,6 +211,10 @@
                             app:boxBackgroundColor="#FFFFFF"
                             app:boxStrokeWidth="0dp"
                             app:boxStrokeWidthFocused="0dp"
+                            app:boxStrokeErrorColor="@color/red"
+                            app:cursorColor="@color/teal_primary"
+                            app:errorIconTint="@color/red"
+                            app:errorTextColor="@color/red"
                             app:hintTextColor="@color/teal_primary">
 
                             <com.google.android.material.textfield.TextInputEditText
@@ -214,6 +223,7 @@
                                 android:layout_height="wrap_content"
                                 android:background="@android:color/transparent"
                                 android:inputType="textEmailAddress"
+                                android:textCursorDrawable="@drawable/cursor_custom"
                                 android:textColor="#1A1A1A" />
                         </com.google.android.material.textfield.TextInputLayout>
                     </LinearLayout>
@@ -250,8 +260,12 @@
                             app:boxBackgroundColor="#FFFFFF"
                             app:boxStrokeWidth="0dp"
                             app:boxStrokeWidthFocused="0dp"
+                            app:boxStrokeErrorColor="@color/red"
+                            app:cursorColor="@color/teal_primary"
                             app:endIconMode="password_toggle"
                             app:endIconTint="@color/teal_primary"
+                            app:errorIconTint="@color/red"
+                            app:errorTextColor="@color/red"
                             app:helperTextTextColor="#777777"
                             app:hintTextColor="@color/teal_primary">
 
@@ -261,6 +275,7 @@
                                 android:layout_height="wrap_content"
                                 android:background="@android:color/transparent"
                                 android:inputType="textPassword"
+                                android:textCursorDrawable="@drawable/cursor_custom"
                                 android:textColor="#1A1A1A" />
                         </com.google.android.material.textfield.TextInputLayout>
                     </LinearLayout>
@@ -312,8 +327,12 @@
                             app:boxBackgroundColor="#FFFFFF"
                             app:boxStrokeWidth="0dp"
                             app:boxStrokeWidthFocused="0dp"
+                            app:boxStrokeErrorColor="@color/red"
+                            app:cursorColor="@color/teal_primary"
                             app:endIconMode="password_toggle"
                             app:endIconTint="@color/teal_primary"
+                            app:errorIconTint="@color/red"
+                            app:errorTextColor="@color/red"
                             app:hintTextColor="@color/teal_primary">
 
                             <com.google.android.material.textfield.TextInputEditText
@@ -322,6 +341,7 @@
                                 android:layout_height="wrap_content"
                                 android:background="@android:color/transparent"
                                 android:inputType="textPassword"
+                                android:textCursorDrawable="@drawable/cursor_custom"
                                 android:textColor="#1A1A1A" />
                         </com.google.android.material.textfield.TextInputLayout>
                     </LinearLayout>

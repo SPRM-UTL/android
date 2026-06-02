@@ -11,8 +11,8 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.android.network.RegisterRequest
 import com.example.android.network.RetrofitClient
+import com.example.android.view.CustomDialog
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.delay
@@ -52,10 +52,17 @@ class RegisterActivity : AppCompatActivity() {
         txtInputContrasenaReg = findViewById(R.id.txtInputContrasenaReg)
         txtInputConfirmarReg = findViewById(R.id.txtInputConfirmarReg)
 
+        CustomDialog.loadingDialog(this)
+
         val btnBackRegister = findViewById<ImageView>(R.id.btnBackRegister)
         val btnCrearCuenta = findViewById<MaterialButton>(R.id.btnCrearCuenta)
+        val tvVolverLogin = findViewById<android.widget.TextView>(R.id.tvVolverLogin)
 
         btnBackRegister.setOnClickListener {
+            finish()
+        }
+
+        tvVolverLogin.setOnClickListener {
             finish()
         }
 
@@ -123,24 +130,41 @@ class RegisterActivity : AppCompatActivity() {
         val btnCrearCuenta = view as MaterialButton
         btnCrearCuenta.isEnabled = false
 
+        CustomDialog.showDialog(
+            titleDialog = "Registrando",
+            subtitleDialog = "Creando tu cuenta, por favor espera...",
+            type = CustomDialog.DialogType.LOADING
+        )
+
         lifecycleScope.launch {
             try {
                 val response = RetrofitClient.apiService.registrar(request)
 
                 if (response.isSuccessful && response.body() != null) {
                     val mensajeServidor = response.body()!!.data.mensaje
-                    Snackbar.make(view, mensajeServidor, Snackbar.LENGTH_SHORT).show()
-
-                    delay(1500)
-                    finish()
+                    
+                    CustomDialog.showSuccessDialog(
+                        titleDialog = "¡Registro Exitoso!",
+                        subtitleDialog = mensajeServidor
+                    ) {
+                        finish()
+                    }
                 } else {
                     val errorMsg = response.errorBody()?.string() ?: "Error al registrar"
-                    Snackbar.make(view, errorMsg, Snackbar.LENGTH_LONG).show()
-                    btnCrearCuenta.isEnabled = true
+                    CustomDialog.showErrorDialog(
+                        titleDialog = "Error de registro",
+                        subtitleDialog = errorMsg,
+                        retryAction = { llamarApiRegistro(view) },
+                        backAction = { btnCrearCuenta.isEnabled = true }
+                    )
                 }
             } catch (e: Exception) {
-                Snackbar.make(view, "Error de conexión: ${e.message}", Snackbar.LENGTH_LONG).show()
-                btnCrearCuenta.isEnabled = true
+                CustomDialog.showErrorDialog(
+                    titleDialog = "Error de conexión",
+                    subtitleDialog = "No se pudo conectar con el servidor: ${e.message}",
+                    retryAction = { llamarApiRegistro(view) },
+                    backAction = { btnCrearCuenta.isEnabled = true }
+                )
             }
         }
     }

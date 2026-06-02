@@ -75,6 +75,12 @@
                 app:boxCornerRadiusTopEnd="16dp"
                 app:boxCornerRadiusTopStart="16dp"
                 app:boxStrokeColor="@color/teal_primary"
+                app:boxStrokeErrorColor="@color/red"
+                app:cursorColor="@color/teal_primary"
+                app:endIconMode="password_toggle"
+                app:endIconTint="@color/teal_primary"
+                app:errorIconTint="@color/red"
+                app:errorTextColor="@color/red"
                 app:hintTextColor="@color/teal_primary"
                 app:startIconDrawable="@drawable/user"
                 app:startIconTint="@color/teal_primary">
@@ -84,6 +90,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="text"
+                    android:textCursorDrawable="@drawable/cursor_custom"
                     android:textColor="#000000"
                     android:textColorLink="@color/teal_primary" />
 
@@ -102,8 +109,12 @@
                 app:boxCornerRadiusTopEnd="16dp"
                 app:boxCornerRadiusTopStart="16dp"
                 app:boxStrokeColor="@color/teal_primary"
+                app:boxStrokeErrorColor="@color/red"
+                app:cursorColor="@color/teal_primary"
                 app:endIconMode="password_toggle"
                 app:endIconTint="@color/teal_primary"
+                app:errorIconTint="@color/red"
+                app:errorTextColor="@color/red"
                 app:hintTextColor="@color/teal_primary"
                 app:startIconDrawable="@drawable/lock"
                 app:startIconTint="@color/teal_primary">
@@ -113,6 +124,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textPassword"
+                    android:textCursorDrawable="@drawable/cursor_custom"
                     android:textColor="#000000"
                     android:textColorLink="@color/teal_primary" />
 

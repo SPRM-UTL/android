@@ -30,6 +30,8 @@ import kotlinx.coroutines.launch
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.delay
 
+import android.app.ActivityManager
+
 class HomeActivity : AppCompatActivity() {
 
     private lateinit var vistaRaiz: View
@@ -55,8 +57,13 @@ class HomeActivity : AppCompatActivity() {
 
         cargarIconosEstaticosEnLinea()
 
-        mainHome.post {
-            mainHome.transitionToEnd()
+        val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        if (!am.isLowRamDevice) {
+            mainHome.post {
+                mainHome.transitionToEnd()
+            }
+        } else {
+            mainHome.progress = 1.0f
         }
 
         if (intent.getBooleanExtra("SHOW_WELCOME", false)) {
@@ -90,6 +97,8 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun abrirMenuPrincipal() {
+        if (supportFragmentManager.findFragmentByTag("MenuBottomSheet") != null) return
+
         val menuSheet = MenuBottomSheetDialog(
             onProfileClick = {
                 val intent = Intent(this@HomeActivity, ProfileActivity::class.java)
@@ -150,14 +159,8 @@ class HomeActivity : AppCompatActivity() {
                 }finally {
                     configuracion.isEnabled = true;
                 }
-
             }
-
-
         }
-
-
-
     }
 
     private fun cargarIconosEstaticosEnLinea() {

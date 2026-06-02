@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Base theme: Material 3 sin ActionBar -->
     <style name="Base.Theme.Android" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/teal_primary</item>
+        <item name="colorSecondary">@color/teal_medium</item>
         <item name="android:statusBarColor">@color/teal_primary</item>
         <item name="android:windowLightStatusBar">false</item>
+        <item name="android:textCursorDrawable">@drawable/cursor_custom</item>
+        <item name="colorError">@color/red</item>
     </style>
 
     <style name="Theme.Android" parent="Base.Theme.Android" />
 
-    <!-- Splash Screen -->
     <style name="Theme.AnimatedSplash.MySplash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/white</item>
         <item name="postSplashScreenTheme">@style/Theme.Android</item>
@@ -17,7 +19,6 @@
         <item name="windowSplashScreenAnimationDuration">2300</item>
     </style>
 
-    <!-- Estilos personalizados -->
     <style name="EsquinasSuperioresRedondeadas"
         parent="ShapeAppearance.Material3.SmallComponent">
         <item name="cornerSizeTopLeft">28dp</item>
@@ -31,8 +32,6 @@
         <item name="cornerSize">50%</item>
     </style>
 
-    <!-- Opcional: Estilo personalizado para BottomAppBar (si quieres más control) -->
-    <!-- No es necesario si ya usas Theme.Material3.DayNight.NoActionBar, pero sirve para debug -->
     <style name="Widget.Custom.BottomAppBar" parent="Widget.Material3.BottomAppBar">
         <item name="backgroundTint">@color/black</item>
         <item name="fabCradleMargin">8dp</item>
