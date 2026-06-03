@@ -136,7 +136,6 @@
                     style="@style/Widget.Custom.TextInputLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="20dp"
                     android:hint="Nombre Completo"
                     app:startIconDrawable="@drawable/user">
 
@@ -153,7 +152,6 @@
                     style="@style/Widget.Custom.TextInputLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="20dp"
                     android:hint="Correo Electrónico"
                     app:startIconDrawable="@android:drawable/ic_dialog_email">
 
@@ -170,7 +168,6 @@
                     style="@style/Widget.Custom.TextInputLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="20dp"
                     android:hint="Nueva Contraseña"
                     app:endIconMode="password_toggle"
                     app:startIconDrawable="@drawable/lock">
@@ -203,7 +200,6 @@
                     style="@style/Widget.Custom.TextInputLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="32dp"
                     android:hint="Confirmar Contraseña"
                     app:endIconMode="password_toggle"
                     app:startIconDrawable="@drawable/lock">

@@ -69,6 +69,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="20dp"
                 android:hint="@string/hint_username"
+                app:errorEnabled="true"
                 app:startIconDrawable="@drawable/user">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -88,6 +89,7 @@
                 android:layout_marginBottom="36dp"
                 android:hint="@string/hint_password"
                 app:endIconMode="password_toggle"
+                app:errorEnabled="true"
                 app:startIconDrawable="@drawable/lock">
 
                 <com.google.android.material.textfield.TextInputEditText

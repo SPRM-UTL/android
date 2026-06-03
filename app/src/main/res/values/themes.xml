@@ -43,6 +43,7 @@
         <item name="boxStrokeColor">@color/input_stroke_color</item>
         <item name="boxStrokeErrorColor">@color/red</item>
         <item name="errorTextColor">@color/red</item>
+        <item name="errorTextAppearance">@style/ErrorTextAppearance</item>
         <item name="errorIconTint">@color/red</item>
         <item name="hintTextColor">@color/teal_primary</item>
         <item name="android:textColorHint">@color/text_grey</item>
@@ -52,6 +53,8 @@
         <item name="boxCornerRadiusTopEnd">16dp</item>
         <item name="boxCornerRadiusBottomStart">16dp</item>
         <item name="boxCornerRadiusBottomEnd">16dp</item>
+        <item name="errorEnabled">true</item>
+        <item name="helperTextTextColor">@color/red</item>
     </style>
 
     <style name="Widget.Custom.TextInputEditText" parent="Widget.Material3.TextInputEditText.OutlinedBox">
@@ -59,6 +62,10 @@
         <item name="android:textCursorDrawable">@drawable/cursor_custom</item>
         <item name="android:paddingTop">16dp</item>
         <item name="android:paddingBottom">16dp</item>
+    </style>
+
+    <style name="ErrorTextAppearance" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:textColor">@color/red</item>
     </style>
 
 </resources>
