@@ -64,69 +64,38 @@
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/txtInputUsuario"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                style="@style/Widget.Custom.TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="20dp"
                 android:hint="@string/hint_username"
-                app:boxBackgroundColor="@android:color/transparent"
-                app:boxCornerRadiusBottomEnd="16dp"
-                app:boxCornerRadiusBottomStart="16dp"
-                app:boxCornerRadiusTopEnd="16dp"
-                app:boxCornerRadiusTopStart="16dp"
-                app:boxStrokeColor="@color/teal_primary"
-                app:boxStrokeErrorColor="@color/red"
-                app:cursorColor="@color/teal_primary"
-                app:endIconMode="password_toggle"
-                app:endIconTint="@color/teal_primary"
-                app:errorIconTint="@color/red"
-                app:errorTextColor="@color/red"
-                app:hintTextColor="@color/teal_primary"
-                app:startIconDrawable="@drawable/user"
-                app:startIconTint="@color/teal_primary">
+                app:startIconDrawable="@drawable/user">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etUsuario"
+                    style="@style/Widget.Custom.TextInputEditText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="text"
-                    android:textCursorDrawable="@drawable/cursor_custom"
-                    android:textColor="#000000"
-                    android:textColorLink="@color/teal_primary" />
+                    android:inputType="text" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/txtInputContrasena"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                style="@style/Widget.Custom.TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="36dp"
                 android:hint="@string/hint_password"
-                app:boxBackgroundColor="@android:color/transparent"
-                app:boxCornerRadiusBottomEnd="16dp"
-                app:boxCornerRadiusBottomStart="16dp"
-                app:boxCornerRadiusTopEnd="16dp"
-                app:boxCornerRadiusTopStart="16dp"
-                app:boxStrokeColor="@color/teal_primary"
-                app:boxStrokeErrorColor="@color/red"
-                app:cursorColor="@color/teal_primary"
                 app:endIconMode="password_toggle"
-                app:endIconTint="@color/teal_primary"
-                app:errorIconTint="@color/red"
-                app:errorTextColor="@color/red"
-                app:hintTextColor="@color/teal_primary"
-                app:startIconDrawable="@drawable/lock"
-                app:startIconTint="@color/teal_primary">
+                app:startIconDrawable="@drawable/lock">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etContrasena"
+                    style="@style/Widget.Custom.TextInputEditText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textPassword"
-                    android:textCursorDrawable="@drawable/cursor_custom"
-                    android:textColor="#000000"
-                    android:textColorLink="@color/teal_primary" />
+                    android:inputType="textPassword" />
 
             </com.google.android.material.textfield.TextInputLayout>
 

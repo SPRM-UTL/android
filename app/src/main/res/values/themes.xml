@@ -39,4 +39,26 @@
         <item name="fabCradleVerticalOffset">6dp</item>
     </style>
 
+    <style name="Widget.Custom.TextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeColor">@color/input_stroke_color</item>
+        <item name="boxStrokeErrorColor">@color/red</item>
+        <item name="errorTextColor">@color/red</item>
+        <item name="errorIconTint">@color/red</item>
+        <item name="hintTextColor">@color/teal_primary</item>
+        <item name="android:textColorHint">@color/text_grey</item>
+        <item name="startIconTint">@color/teal_primary</item>
+        <item name="endIconTint">@color/teal_primary</item>
+        <item name="boxCornerRadiusTopStart">16dp</item>
+        <item name="boxCornerRadiusTopEnd">16dp</item>
+        <item name="boxCornerRadiusBottomStart">16dp</item>
+        <item name="boxCornerRadiusBottomEnd">16dp</item>
+    </style>
+
+    <style name="Widget.Custom.TextInputEditText" parent="Widget.Material3.TextInputEditText.OutlinedBox">
+        <item name="android:textColor">#1A1A1A</item>
+        <item name="android:textCursorDrawable">@drawable/cursor_custom</item>
+        <item name="android:paddingTop">16dp</item>
+        <item name="android:paddingBottom">16dp</item>
+    </style>
+
 </resources>
