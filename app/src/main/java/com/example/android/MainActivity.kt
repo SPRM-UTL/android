@@ -8,7 +8,6 @@ import android.os.Bundle
 import androidx.biometric.BiometricManager
 import android.view.View
 import android.widget.Button
-import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -27,6 +26,8 @@ import com.example.android.view.CustomDialog
 import com.example.android.view.Snackbars
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.concurrent.Executor
@@ -38,6 +39,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var biometricPrompt: BiometricPrompt
     private lateinit var promptInfo: BiometricPrompt.PromptInfo
     private lateinit var db: AppDatabase
+
+    private lateinit var etUsuario: TextInputEditText
+    private lateinit var etContrasena: TextInputEditText
+    private lateinit var txtInputUsuario: TextInputLayout
+    private lateinit var txtInputContrasena: TextInputLayout
+    private lateinit var btnLoginTradicional: Button
 
     private var manteniendoSplash = true
 
@@ -109,44 +116,43 @@ class MainActivity : AppCompatActivity() {
             manteniendoSplash = false
         }
 
-        val etUsuario = findViewById<EditText>(R.id.etUsuario)
-        val etContrasena = findViewById<EditText>(R.id.etContrasena)
-        val btnLoginTradicional = findViewById<Button>(R.id.btnLogin)
+        etUsuario = findViewById(R.id.etUsuario)
+        etContrasena = findViewById(R.id.etContrasena)
+        txtInputUsuario = findViewById(R.id.txtInputUsuario)
+        txtInputContrasena = findViewById(R.id.txtInputContrasena)
+        btnLoginTradicional = findViewById<Button>(R.id.btnLogin)
 
         btnLoginTradicional.setOnClickListener { view ->
-            val usuarioInput = etUsuario.text.toString()
-            val contrasenaInput = etContrasena.text.toString()
+            if (validarEntradas()) {
+                val usuarioInput = etUsuario.text.toString().trim()
+                val contrasenaInput = etContrasena.text.toString().trim()
 
-            if (usuarioInput.isEmpty() || contrasenaInput.isEmpty()) {
-                Snackbars.info(view, "Por favor llena ambos campos", Snackbar.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
+                lifecycleScope.launch {
+                    try {
+                        CustomDialog.loadingDialog(this@MainActivity)
 
-            lifecycleScope.launch {
-                try {
-                    CustomDialog.loadingDialog(this@MainActivity)
+                        CustomDialog.showDialog(
+                            "Verificando",
+                            "Por favor espera...",
+                            CustomDialog.DialogType.LOADING
+                        )
+                        val peticion = LoginRequest(correo = usuarioInput, contrasenia = contrasenaInput)
+                        val response = RetrofitClient.apiService.login(peticion)
 
-                    CustomDialog.showDialog(
-                        "Verificando",
-                        "Por favor espera...",
-                        CustomDialog.DialogType.LOADING
-                    )
-                    val peticion = LoginRequest(correo = usuarioInput, contrasenia = contrasenaInput)
-                    val response = RetrofitClient.apiService.login(peticion)
+                        if (response.isSuccessful && response.body() != null && response.body()!!.success) {
+                            val tokenApi = response.body()!!.data.token
+                            val idApi = response.body()!!.data.id
 
-                    if (response.isSuccessful && response.body() != null && response.body()!!.success) {
-                        val tokenApi = response.body()!!.data.token
-                        val idApi = response.body()!!.data.id
-
-                        guardarSesionExitosa(view, tokenApi, idApi)
+                            guardarSesionExitosa(view, tokenApi, idApi)
+                            CustomDialog.dismissDialog()
+                        } else {
+                            CustomDialog.dismissDialog()
+                            Snackbars.error(view, "Credenciales incorrectas", Snackbar.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
                         CustomDialog.dismissDialog()
-                    } else {
-                        CustomDialog.dismissDialog()
-                        Snackbars.error(view, "Credenciales incorrectas", Snackbar.LENGTH_SHORT).show()
+                        Snackbars.error(view, "Error de red: ${e.message}", Snackbar.LENGTH_LONG).show()
                     }
-                } catch (e: Exception) {
-                    CustomDialog.dismissDialog()
-                    Snackbars.error(view, "Error de red: ${e.message}", Snackbar.LENGTH_LONG).show()
                 }
             }
         }
@@ -194,6 +200,33 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this@MainActivity, RegisterActivity::class.java)
             startActivity(intent)
         }
+    }
+
+    private fun validarEntradas(): Boolean {
+        val usuarioInput = etUsuario.text.toString().trim()
+        val contrasenaInput = etContrasena.text.toString().trim()
+        var isValid = true
+
+        if (usuarioInput.isEmpty()) {
+            txtInputUsuario.error = "El usuario no puede estar vacío"
+            isValid = false
+        } else {
+            txtInputUsuario.error = null
+        }
+
+        val passwordRegex = Regex("""^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&._-])[A-Za-z\d@$!%*?&._-]{8,}$""")
+
+        if (contrasenaInput.isEmpty()) {
+            txtInputContrasena.error = "La contraseña no puede estar vacía"
+            isValid = false
+        } else if (!contrasenaInput.matches(passwordRegex)) {
+            txtInputContrasena.error = "Mín. 8 caracteres, 1 mayúscula, 1 minúscula, 1 número y 1 símbolo (@$!%*?&._-)"
+            isValid = false
+        } else {
+            txtInputContrasena.error = null
+        }
+
+        return isValid
     }
 
     private fun guardarSesionExitosa(view: View, token: String = "", userId: Int = -1) {
