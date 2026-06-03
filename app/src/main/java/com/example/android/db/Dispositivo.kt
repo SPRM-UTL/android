@@ -23,5 +23,17 @@ data class Dispositivo(
     val comandoBluetooth: String?,
 
     @SerializedName("icono")
-    val icono: String?
+    val icono: String?,
+
+    @SerializedName("mac_bluetooth")
+    @androidx.room.ColumnInfo(name = "mac_bluetooth")
+    val macBluetooth: String?,
+
+    @SerializedName("nombre_bluetooth")
+    @androidx.room.ColumnInfo(name = "nombre_bluetooth")
+    val nombreBluetooth: String?,
+
+    @SerializedName("fecha_sincronizacion")
+    @androidx.room.ColumnInfo(name = "fecha_sincronizacion")
+    val fechaSincronizacion: String?
 )

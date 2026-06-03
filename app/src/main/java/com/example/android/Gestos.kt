@@ -28,6 +28,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputEditText
 import android.content.Context
+import android.view.View
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -68,7 +69,6 @@ class Gestos : AppCompatActivity() {
             showGestureDialog(null)
         }
 
-        // Cargar dispositivos para el spinner y para los nombres en las tarjetas
         lifecycleScope.launch {
             db.dispositivoDao().getAllDispositivos().collectLatest { dispositivos ->
                 dispositivosLocales = dispositivos
@@ -76,14 +76,12 @@ class Gestos : AppCompatActivity() {
             }
         }
 
-        // Observar Room DB para los gestos
         lifecycleScope.launch {
             db.gestoDao().getAllGestos().collectLatest { gestos ->
                 gestureAdapter.submitList(gestos)
             }
         }
 
-        // Sincronizar desde API
         syncGestosFromApi()
     }
 
@@ -136,14 +134,12 @@ class Gestos : AppCompatActivity() {
         val etName = dialog.findViewById<MaterialAutoCompleteTextView>(R.id.etGestureName)
         val spinnerDevices = dialog.findViewById<Spinner>(R.id.spinnerDevices)
 
-        // Configurar Spinner
         val deviceNames = dispositivosLocales.map { it.nombre ?: "Desconocido" }.toMutableList()
         deviceNames.add(0, "Ninguno (Sin asignar)")
         
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, deviceNames)
         spinnerDevices.adapter = adapter
 
-        // Configurar gestos predefinidos
         val gestosValidos = listOf("Manos Arriba", "Una Mano Arriba", "Agitar la Mano", "Abrir Puño", "Cerrar Puño")
         val gestoAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, gestosValidos)
         etName.setAdapter(gestoAdapter)
@@ -282,8 +278,7 @@ class Gestos : AppCompatActivity() {
             },
             onSettingsClick = {
                 Snackbars.info(findViewById<View>(android.R.id.content), "Configuración próximamente", Snackbar.LENGTH_SHORT).show()
-            },
-            onLogoutClick = { }
+            }
         )
         menuSheet.show(supportFragmentManager, "MenuBottomSheet")
     }

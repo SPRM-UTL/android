@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -8,128 +9,208 @@
     app:cardElevation="0dp"
     app:strokeWidth="0dp">
 
-<LinearLayout
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="24dp">
-
-    <TextView
-        android:id="@+id/tvDialogTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Añadir Dispositivo"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:textColor="#17252A"
-        android:layout_marginBottom="16dp"/>
-
-    <com.google.android.material.textfield.TextInputLayout
+    <!-- ScrollView externo: garantiza que los botones siempre sean accesibles -->
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-        app:boxBackgroundColor="@android:color/transparent"
-        app:boxCornerRadiusBottomEnd="16dp"
-        app:boxCornerRadiusBottomStart="16dp"
-        app:boxCornerRadiusTopEnd="16dp"
-        app:boxCornerRadiusTopStart="16dp"
-        app:boxStrokeColor="@color/teal_primary"
-        app:hintTextColor="@color/teal_primary">
+        android:maxHeight="560dp"
+        android:scrollbars="none">
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etDeviceName"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Nombre del Dispositivo"
-            android:textColor="#000000" />
-    </com.google.android.material.textfield.TextInputLayout>
+            android:orientation="vertical"
+            android:padding="24dp">
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-        app:boxBackgroundColor="@android:color/transparent"
-        app:boxCornerRadiusBottomEnd="16dp"
-        app:boxCornerRadiusBottomStart="16dp"
-        app:boxCornerRadiusTopEnd="16dp"
-        app:boxCornerRadiusTopStart="16dp"
-        app:boxStrokeColor="@color/teal_primary"
-        app:hintTextColor="@color/teal_primary">
+            <!-- Título -->
+            <TextView
+                android:id="@+id/tvDialogTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Añadir Dispositivo"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="#17252A"
+                android:layout_marginBottom="20dp"/>
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etDeviceType"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Tipo (ej: Iluminación, TV)"
-            android:textColor="#000000" />
-    </com.google.android.material.textfield.TextInputLayout>
+            <!-- Nombre del dispositivo -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                app:boxBackgroundColor="@android:color/transparent"
+                app:boxCornerRadiusBottomEnd="16dp"
+                app:boxCornerRadiusBottomStart="16dp"
+                app:boxCornerRadiusTopEnd="16dp"
+                app:boxCornerRadiusTopStart="16dp"
+                app:boxStrokeColor="@color/teal_primary"
+                app:hintTextColor="@color/teal_primary">
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-        app:boxBackgroundColor="@android:color/transparent"
-        app:boxCornerRadiusBottomEnd="16dp"
-        app:boxCornerRadiusBottomStart="16dp"
-        app:boxCornerRadiusTopEnd="16dp"
-        app:boxCornerRadiusTopStart="16dp"
-        app:boxStrokeColor="@color/teal_primary"
-        app:hintTextColor="@color/teal_primary">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etDeviceName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Nombre del Dispositivo"
+                    android:textColor="#000000" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etDeviceAction"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Acción (ej: Encender)"
-            android:textColor="#000000" />
-    </com.google.android.material.textfield.TextInputLayout>
+            <!-- Tipo de dispositivo (dropdown predefinido) -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                app:boxBackgroundColor="@android:color/transparent"
+                app:boxCornerRadiusBottomEnd="16dp"
+                app:boxCornerRadiusBottomStart="16dp"
+                app:boxCornerRadiusTopEnd="16dp"
+                app:boxCornerRadiusTopStart="16dp"
+                app:boxStrokeColor="@color/teal_primary"
+                app:hintTextColor="@color/teal_primary">
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp"
-        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-        app:boxBackgroundColor="@android:color/transparent"
-        app:boxCornerRadiusBottomEnd="16dp"
-        app:boxCornerRadiusBottomStart="16dp"
-        app:boxCornerRadiusTopEnd="16dp"
-        app:boxCornerRadiusTopStart="16dp"
-        app:boxStrokeColor="@color/teal_primary"
-        app:hintTextColor="@color/teal_primary">
+                <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                    android:id="@+id/etDeviceType"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Tipo de Dispositivo"
+                    android:inputType="none"
+                    android:textColor="#000000" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etDeviceCommand"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Comando Bluetooth (ej: BT_ON_1)"
-            android:textColor="#000000" />
-    </com.google.android.material.textfield.TextInputLayout>
+            <!-- Sección Bluetooth -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Vincular por Bluetooth"
+                android:textColor="#17252A"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"/>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="end"
-        android:orientation="horizontal">
+            <!-- Botón escanear -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnScanBluetooth"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Escanear dispositivos"
+                android:textAllCaps="false"
+                app:backgroundTint="@color/teal_primary"
+                app:cornerRadius="12dp"
+                app:icon="@android:drawable/stat_sys_data_bluetooth"
+                app:iconGravity="textStart"
+                android:layout_marginBottom="12dp"/>
 
-        <Button
-            android:id="@+id/btnCancel"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:text="Cancelar"
-            android:textColor="#6F7EA8" />
+            <!-- ProgressBar de escaneo -->
+            <LinearLayout
+                android:id="@+id/layoutScanProgress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:visibility="gone"
+                android:layout_marginBottom="8dp">
 
-        <Button
-            android:id="@+id/btnSave"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Guardar"
-            android:backgroundTint="@color/teal_primary" />
-    </LinearLayout>
+                <ProgressBar
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="10dp"
+                    style="?android:attr/progressBarStyleSmall"/>
 
-</LinearLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Buscando dispositivos..."
+                    android:textColor="#666666"
+                    android:textSize="13sp"/>
+            </LinearLayout>
+
+            <!-- Lista de dispositivos BT: altura FIJA para no desplazar los botones -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvBluetoothDevices"
+                android:layout_width="match_parent"
+                android:layout_height="180dp"
+                android:nestedScrollingEnabled="true"
+                android:visibility="gone"
+                android:layout_marginBottom="12dp"/>
+
+            <!-- Dispositivo BT seleccionado — Nombre (solo lectura) -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/layoutBtName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                app:boxBackgroundColor="@android:color/transparent"
+                app:boxCornerRadiusBottomEnd="16dp"
+                app:boxCornerRadiusBottomStart="16dp"
+                app:boxCornerRadiusTopEnd="16dp"
+                app:boxCornerRadiusTopStart="16dp"
+                app:boxStrokeColor="@color/teal_primary"
+                app:hintTextColor="@color/teal_primary">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etBtName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Nombre Bluetooth"
+                    android:focusable="false"
+                    android:cursorVisible="false"
+                    android:textColor="#000000"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Dispositivo BT seleccionado — MAC (solo lectura) -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/layoutBtMac"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                android:visibility="gone"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                app:boxBackgroundColor="@android:color/transparent"
+                app:boxCornerRadiusBottomEnd="16dp"
+                app:boxCornerRadiusBottomStart="16dp"
+                app:boxCornerRadiusTopEnd="16dp"
+                app:boxCornerRadiusTopStart="16dp"
+                app:boxStrokeColor="@color/teal_primary"
+                app:hintTextColor="@color/teal_primary">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etBtMac"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Dirección MAC"
+                    android:focusable="false"
+                    android:cursorVisible="false"
+                    android:textColor="#000000"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Botones Cancelar / Guardar — siempre visibles al hacer scroll -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btnCancel"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:text="Cancelar"
+                    android:textColor="#6F7EA8" />
+
+                <Button
+                    android:id="@+id/btnSave"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Guardar"
+                    android:backgroundTint="@color/teal_primary" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
 </com.google.android.material.card.MaterialCardView>
