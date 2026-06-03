@@ -2,7 +2,7 @@
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/addDeviceCard"
-    android:layout_width="0dp"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_columnWeight="1"
     android:layout_margin="8dp"
@@ -12,12 +12,12 @@
     app:strokeWidth="0dp">
 
     <LinearLayout
-        android:layout_width="170dp"
+        android:layout_width="match_parent"
         android:layout_height="170dp"
         android:background="@drawable/bg_dotted_teal"
         android:gravity="center"
         android:orientation="vertical"
-        android:padding="24dp">
+        android:padding="8dp">
 
         <com.google.android.material.card.MaterialCardView
             android:layout_width="56dp"
@@ -49,8 +49,9 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:gravity="center"
-            android:text="Agregar un dispositivo"
+            android:text="Nuevo dispositivo"
             android:textColor="#6F7EA8"
-            android:textSize="12sp" />
+            android:textSize="12sp"
+            android:textAlignment="center"/>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

@@ -82,6 +82,10 @@ class MainActivity : AppCompatActivity() {
             findViewById<MotionLayout>(R.id.motionLayout).post {
                 findViewById<MotionLayout>(R.id.motionLayout).transitionToEnd()
             }
+            lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                db.dispositivoDao().deleteAllDispositivos()
+                db.gestoDao().deleteAllGestos()
+            }
         }
 
         if(biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) == BiometricManager.BIOMETRIC_SUCCESS){

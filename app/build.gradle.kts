@@ -74,6 +74,7 @@ dependencies {
     implementation(libs.androidx.fragment)
     //implementation(libs.cardview.v7)
     implementation(libs.androidx.biometric)
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
 
     val room_version = "2.6.1"
     implementation("androidx.room:room-runtime:$room_version")

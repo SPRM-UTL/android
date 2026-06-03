@@ -102,18 +102,8 @@ class ProfileActivity : AppCompatActivity() {
             LucideLoader.cargarIcono(it, "arrow-left")
         }
 
-        findViewById<ImageView>(R.id.ivIconUser)?.let { icono ->
-            LucideLoader.cargarIcono(icono, "user")
-        }
-        findViewById<ImageView>(R.id.ivIconEmail)?.let { icono ->
-            LucideLoader.cargarIcono(icono, "mail")
-        }
-        findViewById<ImageView>(R.id.ivIconPassword)?.let { icono ->
-            LucideLoader.cargarIcono(icono, "lock")
-        }
-        findViewById<ImageView>(R.id.ivIconConfirmPassword)?.let { icono ->
-            LucideLoader.cargarIcono(icono, "shield-check")
-        }
+        // Los iconos de los campos ahora se definen directamente en el XML
+        // mediante app:startIconDrawable en cada TextInputLayout
 
         findViewById<MaterialButton>(R.id.btnGuardarPerfil)?.let { botonGuardar ->
             val ivTemporal = ImageView(this)

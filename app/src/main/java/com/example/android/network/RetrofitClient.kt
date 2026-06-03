@@ -12,6 +12,12 @@ import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
 
+data class ApiResponse<T>(
+    val success: Boolean,
+    val status: Int,
+    val data: T
+)
+
 data class LoginRequest(val correo: String, val contrasenia: String)
 
 data class LoginResponse(
@@ -80,11 +86,22 @@ interface AuthApiService {
 
 
 object RetrofitClient {
-    val apiService: AuthApiService by lazy {
+    private val retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BuildConfig.BASE_URL)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-            .create(AuthApiService::class.java)
+    }
+
+    val apiService: AuthApiService by lazy {
+        retrofit.create(AuthApiService::class.java)
+    }
+
+    val deviceService: DeviceApiService by lazy {
+        retrofit.create(DeviceApiService::class.java)
+    }
+
+    val gestureService: GestureApiService by lazy {
+        retrofit.create(GestureApiService::class.java)
     }
 }
