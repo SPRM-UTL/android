@@ -270,14 +270,28 @@ class DeviceActivity : AppCompatActivity() {
             return
         }
 
-        if (!gestorBluetooth.bluetoothActivado) {
-            lanzadorActivarBt.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
-            return
-        }
-
         if (!gestorBluetooth.tienePermisosNecesarios()) {
             accionPendienteBt = { ejecutarEscaneo(adaptadorBt, layoutCargando, rvBt, btnEscanear) }
             lanzadorPermisos.launch(gestorBluetooth.permisosNecesarios())
+            return
+        }
+
+        if (!gestorBluetooth.isGpsEnabled()) {
+            Toast.makeText(this, "Por favor, activa la ubicación (GPS) para escanear dispositivos", Toast.LENGTH_LONG).show()
+            startActivity(Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+            return
+        }
+
+        if (!gestorBluetooth.bluetoothActivado) {
+            try {
+                lanzadorActivarBt.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
+            } catch (e: SecurityException) {
+                Log.e("DeviceActivity", "Permiso denegado al intentar activar Bluetooth", e)
+                Toast.makeText(this, "Error: No se tienen los permisos para activar Bluetooth", Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                Log.e("DeviceActivity", "Error inesperado al solicitar activación de Bluetooth", e)
+                Toast.makeText(this, "No se pudo solicitar la activación de Bluetooth", Toast.LENGTH_LONG).show()
+            }
             return
         }
 

@@ -1,16 +1,10 @@
 package com.example.android
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothManager
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.ArrayAdapter
@@ -19,8 +13,8 @@ import android.widget.ImageView
 import android.widget.ListView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
@@ -29,12 +23,12 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.android.network.BluetoothController
+import com.example.android.network.BluetoothScanManager
 import com.example.android.view.Snackbars
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.google.android.material.snackbar.Snackbar
 
 class NetworkActivity : AppCompatActivity() {
 
@@ -45,7 +39,7 @@ class NetworkActivity : AppCompatActivity() {
     private lateinit var progressCargando: LinearProgressIndicator
     private lateinit var lvDispositivos: ListView
 
-    private var bluetoothAdapter: BluetoothAdapter? = null
+    private lateinit var gestorBluetooth: BluetoothScanManager
     private val discoveredDevices = mutableListOf<BluetoothDevice>()
     private val deviceNames = mutableListOf<String>()
     private lateinit var listAdapter: ArrayAdapter<String>
@@ -57,28 +51,15 @@ class NetworkActivity : AppCompatActivity() {
     private lateinit var vistaRaiz: View
 
     private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
-        if (permissions.entries.all { it.value }) verificarYEncenderBluetooth()
-        else Snackbars.info(vistaRaiz, "Permisos denegados", Toast.LENGTH_SHORT).show()
+        if (permissions.entries.all { it.value }) {
+            verificarYEncenderBluetooth()
+        } else {
+            Snackbars.error(vistaRaiz, "Permisos necesarios denegados", Toast.LENGTH_LONG).show()
+        }
     }
 
     private val enableBluetoothLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == RESULT_OK) iniciarEscaneo()
-    }
-
-    private val receiver = object : BroadcastReceiver() {
-        @SuppressLint("MissingPermission")
-        override fun onReceive(context: Context, intent: Intent) {
-            if (BluetoothDevice.ACTION_FOUND == intent.action) {
-                val device: BluetoothDevice? = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
-                device?.let {
-                    if (!discoveredDevices.contains(it) && it.name != null) {
-                        discoveredDevices.add(it)
-                        deviceNames.add("${it.name}\n${it.address}")
-                        listAdapter.notifyDataSetChanged()
-                    }
-                }
-            }
-        }
+        if (result.resultCode == RESULT_OK) verificarGPSYScan()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -91,17 +72,6 @@ class NetworkActivity : AppCompatActivity() {
         setContentView(R.layout.activity_network)
         vistaRaiz = findViewById(android.R.id.content)
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.mainNetwork)) { v, insets ->
-            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(bars.left, bars.top, bars.right, 0)
-            
-            // Ajustar la lista para que no quede bajo la barra de navegación
-            lvDispositivos.setPadding(lvDispositivos.paddingLeft, lvDispositivos.paddingTop, lvDispositivos.paddingRight, bars.bottom)
-            lvDispositivos.clipToPadding = false
-
-            insets
-        }
-
         tvDispositivoGuardado = findViewById(R.id.tvDispositivoGuardado)
         tvEstadoConexion = findViewById(R.id.tvEstadoConexion)
         ivIconoEstado = findViewById(R.id.ivIconoEstado)
@@ -109,8 +79,17 @@ class NetworkActivity : AppCompatActivity() {
         progressCargando = findViewById(R.id.progressCargando)
         lvDispositivos = findViewById(R.id.lvDispositivos)
 
-        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        bluetoothAdapter = bluetoothManager.adapter
+        gestorBluetooth = BluetoothScanManager(this)
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.mainNetwork)) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(bars.left, bars.top, bars.right, 0)
+            
+            lvDispositivos.setPadding(lvDispositivos.paddingLeft, lvDispositivos.paddingTop, lvDispositivos.paddingRight, bars.bottom)
+            lvDispositivos.clipToPadding = false
+            
+            insets
+        }
 
         listAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, deviceNames)
         lvDispositivos.adapter = listAdapter
@@ -126,19 +105,34 @@ class NetworkActivity : AppCompatActivity() {
     }
 
     private fun pedirPermisos() {
-        val permissions = mutableListOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            permissions.add(Manifest.permission.BLUETOOTH_SCAN)
-            permissions.add(Manifest.permission.BLUETOOTH_CONNECT)
+        if (gestorBluetooth.tienePermisosNecesarios()) {
+            verificarYEncenderBluetooth()
+        } else {
+            requestPermissionLauncher.launch(gestorBluetooth.permisosNecesarios())
         }
-        val missing = permissions.filter { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
-        if (missing.isEmpty()) verificarYEncenderBluetooth() else requestPermissionLauncher.launch(missing.toTypedArray())
     }
 
     @SuppressLint("MissingPermission")
     private fun verificarYEncenderBluetooth() {
-        if (bluetoothAdapter?.isEnabled == false) {
-            enableBluetoothLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
+        if (!gestorBluetooth.bluetoothActivado) {
+            try {
+                enableBluetoothLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
+            } catch (e: SecurityException) {
+                android.util.Log.e("NetworkActivity", "Permiso denegado al activar Bluetooth", e)
+                Snackbars.error(vistaRaiz, "Permisos insuficientes para activar Bluetooth", Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                android.util.Log.e("NetworkActivity", "Error al activar Bluetooth", e)
+                Snackbars.error(vistaRaiz, "Error al activar Bluetooth", Toast.LENGTH_LONG).show()
+            }
+        } else {
+            verificarGPSYScan()
+        }
+    }
+
+    private fun verificarGPSYScan() {
+        if (!gestorBluetooth.isGpsEnabled()) {
+            Snackbars.warning(vistaRaiz, "Activa el GPS para escanear dispositivos", Toast.LENGTH_LONG).show()
+            startActivity(Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS))
         } else {
             iniciarEscaneo()
         }
@@ -146,28 +140,58 @@ class NetworkActivity : AppCompatActivity() {
 
     @SuppressLint("MissingPermission")
     private fun iniciarEscaneo() {
+        if (!gestorBluetooth.tienePermisosNecesarios()) {
+            pedirPermisos()
+            return
+        }
+
         discoveredDevices.clear()
         deviceNames.clear()
         listAdapter.notifyDataSetChanged()
+        
         progressCargando.visibility = View.VISIBLE
-        registerReceiver(receiver, IntentFilter(BluetoothDevice.ACTION_FOUND))
-        bluetoothAdapter?.startDiscovery()
+        btnEscanear.isEnabled = false
+        btnEscanear.text = "Escaneando..."
+
+        gestorBluetooth.iniciarEscaneo(
+            alEncontrarDispositivo = { resultado ->
+                runOnUiThread {
+                    if (!discoveredDevices.any { it.address == resultado.mac }) {
+                        val device = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(resultado.mac)
+                        discoveredDevices.add(device)
+                        deviceNames.add("${resultado.nombre}\n${resultado.mac}")
+                        listAdapter.notifyDataSetChanged()
+                    }
+                }
+            },
+            alFinalizarEscaneo = {
+                runOnUiThread {
+                    if (this.isDestroyed || this.isFinishing) return@runOnUiThread
+                    progressCargando.visibility = View.INVISIBLE
+                    btnEscanear.isEnabled = true
+                    btnEscanear.text = "Escanear Dispositivos"
+                    if (discoveredDevices.isEmpty()) {
+                        Snackbars.info(vistaRaiz, "No se encontraron dispositivos", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        )
     }
 
     @SuppressLint("MissingPermission")
     private fun conectarYGuardarDispositivo(device: BluetoothDevice) {
-        bluetoothAdapter?.cancelDiscovery()
+        gestorBluetooth.detenerEscaneo()
         progressCargando.visibility = View.VISIBLE
         btnEscanear.isEnabled = false
-        Snackbars.info(vistaRaiz, "Conectando al Socket Hardware...", Toast.LENGTH_SHORT).show()
+        Snackbars.info(vistaRaiz, "Conectando al Hardware...", Toast.LENGTH_SHORT).show()
 
-        // Hacemos la conexión real en un hilo secundario
         lifecycleScope.launch(Dispatchers.IO) {
             val exito = BluetoothController.connectDevice(device)
 
             withContext(Dispatchers.Main) {
                 progressCargando.visibility = View.INVISIBLE
                 btnEscanear.isEnabled = true
+                btnEscanear.text = "Escanear Dispositivos"
 
                 if (exito) {
                     val prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
@@ -176,9 +200,9 @@ class NetworkActivity : AppCompatActivity() {
                         putString(KEY_MAC, device.address)
                         apply()
                     }
-                    Snackbars.info(vistaRaiz, "¡Conexión Física Establecida!", Snackbar.LENGTH_SHORT).show()
+                    Snackbars.success(vistaRaiz, "¡Conexión Establecida!", Toast.LENGTH_SHORT).show()
                 } else {
-                    Snackbars.info(vistaRaiz, "Error: El hardware rechazó la conexión Socket", Snackbar.LENGTH_LONG).show()
+                    Snackbars.error(vistaRaiz, "Error de conexión con el hardware", Toast.LENGTH_LONG).show()
                 }
                 actualizarUIConexionLocal()
             }
@@ -202,6 +226,6 @@ class NetworkActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        try { unregisterReceiver(receiver) } catch (e: Exception) {}
+        gestorBluetooth.detenerEscaneo()
     }
 }
