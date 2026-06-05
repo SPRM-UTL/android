@@ -1,88 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.motion.widget.MotionLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mainRegister"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/teal_primary">
-
-    <ImageView
-        android:id="@+id/btnBackRegister"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:padding="12dp"
-        android:src="@drawable/arrow_left"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:tint="@color/white" />
+    android:background="@color/teal_primary"
+    app:layoutDescription="@xml/activity_register_scene">
 
     <ImageView
         android:id="@+id/imgLogo"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:layout_marginTop="16dp"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
         android:contentDescription="Manordomo Logo"
-        android:src="@drawable/ic_manordomo"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:src="@drawable/ic_manordomo" />
 
     <TextView
         android:id="@+id/tvTitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="32dp"
-        android:layout_marginTop="16dp"
         android:text="Crear una cuenta"
         android:textAlignment="center"
         android:textColor="@color/white"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/imgLogo" />
+        android:textSize="22sp"
+        android:textStyle="bold" />
 
     <TextView
         android:id="@+id/tvSubtitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="32dp"
-        android:layout_marginTop="4dp"
         android:text="Introduce tus datos para continuar"
         android:textAlignment="center"
         android:textColor="#E0F2F1"
-        android:textSize="14sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvTitle" />
+        android:textSize="13sp" />
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollForm"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="32dp"
         android:background="@drawable/bg_login_card"
-        android:fillViewport="true"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvSubtitle">
+        android:fillViewport="true">
 
         <LinearLayout
+            android:id="@+id/containerForm"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingHorizontal="28dp"
-            android:paddingTop="48dp"
-            android:paddingBottom="32dp">
+            android:paddingTop="32dp"
+            android:paddingBottom="48dp">
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/txtInputNombre"
                 style="@style/Widget.Custom.TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
+                android:layout_marginBottom="8dp"
                 android:hint="Nombre Completo"
                 app:startIconDrawable="@drawable/user">
 
@@ -99,7 +72,7 @@
                 style="@style/Widget.Custom.TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
+                android:layout_marginBottom="8dp"
                 android:hint="Correo Electrónico"
                 app:startIconDrawable="@android:drawable/ic_dialog_email">
 
@@ -116,7 +89,7 @@
                 style="@style/Widget.Custom.TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
+                android:layout_marginBottom="8dp"
                 android:hint="Contraseña"
                 app:endIconMode="password_toggle"
                 app:startIconDrawable="@drawable/lock">
@@ -134,7 +107,7 @@
                 style="@style/Widget.Custom.TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="36dp"
+                android:layout_marginBottom="20dp"
                 android:hint="Confirmar Contraseña"
                 app:endIconMode="password_toggle"
                 app:startIconDrawable="@drawable/lock">
@@ -151,7 +124,7 @@
                 android:id="@+id/btnCrearCuenta"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
-                android:layout_marginBottom="28dp"
+                android:layout_marginBottom="16dp"
                 android:text="Registrarse"
                 android:textAllCaps="false"
                 android:textColor="@color/white"
@@ -183,8 +156,20 @@
                     android:textSize="14sp"
                     android:textStyle="bold" />
             </LinearLayout>
-
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <ImageView
+        android:id="@+id/btnBackRegister"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:padding="12dp"
+        android:src="@drawable/arrow_left"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/white" />
+
+</androidx.constraintlayout.motion.widget.MotionLayout>

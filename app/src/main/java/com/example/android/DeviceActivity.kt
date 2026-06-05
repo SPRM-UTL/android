@@ -17,7 +17,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -67,12 +69,27 @@ class DeviceActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = true
+
         setContentView(R.layout.activity_device)
 
         val vistaRaiz = findViewById<View>(R.id.mainDevice)
         ViewCompat.setOnApplyWindowInsetsListener(vistaRaiz) { v, insets ->
             val barras = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(barras.left, barras.top, barras.right, barras.bottom)
+            v.setPadding(barras.left, barras.top, barras.right, 0)
+            
+            // Ajustar el margen del FAB para que no lo tape la barra de navegación
+            val fab = findViewById<View>(R.id.fabAddDevice)
+            val params = fab.layoutParams as android.view.ViewGroup.MarginLayoutParams
+            params.bottomMargin = barras.bottom + (16 * resources.displayMetrics.density).toInt()
+            fab.layoutParams = params
+
+            // Añadir padding al recycler para que el último item se vea bien
+            val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvDevices)
+            rv.setPadding(rv.paddingLeft, rv.paddingTop, rv.paddingRight, barras.bottom)
+
             insets
         }
 

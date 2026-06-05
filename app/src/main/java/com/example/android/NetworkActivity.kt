@@ -20,8 +20,13 @@ import android.widget.ListView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.android.network.BluetoothController
 import com.example.android.view.Snackbars
@@ -78,8 +83,24 @@ class NetworkActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = true
+
         setContentView(R.layout.activity_network)
         vistaRaiz = findViewById(android.R.id.content)
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.mainNetwork)) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(bars.left, bars.top, bars.right, 0)
+            
+            // Ajustar la lista para que no quede bajo la barra de navegación
+            lvDispositivos.setPadding(lvDispositivos.paddingLeft, lvDispositivos.paddingTop, lvDispositivos.paddingRight, bars.bottom)
+            lvDispositivos.clipToPadding = false
+
+            insets
+        }
 
         tvDispositivoGuardado = findViewById(R.id.tvDispositivoGuardado)
         tvEstadoConexion = findViewById(R.id.tvEstadoConexion)
