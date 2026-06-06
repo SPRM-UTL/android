@@ -44,15 +44,12 @@ class DeviceActivity : AppCompatActivity() {
     private lateinit var baseDatos: AppDatabase
     private lateinit var gestorBluetooth: BluetoothScanManager
 
-    // Acción pendiente que se ejecuta después de que el usuario concede permisos BT
     private var accionPendienteBt: (() -> Unit)? = null
 
-    // Solicita al usuario activar el Bluetooth si está apagado
     private val lanzadorActivarBt = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
-    ) { /* El diálogo manejará el estado según si el usuario activó o no el BT */ }
+    ) { /* El dialogo manejara el estado según si el usuario activó o no el bluetooth */ }
 
-    // Pide permisos de Bluetooth en tiempo de ejecución (requerido en Android 12+)
     private val lanzadorPermisos = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permisos ->
@@ -85,11 +82,6 @@ class DeviceActivity : AppCompatActivity() {
 
         configurarListaDispositivos()
 
-        findViewById<FloatingActionButton>(R.id.fabAddDevice).setOnClickListener {
-            mostrarDialogoDispositivo(null)
-        }
-
-        // Observar la base de datos local y actualizar la lista en pantalla
         lifecycleScope.launch {
             baseDatos.dispositivoDao().getAllDispositivos().collectLatest { lista ->
                 adaptadorDispositivos.submitList(lista)
@@ -97,6 +89,23 @@ class DeviceActivity : AppCompatActivity() {
         }
 
         sincronizarDesdeServidor()
+
+        val dispositivoId = intent.getIntExtra("DISPOSITIVO_ID", -1)
+        val abrirAgregar  = intent.getBooleanExtra("ABRIR_FORMULARIO_AGREGAR", false)
+
+        val fab = findViewById<FloatingActionButton>(R.id.fabAddDevice)
+        fab.setOnClickListener { mostrarDialogoDispositivo(null) }
+
+        when {
+            dispositivoId != -1 -> {
+                fab.visibility = View.GONE
+                lifecycleScope.launch {
+                    val dispositivo = baseDatos.dispositivoDao().getDispositivoById(dispositivoId)
+                    mostrarDialogoDispositivo(dispositivo)
+                }
+            }
+            abrirAgregar -> mostrarDialogoDispositivo(null)
+        }
     }
 
     override fun onDestroy() {
@@ -117,7 +126,6 @@ class DeviceActivity : AppCompatActivity() {
         rvDispositivos.adapter = adaptadorDispositivos
     }
 
-    /** Descarga los dispositivos del servidor y actualiza la base de datos local */
     private fun sincronizarDesdeServidor() {
         val preferencias = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
         val token = preferencias.getString("apiToken", "") ?: ""
@@ -140,12 +148,12 @@ class DeviceActivity : AppCompatActivity() {
         }
     }
 
-    // ─────────────────────── DIÁLOGO AGREGAR / EDITAR ───────────────────────
-
     private fun mostrarDialogoDispositivo(dispositivoExistente: Dispositivo?) {
         val dialogo = Dialog(this)
         dialogo.requestWindowFeature(Window.FEATURE_NO_TITLE)
         dialogo.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialogo.setCanceledOnTouchOutside(false)
+        dialogo.setCancelable(false)
         dialogo.setContentView(R.layout.dialog_device_form)
         dialogo.window?.setLayout(
             (resources.displayMetrics.widthPixels * 0.92).toInt(),
@@ -168,7 +176,6 @@ class DeviceActivity : AppCompatActivity() {
         val tiposDisponibles = listOf("Luces", "Bocinas", "Ventilador", "Televisión")
         etTipo.setAdapter(ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, tiposDisponibles))
 
-        // Si es edición, rellenar los campos con los datos actuales
         if (dispositivoExistente != null) {
             etNombre.setText(dispositivoExistente.nombre)
             etTipo.setText(dispositivoExistente.tipo, false)
@@ -181,7 +188,6 @@ class DeviceActivity : AppCompatActivity() {
         }
 
         val adaptadorBt = BluetoothDeviceAdapter { dispositivoBt ->
-            // Si el nombre personalizado está vacío, se sugiere el nombre del BT encontrado
             if (etNombre.text.isNullOrBlank()) etNombre.setText(dispositivoBt.nombre)
             etNombreBt.setText(dispositivoBt.nombre)
             etMacBt.setText(dispositivoBt.mac)
@@ -204,12 +210,33 @@ class DeviceActivity : AppCompatActivity() {
             val mac      = etMacBt.text.toString().trim()
             val nombreBt = etNombreBt.text.toString().trim()
 
+            var hayError = false
+
             if (nombre.isBlank()) {
                 etNombre.error = "Campo requerido"
-                return@setOnClickListener
+                hayError = true
+            } else {
+                etNombre.error = null
             }
 
-            // La fecha de sincronización se actualiza solo cuando se vincula un dispositivo BT
+            val tiposValidos = listOf("Luces", "Bocinas", "Ventilador", "Televisión")
+            if (tipo.isBlank() || tipo !in tiposValidos) {
+                etTipo.error = "Selecciona un tipo de dispositivo"
+                hayError = true
+            } else {
+                etTipo.error = null
+            }
+
+            val formatoMacValido = Regex("^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
+            if (mac.isNotBlank() && !mac.matches(formatoMacValido)) {
+                etMacBt.error = "Formato inválido (ej: AA:BB:CC:DD:EE:FF)"
+                hayError = true
+            } else {
+                etMacBt.error = null
+            }
+
+            if (hayError) return@setOnClickListener
+
             val fechaSincronizacion = if (mac.isNotBlank()) {
                 java.time.LocalDateTime.now().toString()
             } else {
@@ -219,7 +246,7 @@ class DeviceActivity : AppCompatActivity() {
             val nuevoDispositivo = Dispositivo(
                 id                  = dispositivoExistente?.id ?: 0,
                 nombre              = nombre,
-                tipo                = tipo.ifBlank { null },
+                tipo                = tipo,
                 accion              = "Encendido",
                 comandoBluetooth    = "BT_ON",
                 icono               = "ic_default",
@@ -239,8 +266,6 @@ class DeviceActivity : AppCompatActivity() {
         dialogo.setOnDismissListener { gestorBluetooth.detenerEscaneo() }
         dialogo.show()
     }
-
-    // ─────────────────────── ESCANEO BLUETOOTH ───────────────────────
 
     private fun ejecutarEscaneo(
         adaptadorBt: BluetoothDeviceAdapter,
@@ -286,8 +311,6 @@ class DeviceActivity : AppCompatActivity() {
             }
         )
     }
-
-    // ─────────────────────── OPERACIONES EN SERVIDOR ───────────────────────
 
     private fun guardarDispositivo(dispositivo: Dispositivo, esActualizacion: Boolean) {
         val preferencias = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)

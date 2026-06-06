@@ -92,7 +92,6 @@ class HomeActivity : AppCompatActivity() {
 
         lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
-                // Sincronizar Dispositivos
                 val responseDisp = RetrofitClient.deviceService.getDispositivos(bearer)
                 if (responseDisp.isSuccessful) {
                     val apiDevices = responseDisp.body()?.data ?: emptyList()
@@ -100,7 +99,6 @@ class HomeActivity : AppCompatActivity() {
                     db.dispositivoDao().insertAll(apiDevices)
                 }
 
-                // Sincronizar Gestos
                 val responseGest = RetrofitClient.gestureService.getGestos(bearer)
                 if (responseGest.isSuccessful) {
                     val apiGestos = responseGest.body()?.data ?: emptyList()
@@ -212,7 +210,9 @@ class HomeActivity : AppCompatActivity() {
     private fun cargarDispositivos() {
         deviceAdapter = DeviceAdapter(
             onEditClick = { disp ->
-                val intent = Intent(this, DeviceActivity::class.java)
+                val intent = Intent(this, DeviceActivity::class.java).apply {
+                    putExtra("DISPOSITIVO_ID", disp.id)
+                }
                 startActivity(intent)
             },
             onDeleteClick = { disp -> },
@@ -222,8 +222,9 @@ class HomeActivity : AppCompatActivity() {
         )
 
         val addDeviceAdapter = AddDeviceAdapter {
-            Snackbars.info(mainHome, "Abriendo panel de dispositivos", Snackbar.LENGTH_SHORT).show()
-            val intent = Intent(this, DeviceActivity::class.java)
+            val intent = Intent(this, DeviceActivity::class.java).apply {
+                putExtra("ABRIR_FORMULARIO_AGREGAR", true)
+            }
             startActivity(intent)
         }
 
