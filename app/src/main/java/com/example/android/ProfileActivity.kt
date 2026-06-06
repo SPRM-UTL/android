@@ -6,20 +6,23 @@ import android.os.Bundle
 import android.util.Patterns
 import android.view.View
 import android.widget.Button
-import com.example.android.view.cambiarColorStatusBar
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.android.network.RetrofitClient
 import com.example.android.network.UpdateUserRequest
 import com.example.android.view.CustomDialog
 import com.example.android.view.Snackbars
+import com.example.android.view.cambiarColorStatusBar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
@@ -43,6 +46,7 @@ class ProfileActivity : AppCompatActivity() {
 
     private lateinit var vistaRaiz : View
     private lateinit var btnLogout : Button
+    private lateinit var mainProfile: MotionLayout
 
     private var userIdGuardado: Int = -1
     private var tokenGuardado: String = ""
@@ -50,13 +54,30 @@ class ProfileActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = true
+
         setContentView(R.layout.activity_profile)
 
         cambiarColorStatusBar(R.color.teal_primary, true)
-        val mainProfile = findViewById<View>(R.id.mainProfile)
+        mainProfile = findViewById(R.id.mainProfile)
+        
         ViewCompat.setOnApplyWindowInsetsListener(mainProfile) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            val isKeyboardVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
+
+            if (isKeyboardVisible) {
+                mainProfile.transitionToEnd()
+            } else {
+                mainProfile.transitionToStart()
+                if (currentFocus is TextInputEditText) {
+                    currentFocus?.clearFocus()
+                }
+            }
+            
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, ime.bottom)
             insets
         }
 
@@ -95,30 +116,55 @@ class ProfileActivity : AppCompatActivity() {
 
         btnGuardarPerfil = findViewById(R.id.btnGuardarPerfil)
         tvHola = findViewById(R.id.tvHola)
+
+        // ACTIVACIÓN DE ANIMACIÓN AL TOCAR CUALQUIER INPUT
+        val inputs = listOf(etNombrePerfil, etCorreoPerfil, etContrasenaPerfil, etConfirmarContrasena)
+        inputs.forEach { input ->
+            input.setOnFocusChangeListener { _, hasFocus ->
+                if (hasFocus) mainProfile.transitionToEnd()
+            }
+            input.setOnClickListener { mainProfile.transitionToEnd() }
+
+            // Al presionar Enter (Done/Next)
+            input.setOnEditorActionListener { v, actionId, _ ->
+                if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE || 
+                    v.id == R.id.etConfirmarContrasena) {
+                    v.clearFocus()
+                    val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+                    imm.hideSoftInputFromWindow(v.windowToken, 0)
+                    mainProfile.transitionToStart()
+                }
+                false
+            }
+        }
+        
+        // TOCAR FUERA para cerrar teclado y resetear pantalla
+        val cerrarTecladoAction = View.OnClickListener {
+            val focus = currentFocus
+            if (focus is TextInputEditText) {
+                focus.clearFocus()
+                val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+                imm.hideSoftInputFromWindow(focus.windowToken, 0)
+            }
+            mainProfile.transitionToStart()
+        }
+
+        mainProfile.setOnClickListener(cerrarTecladoAction)
+        findViewById<View>(R.id.scrollProfile).setOnClickListener(cerrarTecladoAction)
+        findViewById<View>(R.id.containerFormProfile).setOnClickListener(cerrarTecladoAction)
     }
 
     private fun cargarIconosPerfil() {
         findViewById<ImageButton>(R.id.btnBack)?.let {
-            LucideLoader.cargarIcono(it, "arrow-left")
+            it.setImageResource(R.drawable.arrow_left)
         }
 
-        // Los iconos de los campos ahora se definen directamente en el XML
-        // mediante app:startIconDrawable en cada TextInputLayout
-
         findViewById<MaterialButton>(R.id.btnGuardarPerfil)?.let { botonGuardar ->
-            val ivTemporal = ImageView(this)
-            LucideLoader.cargarIcono(ivTemporal, "save")
-            ivTemporal.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-                botonGuardar.icon = ivTemporal.drawable
-            }
+            // Se puede cargar icono local si se requiere
         }
 
         findViewById<MaterialButton>(R.id.logout)?.let { botonLogout ->
-            val ivTemporal = ImageView(this)
-            LucideLoader.cargarIcono(ivTemporal, "log-out")
-            ivTemporal.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-                botonLogout.icon = ivTemporal.drawable
-            }
+            // Se puede cargar icono local si se requiere
         }
     }
 
@@ -169,10 +215,18 @@ class ProfileActivity : AppCompatActivity() {
     }
 
     private fun validarEntradas(): Boolean {
+        val nombreInput = etNombrePerfil.text.toString().trim()
         val correoInput = etCorreoPerfil.text.toString().trim()
         val contrasenaInput = etContrasenaPerfil.text.toString().trim()
         val confirmarInput = etConfirmarContrasena.text.toString().trim()
         var isValid = true
+
+        if (nombreInput.isEmpty()) {
+            txtInputNombrePerfil.error = "El nombre no puede estar vacío"
+            isValid = false
+        } else {
+            txtInputNombrePerfil.error = null
+        }
 
         if (correoInput.isEmpty()) {
             txtInputCorreo.error = "El correo no puede estar vacío"
@@ -184,11 +238,11 @@ class ProfileActivity : AppCompatActivity() {
             txtInputCorreo.error = null
         }
 
-        val passwordRegex = Regex("""^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&._-])[A-Za-z\d@$!%*?&._-]{8,}$""")
+        val passwordRegex = Regex("""^(?=.*[A-Z])(?=.*[@$!%*?&._-])[A-Za-z\d@$!%*?&._-]{8,}$""")
 
         if (contrasenaInput.isNotEmpty()) {
             if (!contrasenaInput.matches(passwordRegex)) {
-                txtInputContrasena.error = "Mín. 8 caracteres, 1 mayúscula, 1 minúscula, 1 número y 1 símbolo (@$!%*?&._-)"
+                txtInputContrasena.error = "Mín. 8 caracteres, 1 mayúscula y 1 símbolo"
                 isValid = false
             } else {
                 txtInputContrasena.error = null

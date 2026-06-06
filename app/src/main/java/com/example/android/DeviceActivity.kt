@@ -17,7 +17,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -67,12 +69,27 @@ class DeviceActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = true
+
         setContentView(R.layout.activity_device)
 
         val vistaRaiz = findViewById<View>(R.id.mainDevice)
         ViewCompat.setOnApplyWindowInsetsListener(vistaRaiz) { v, insets ->
             val barras = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(barras.left, barras.top, barras.right, barras.bottom)
+            v.setPadding(barras.left, barras.top, barras.right, 0)
+            
+            // Ajustar el margen del FAB para que no lo tape la barra de navegación
+            val fab = findViewById<View>(R.id.fabAddDevice)
+            val params = fab.layoutParams as android.view.ViewGroup.MarginLayoutParams
+            params.bottomMargin = barras.bottom + (16 * resources.displayMetrics.density).toInt()
+            fab.layoutParams = params
+
+            // Añadir padding al recycler para que el último item se vea bien
+            val rv = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvDevices)
+            rv.setPadding(rv.paddingLeft, rv.paddingTop, rv.paddingRight, barras.bottom)
+
             insets
         }
 
@@ -253,14 +270,28 @@ class DeviceActivity : AppCompatActivity() {
             return
         }
 
-        if (!gestorBluetooth.bluetoothActivado) {
-            lanzadorActivarBt.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
-            return
-        }
-
         if (!gestorBluetooth.tienePermisosNecesarios()) {
             accionPendienteBt = { ejecutarEscaneo(adaptadorBt, layoutCargando, rvBt, btnEscanear) }
             lanzadorPermisos.launch(gestorBluetooth.permisosNecesarios())
+            return
+        }
+
+        if (!gestorBluetooth.isGpsEnabled()) {
+            Toast.makeText(this, "Por favor, activa la ubicación (GPS) para escanear dispositivos", Toast.LENGTH_LONG).show()
+            startActivity(Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+            return
+        }
+
+        if (!gestorBluetooth.bluetoothActivado) {
+            try {
+                lanzadorActivarBt.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
+            } catch (e: SecurityException) {
+                Log.e("DeviceActivity", "Permiso denegado al intentar activar Bluetooth", e)
+                Toast.makeText(this, "Error: No se tienen los permisos para activar Bluetooth", Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                Log.e("DeviceActivity", "Error inesperado al solicitar activación de Bluetooth", e)
+                Toast.makeText(this, "No se pudo solicitar la activación de Bluetooth", Toast.LENGTH_LONG).show()
+            }
             return
         }
 

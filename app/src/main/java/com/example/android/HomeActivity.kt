@@ -1,22 +1,22 @@
 package com.example.android
 
+import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
 import android.widget.FrameLayout
-import android.widget.GridLayout
 import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.ui.platform.ComposeView
 import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.GridLayoutManager
@@ -24,129 +24,58 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.android.db.AppDatabase
 import com.example.android.network.BluetoothController
 import com.example.android.network.RetrofitClient
+import com.example.android.ui.AddDeviceAdapter
+import com.example.android.ui.DeviceAdapter
 import com.example.android.ui.components.BottomBarWithFab
 import com.example.android.view.Snackbars
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.snackbar.Snackbar
-import com.google.android.material.switchmaterial.SwitchMaterial
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import com.example.android.ui.DeviceAdapter
-import com.example.android.ui.AddDeviceAdapter
-import android.app.ActivityManager
-import kotlinx.coroutines.delay
 
 class HomeActivity : AppCompatActivity() {
 
+    // ==========================================================
+    // VARIABLES
+    // ==========================================================
+
+    private lateinit var db: AppDatabase
+
     private lateinit var vistaRaiz: View
     private lateinit var mainHome: MotionLayout
+
     private lateinit var rvDispositivos: RecyclerView
-    private lateinit var deviceAdapter: DeviceAdapter
-    private lateinit var db: AppDatabase
-    private lateinit var ivProfile: ImageView
-    private var isLoggingOut = false
 
     private lateinit var tvRedEstado: TextView
     private lateinit var iconWifiContainer: MaterialCardView
     private lateinit var iconWifi: ImageView
 
-    private lateinit var configuracion : View
+    private lateinit var btnConfigurarRed: View
+
+    private lateinit var deviceAdapter: DeviceAdapter
+
+    private var isLoggingOut = false
+
+    // ==========================================================
+    // LIFECYCLE
+    // ==========================================================
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         enableEdgeToEdge()
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = true
+
         setContentView(R.layout.activity_home)
 
-        db = AppDatabase.getDatabase(this)
-
-        inicializarVistas()
-        configurarInsets()
-        configurarListeners()
-
-        cargarIconosEstaticosEnLinea()
-
-        val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        if (!am.isLowRamDevice) {
-            mainHome.post {
-                mainHome.transitionToEnd()
-            }
-        } else {
-            mainHome.progress = 1.0f
-        }
-
-        if (intent.getBooleanExtra("SHOW_WELCOME", false)) {
-            Snackbars.info(mainHome, "Bienvenido", Snackbar.LENGTH_SHORT).show()
-        }
-
-        cargarDispositivos()
-        configurarBottomBarCompose()
-        sincronizarDatosServidor()
-    }
-
-    private fun sincronizarDatosServidor() {
-        val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
-        val token = sharedPref.getString("apiToken", "") ?: ""
-        if (token.isEmpty()) return
-        val bearer = "Bearer $token"
-
-        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            try {
-                // Sincronizar Dispositivos
-                val responseDisp = RetrofitClient.deviceService.getDispositivos(bearer)
-                if (responseDisp.isSuccessful) {
-                    val apiDevices = responseDisp.body()?.data ?: emptyList()
-                    db.dispositivoDao().deleteAllDispositivos()
-                    db.dispositivoDao().insertAll(apiDevices)
-                }
-
-                // Sincronizar Gestos
-                val responseGest = RetrofitClient.gestureService.getGestos(bearer)
-                if (responseGest.isSuccessful) {
-                    val apiGestos = responseGest.body()?.data ?: emptyList()
-                    db.gestoDao().deleteAllGestos()
-                    db.gestoDao().insertAll(apiGestos)
-                }
-            } catch (e: Exception) {
-            }
-        }
-    }
-
-    private fun configurarBottomBarCompose() {
-        val composeContainer = findViewById<FrameLayout>(R.id.bottom_bar_container)
-        val composeView = ComposeView(this).apply {
-            setContent {
-                BottomBarWithFab(
-                    onHomeClick = {
-                    },
-                    onGesturesClick = {
-                        val intent = Intent(this@HomeActivity, Gestos::class.java)
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
-                        startActivity(intent)
-                        overridePendingTransition(0, 0)
-                    },
-                    onFabClick = {
-                        abrirMenuPrincipal()
-                    }
-                )
-            }
-        }
-        composeContainer.addView(composeView)
-    }
-
-    private fun abrirMenuPrincipal() {
-        if (supportFragmentManager.findFragmentByTag("MenuBottomSheet") != null) return
-
-        val menuSheet = MenuBottomSheetDialog(
-            onProfileClick = {
-                val intent = Intent(this@HomeActivity, ProfileActivity::class.java)
-                startActivity(intent)
-            },
-            onSettingsClick = {
-                Snackbars.info(findViewById(android.R.id.content), "Configuración próximamente", Snackbar.LENGTH_SHORT).show()
-            }
-        )
-        menuSheet.show(supportFragmentManager, "MenuBottomSheet")
+        inicializar()
+        configurarUI()
+        configurarEventos()
+        cargarDatos()
     }
 
     override fun onResume() {
@@ -154,146 +83,444 @@ class HomeActivity : AppCompatActivity() {
         verificarEstadoRedVisual()
     }
 
+    // ==========================================================
+    // INICIALIZACION
+    // ==========================================================
+
+    private fun inicializar() {
+
+        db = AppDatabase.getDatabase(this)
+
+        inicializarVistas()
+        inicializarAdapters()
+    }
+
     private fun inicializarVistas() {
+
         vistaRaiz = findViewById(android.R.id.content)
+
         mainHome = findViewById(R.id.mainHome)
+
         rvDispositivos = findViewById(R.id.rvDispositivosHome)
-        ivProfile = findViewById(R.id.ivProfile)
 
         tvRedEstado = findViewById(R.id.tvRedEstado)
+
         iconWifiContainer = findViewById(R.id.iconWifiContainer)
+
         iconWifi = findViewById(R.id.iconWifi)
+
+        btnConfigurarRed = findViewById(R.id.btnConfigurarRed)
+    }
+
+    private fun inicializarAdapters() {
+
+        deviceAdapter = DeviceAdapter(
+
+            onEditClick = {
+                abrirPantallaDispositivo()
+            },
+
+            onDeleteClick = {
+            },
+
+            onToggleClick = { dispositivo, isChecked ->
+
+                Snackbars.info(
+                    mainHome,
+                    "${dispositivo.nombre} ${
+                        if (isChecked) "Encendido"
+                        else "Apagado"
+                    }",
+                    Snackbar.LENGTH_SHORT
+                ).show()
+            }
+        )
+    }
+
+    // ==========================================================
+    // UI
+    // ==========================================================
+
+    private fun configurarUI() {
+
+        configurarInsets()
+
+        cargarIconos()
+
+        configurarBottomBar()
+
+        configurarAnimacionInicial()
+
+        mostrarMensajeBienvenida()
     }
 
     private fun configurarInsets() {
-        ViewCompat.setOnApplyWindowInsetsListener(mainHome) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+
+        ViewCompat.setOnApplyWindowInsetsListener(mainHome) { view, insets ->
+
+            val bars =
+                insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars()
+                )
+
+            view.setPadding(
+                bars.left,
+                bars.top,
+                bars.right,
+                0
+            )
+
+            findViewById<View>(R.id.bottom_bar_container)?.setPadding(0, 0, 0, bars.bottom)
+            
+            // Ajustar el scroll para que el contenido no quede tapado por la barra
+            val scrollView = findViewById<androidx.core.widget.NestedScrollView>(R.id.scrollContainer)
+            scrollView?.setPadding(scrollView.paddingLeft, scrollView.paddingTop, scrollView.paddingRight, bars.bottom + (16 * resources.displayMetrics.density).toInt())
+
             insets
         }
     }
 
-    private fun configurarListeners() {
-//        ivProfile.setOnClickListener {
-//            abrirMenuPrincipal()
-//        }
+    private fun cargarIconos() {
 
-//        findViewById<View>(R.id.btnEscenas).setOnClickListener {
-//            val intent = Intent(this, Gestos::class.java)
-//            startActivity(intent)
-//        }
+        iconWifi.setImageResource(R.drawable.wifi)
+        iconWifi.imageTintList = ColorStateList.valueOf(getColor(R.color.white))
 
-        configuracion = findViewById<View>(R.id.btnConfigurarRed);
-        configuracion.setOnClickListener {
-            configuracion.isEnabled = false
-            lifecycleScope.launch {
-                try{
-                    val intent = Intent(this@HomeActivity, NetworkActivity::class.java)
-                    startActivity(intent)
-                    delay(1000)
-                } catch (e: Exception){
-                    Snackbars.error(vistaRaiz,e.message.toString(), Snackbar.LENGTH_SHORT).show()
-
-                }finally {
-                    configuracion.isEnabled = true;
-                }
-            }
-        }
-    }
-
-    private fun cargarIconosEstaticosEnLinea() {
-        LucideLoader.cargarIcono(iconWifi, "wifi")
         findViewById<ImageView>(R.id.ivFlechaDerecha)?.let {
-            LucideLoader.cargarIcono(it, "arrow-right")
+            it.setImageResource(R.drawable.arrow_right)
+            it.imageTintList = ColorStateList.valueOf(getColor(R.color.teal_primary))
         }
-
     }
 
-    private fun cargarDispositivos() {
-        deviceAdapter = DeviceAdapter(
-            onEditClick = { disp ->
-                val intent = Intent(this, DeviceActivity::class.java)
-                startActivity(intent)
-            },
-            onDeleteClick = { disp -> },
-            onToggleClick = { disp, isChecked ->
-                Snackbars.info(mainHome, "${disp.nombre} " + (if(isChecked) "Encendido" else "Apagado"), Snackbar.LENGTH_SHORT).show()
+    private fun configurarAnimacionInicial() {
+
+        val activityManager =
+            getSystemService(
+                Context.ACTIVITY_SERVICE
+            ) as ActivityManager
+
+        if (!activityManager.isLowRamDevice) {
+
+            mainHome.post {
+                mainHome.transitionToEnd()
             }
-        )
+
+        } else {
+
+            mainHome.progress = 1f
+        }
+    }
+
+    private fun mostrarMensajeBienvenida() {
+
+        if (
+            intent.getBooleanExtra(
+                "SHOW_WELCOME",
+                false
+            )
+        ) {
+
+            Snackbars.info(
+                vistaRaiz,
+                "Bienvenido",
+                Snackbar.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    private fun configurarBottomBar() {
+
+        val container =
+            findViewById<FrameLayout>(
+                R.id.bottom_bar_container
+            )
+
+        val composeView = ComposeView(this).apply {
+
+            setContent {
+
+                BottomBarWithFab(
+
+                    onHomeClick = {},
+
+                    onGesturesClick = {
+
+                        startActivity(
+                            Intent(
+                                this@HomeActivity,
+                                Gestos::class.java
+                            )
+                        )
+
+                        overridePendingTransition(0, 0)
+                    },
+
+                    onFabClick = {
+                        abrirMenuPrincipal()
+                    }
+                )
+            }
+        }
+
+        container.addView(composeView)
+    }
+
+    // ==========================================================
+    // EVENTOS
+    // ==========================================================
+
+    private fun configurarEventos() {
+
+        btnConfigurarRed.setOnClickListener {
+
+            abrirConfiguracionRed()
+        }
+    }
+
+    // ==========================================================
+    // DATOS
+    // ==========================================================
+
+    private fun cargarDatos() {
+
+        cargarRecycler()
+
+        sincronizarDatosServidor()
+    }
+
+    private fun cargarRecycler() {
 
         val addDeviceAdapter = AddDeviceAdapter {
-            Snackbars.info(mainHome, "Abriendo panel de dispositivos", Snackbar.LENGTH_SHORT).show()
-            val intent = Intent(this, DeviceActivity::class.java)
-            startActivity(intent)
+
+            abrirPantallaDispositivo()
         }
 
-        val concatAdapter = ConcatAdapter(deviceAdapter, addDeviceAdapter)
+        val concatAdapter =
+            ConcatAdapter(
+                deviceAdapter,
+                addDeviceAdapter
+            )
 
-        rvDispositivos.layoutManager = GridLayoutManager(this, 2)
-        rvDispositivos.adapter = concatAdapter
+        rvDispositivos.layoutManager =
+            GridLayoutManager(this, 2)
+
+        rvDispositivos.adapter =
+            concatAdapter
+
+        observarDispositivos()
+    }
+
+    private fun observarDispositivos() {
 
         lifecycleScope.launch {
-            db.dispositivoDao().getAllDispositivos().collectLatest { dispositivos ->
-                if (!isLoggingOut) {
-                    deviceAdapter.submitList(dispositivos)
+
+            db.dispositivoDao()
+                .getAllDispositivos()
+                .collectLatest { dispositivos ->
+
+                    if (!isLoggingOut) {
+
+                        deviceAdapter.submitList(
+                            dispositivos
+                        )
+                    }
+
+                    actualizarNombreUsuario()
                 }
-                findViewById<TextView>(R.id.tvUsuario)?.let {
-                    val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
-                    val userName = sharedPref.getString("userName", "Manordomo")
-                    it.text = userName
-                }
-                // Actualizar contador
-                // Por ejemplo, se buscará tvStatus pero se requiere un ID
-                // Por ahora lo ignoramos o lo actualizamos si tiene un ID.
-            }
         }
     }
 
-    private fun logout() {
-        val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
-        val tokenGuardado = sharedPref.getString("apiToken", "") ?: ""
+    private fun actualizarNombreUsuario() {
 
-        isLoggingOut = true
+        findViewById<TextView>(R.id.tvUsuario)?.let {
 
-        if (tokenGuardado.isEmpty()) {
-            Snackbars.info(vistaRaiz, "Aviso: No hay un token guardado localmente", Toast.LENGTH_LONG).show()
+            val sharedPref =
+                getSharedPreferences(
+                    "SesionApp",
+                    Context.MODE_PRIVATE
+                )
+
+            it.text =
+                sharedPref.getString(
+                    "userName",
+                    "Mayordomo"
+                )
         }
+    }
 
-        lifecycleScope.launch {
+    private fun sincronizarDatosServidor() {
+
+        val sharedPref =
+            getSharedPreferences(
+                "SesionApp",
+                Context.MODE_PRIVATE
+            )
+
+        val token =
+            sharedPref.getString(
+                "apiToken",
+                ""
+            ) ?: ""
+
+        if (token.isEmpty()) return
+
+        val bearer = "Bearer $token"
+
+        lifecycleScope.launch(Dispatchers.IO) {
+
             try {
-                val response = RetrofitClient.apiService.logout(tokenGuardado)
-                if (response.isSuccessful) {
-                    Toast.makeText(this@HomeActivity, "Sesión cerrada en el servidor", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this@HomeActivity, "Error API ${response.code()}", Toast.LENGTH_LONG).show()
+
+                val dispositivosResponse =
+                    RetrofitClient.deviceService
+                        .getDispositivos(bearer)
+
+                if (dispositivosResponse.isSuccessful) {
+
+                    val dispositivos =
+                        dispositivosResponse.body()?.data
+                            ?: emptyList()
+
+                    db.dispositivoDao()
+                        .deleteAllDispositivos()
+
+                    db.dispositivoDao()
+                        .insertAll(dispositivos)
                 }
-            } catch (e: Exception) {
-                Toast.makeText(this@HomeActivity, "Error de conexión: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
 
-            with(sharedPref.edit()) {
-                putBoolean("isLoggedIn", false)
-                putString("apiToken", "")
-                apply()
-            }
+                val gestosResponse =
+                    RetrofitClient.gestureService
+                        .getGestos(bearer)
 
-            val intent = Intent(this@HomeActivity, MainActivity::class.java).apply {
-                putExtra("FROM_LOGOUT", true)
+                if (gestosResponse.isSuccessful) {
+
+                    val gestos =
+                        gestosResponse.body()?.data
+                            ?: emptyList()
+
+                    db.gestoDao()
+                        .deleteAllGestos()
+
+                    db.gestoDao()
+                        .insertAll(gestos)
+                }
+
+            } catch (_: Exception) {
             }
-            startActivity(intent)
-            finish()
         }
     }
+
+    // ==========================================================
+    // NAVEGACION
+    // ==========================================================
+
+    private fun abrirPantallaDispositivo() {
+
+        startActivity(
+            Intent(
+                this,
+                DeviceActivity::class.java
+            )
+        )
+    }
+
+    private fun abrirConfiguracionRed() {
+
+        btnConfigurarRed.isEnabled = false
+
+        lifecycleScope.launch {
+
+            try {
+
+                startActivity(
+                    Intent(
+                        this@HomeActivity,
+                        NetworkActivity::class.java
+                    )
+                )
+
+                delay(1000)
+
+            } finally {
+
+                btnConfigurarRed.isEnabled = true
+            }
+        }
+    }
+
+    private fun abrirMenuPrincipal() {
+
+        if (
+            supportFragmentManager
+                .findFragmentByTag("MenuBottomSheet")
+            != null
+        ) return
+
+        val menuSheet =
+            MenuBottomSheetDialog(
+
+                onProfileClick = {
+
+                    startActivity(
+                        Intent(
+                            this,
+                            ProfileActivity::class.java
+                        )
+                    )
+                },
+
+                onSettingsClick = {
+                    startActivity(
+                        Intent(
+                            this@HomeActivity,
+                            SettingsActivity::class.java
+                        )
+                    )
+                }
+            )
+
+        menuSheet.show(
+            supportFragmentManager,
+            "MenuBottomSheet"
+        )
+    }
+
+    // ==========================================================
+    // HELPERS
+    // ==========================================================
+
     private fun verificarEstadoRedVisual() {
+
         if (BluetoothController.isConnected) {
-            tvRedEstado.text = "Hardware Conectado"
-            tvRedEstado.setTextColor(getColor(R.color.teal_primary))
-            iconWifiContainer.setCardBackgroundColor(getColor(R.color.teal_primary))
-        } else {
-            tvRedEstado.text = "Desconectado"
-            tvRedEstado.setTextColor(getColor(R.color.text_grey))
+
+            tvRedEstado.text =
+                "Hardware Conectado"
+
+            tvRedEstado.setTextColor(
+                getColor(R.color.teal_primary)
+            )
+
+            iconWifiContainer.setCardBackgroundColor(
+                getColor(R.color.teal_primary)
+            )
+            
             iconWifi.imageTintList = ColorStateList.valueOf(getColor(R.color.white))
-            iconWifiContainer.setCardBackgroundColor(getColor(R.color.text_grey))
+
+        } else {
+
+            tvRedEstado.text =
+                "Desconectado"
+
+            tvRedEstado.setTextColor(
+                getColor(R.color.text_grey)
+            )
+
+            iconWifi.imageTintList =
+                ColorStateList.valueOf(
+                    getColor(R.color.white)
+                )
+
+            iconWifiContainer.setCardBackgroundColor(
+                getColor(R.color.text_grey)
+            )
         }
     }
 }
