@@ -54,7 +54,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var txtInputContrasena: TextInputLayout
 
     private lateinit var btnLoginTradicional: Button
-    private lateinit var btnLoginHuella: MaterialButton
     private lateinit var tvRegistrarse: TextView
 
     private var manteniendoSplash = true
@@ -105,7 +104,6 @@ class MainActivity : AppCompatActivity() {
         txtInputContrasena = findViewById(R.id.txtInputContrasena)
 
         btnLoginTradicional = findViewById(R.id.btnLogin)
-        btnLoginHuella = findViewById(R.id.btnLoginHuella)
 
         tvRegistrarse = findViewById(R.id.tvRegistrarse)
     }
@@ -118,8 +116,6 @@ class MainActivity : AppCompatActivity() {
 
         CustomDialog.loadingDialog(this)
 
-        mostrarBotonBiometrico()
-
         procesarLogout()
     }
 
@@ -131,10 +127,6 @@ class MainActivity : AppCompatActivity() {
 
         btnLoginTradicional.setOnClickListener {
             iniciarSesionTradicional()
-        }
-
-        btnLoginHuella.setOnClickListener {
-            biometricPrompt.authenticate(promptInfo)
         }
 
         tvRegistrarse.setOnClickListener {
@@ -157,7 +149,7 @@ class MainActivity : AppCompatActivity() {
                     motionLayout.transitionToStart()
                 }
             }
-            
+
             v.setPadding(bars.left, bars.top, bars.right, ime.bottom)
             insets
         }
@@ -285,33 +277,7 @@ class MainActivity : AppCompatActivity() {
             override fun onAuthenticationSucceeded(
                 result: BiometricPrompt.AuthenticationResult
             ) {
-
-                val sharedPref =
-                    getSharedPreferences(
-                        "SesionApp",
-                        Context.MODE_PRIVATE
-                    )
-
-                val tokenExistente =
-                    sharedPref.getString(
-                        "apiToken",
-                        ""
-                    )
-
-                if (!tokenExistente.isNullOrEmpty()) {
-
-                    guardarSesionExitosa(
-                        findViewById(android.R.id.content)
-                    )
-
-                } else {
-
-                    Snackbars.warning(
-                        findViewById(android.R.id.content),
-                        "Primero inicia sesión con tu contraseña",
-                        Snackbar.LENGTH_LONG
-                    ).show()
-                }
+                irAHome()
             }
 
             override fun onAuthenticationError(
@@ -319,11 +285,6 @@ class MainActivity : AppCompatActivity() {
                 errString: CharSequence
             ) {
 
-                Snackbars.info(
-                    findViewById(android.R.id.content),
-                    "Error biométrico: $errString",
-                    Snackbar.LENGTH_SHORT
-                ).show()
             }
 
             override fun onAuthenticationFailed() {
@@ -392,11 +353,14 @@ class MainActivity : AppCompatActivity() {
 
             if (estaLogueado) {
 
-                irAHome()
+                manteniendoSplash = false
+
+                delay(300)
+
+                intentarLoginBiometrico()
 
                 return@launch
             }
-
             delay(500)
 
             manteniendoSplash = false
@@ -483,12 +447,6 @@ class MainActivity : AppCompatActivity() {
 
         splashScreen.setOnExitAnimationListener { splashProvider ->
 
-            val iconView = splashProvider.iconView
-
-            if (iconView is ImageView) {
-                (iconView.drawable as? Animatable)?.start()
-            }
-
             lifecycleScope.launch {
 
                 delay(2000)
@@ -497,7 +455,7 @@ class MainActivity : AppCompatActivity() {
 
                 findViewById<MotionLayout>(
                     R.id.motionLayout
-                ).transitionToEnd()
+                )?.transitionToEnd()
             }
         }
     }
@@ -524,21 +482,34 @@ class MainActivity : AppCompatActivity() {
             window.decorView
         ).isAppearanceLightNavigationBars = false
     }
-    private fun mostrarBotonBiometrico() {
+    private fun intentarLoginBiometrico() {
 
         val biometricManager =
             BiometricManager.from(this)
 
-        btnLoginHuella.visibility =
-            if (
-                biometricManager.canAuthenticate(
-                    BiometricManager.Authenticators.BIOMETRIC_STRONG
-                ) == BiometricManager.BIOMETRIC_SUCCESS
-            ) {
-                View.VISIBLE
-            } else {
-                View.GONE
-            }
+        val biometriaDisponible =
+            biometricManager.canAuthenticate(
+                BiometricManager.Authenticators.BIOMETRIC_STRONG
+            ) == BiometricManager.BIOMETRIC_SUCCESS
+
+        if (!biometriaDisponible) return
+
+        val sharedPref =
+            getSharedPreferences(
+                "SesionApp",
+                Context.MODE_PRIVATE
+            )
+
+        val token =
+            sharedPref.getString(
+                "apiToken",
+                ""
+            )
+
+        if (!token.isNullOrEmpty()) {
+
+            biometricPrompt.authenticate(promptInfo)
+        }
     }
     private fun procesarLogout() {
 

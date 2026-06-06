@@ -7,6 +7,8 @@
         <item name="android:statusBarColor">@color/teal_primary</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:textCursorDrawable">@drawable/cursor_custom</item>
+        <item name="android:navigationBarColor">@android:color/white</item>
+        <item name="android:windowLightNavigationBar">true</item>
         <item name="colorError">@color/red</item>
     </style>
 
@@ -17,6 +19,16 @@
         <item name="postSplashScreenTheme">@style/Theme.Android</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/avd_manordomo</item>
         <item name="windowSplashScreenAnimationDuration">2300</item>
+    </style>
+
+    <style name="BottomSheetTopRounded">
+        <item name="cornerFamily">rounded</item>
+
+        <item name="cornerSizeTopLeft">28dp</item>
+        <item name="cornerSizeTopRight">28dp</item>
+
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
     </style>
 
     <style name="EsquinasSuperioresRedondeadas"

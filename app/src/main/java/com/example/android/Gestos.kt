@@ -287,16 +287,9 @@ class Gestos : AppCompatActivity() {
     private fun abrirMenuPrincipal() {
         if (supportFragmentManager.findFragmentByTag("MenuBottomSheet") != null) return
 
-        val menuSheet = MenuBottomSheetDialog(
-            onProfileClick = {
-                val intent = Intent(this@Gestos, ProfileActivity::class.java)
-                startActivity(intent)
-            },
-            onSettingsClick = {
-                val intent = Intent(this@Gestos, SettingsActivity::class.java)
-                startActivity(intent)
-            }
+        MenuBottomSheetDialog(this).show(
+            supportFragmentManager,
+            "MenuBottomSheet"
         )
-        menuSheet.show(supportFragmentManager, "MenuBottomSheet")
     }
 }

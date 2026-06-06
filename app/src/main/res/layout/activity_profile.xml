@@ -227,23 +227,6 @@
                 app:iconGravity="textStart"
                 app:iconTint="@color/white" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/logout"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="32dp"
-                android:text="Cerrar sesion"
-                android:textAllCaps="false"
-                android:textColor="@color/white"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                app:backgroundTint="@color/red"
-                app:cornerRadius="10dp"
-                app:elevation="4dp"
-                app:icon="@drawable/fingerprint_dialog_error"
-                app:iconGravity="textStart"
-                app:iconTint="@color/white" />
-
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 

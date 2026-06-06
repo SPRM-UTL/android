@@ -49,6 +49,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="24dp"
+
         android:background="@drawable/bg_login_card"
         android:fillViewport="true"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -56,7 +57,7 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:orientation="vertical"
             android:paddingHorizontal="28dp"
             android:paddingTop="32dp"
@@ -115,58 +116,26 @@
                 app:cornerRadius="16dp"
                 app:elevation="2dp" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
+            <!-- Espacio flexible -->
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <!-- Separador -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="24dp"
                 android:layout_marginBottom="20dp"
-                android:text="@string/or_login_with"
-                android:textColor="@color/text_grey"
-                android:textSize="14sp" />
+                android:background="#E0E0E0" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnLoginHuella"
-                style="@style/Widget.Material3.Button.OutlinedButton"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:text="@string/btn_fingerprint"
-                android:textAllCaps="false"
-                android:textColor="@color/teal_primary"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                app:cornerRadius="16dp"
-                app:icon="@drawable/fingerprint_pattern"
-                app:iconGravity="textStart"
-                app:iconPadding="12dp"
-                app:iconSize="24dp"
-                app:iconTint="@color/teal_primary"
-                app:strokeColor="@color/teal_primary"
-                app:strokeWidth="1.5dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnLoginGoogle"
-                style="@style/Widget.Material3.Button.OutlinedButton"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:text="inicia sesion con Google"
-                android:textAllCaps="false"
-                android:textColor="@color/teal_primary"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                app:cornerRadius="16dp"
-                app:icon="@drawable/fingerprint_pattern"
-                app:iconGravity="textStart"
-                app:iconPadding="12dp"
-                app:iconSize="24dp"
-                app:iconTint="@color/teal_primary"
-                app:strokeColor="@color/teal_primary"
-                app:strokeWidth="1.5dp" />
-
+            <!-- Registro -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
                 android:gravity="center"
+                android:layout_marginBottom="50dp"
                 android:orientation="horizontal">
 
                 <TextView
@@ -184,9 +153,11 @@
                     android:textColor="@color/teal_primary"
                     android:textSize="14sp"
                     android:textStyle="bold" />
+
             </LinearLayout>
 
         </LinearLayout>
+
     </ScrollView>
 
 </androidx.constraintlayout.motion.widget.MotionLayout>

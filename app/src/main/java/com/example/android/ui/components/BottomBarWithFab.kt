@@ -33,10 +33,10 @@ fun BottomBarWithFab(
     val density = LocalDensity.current
     val activeColor = colorResource(id = R.color.teal_primary)
 
-    val fabSize = 64.dp
-    val notchRadius = with(density) { 38.dp.toPx() }
-    val shoulderRadius = with(density) { 10.dp.toPx() }
-    val barCornerRadius = with(density) { 20.dp.toPx() }
+    val fabSize = 54.dp
+    val notchRadius = with(density) { 32.dp.toPx() }
+    val shoulderRadius = with(density) { 8.dp.toPx() }
+    val barCornerRadius = with(density) { 18.dp.toPx() }
 
     var lastClickTime by remember { mutableLongStateOf(0L) }
     val debounceTime = 800L
@@ -83,12 +83,12 @@ fun BottomBarWithFab(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(120.dp)
+            .height(96.dp)
     ) {
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(80.dp)
+                .height(66.dp)
                 .align(Alignment.BottomCenter),
             color = Color.White,
             shape = customShape,
@@ -121,19 +121,19 @@ fun BottomBarWithFab(
                             imageVector = Icons.Outlined.Home,
                             contentDescription = "Inicio",
                             tint = activeColor,
-                            modifier = Modifier.size(30.dp)
+                            modifier = Modifier.size(25.dp)
                         )
                         Text(
                             text = "Inicio",
                             color = activeColor,
-                            fontSize = 12.sp,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
                 }
 
                 // Espacio central para el Notch (FAB)
-                Spacer(modifier = Modifier.width(90.dp))
+                Spacer(modifier = Modifier.width(76.dp))
 
                 // Área Botón Gestos
                 Box(
@@ -158,12 +158,12 @@ fun BottomBarWithFab(
                             imageVector = Icons.Outlined.BackHand,
                             contentDescription = "Gestos",
                             tint = activeColor,
-                            modifier = Modifier.size(30.dp)
+                            modifier = Modifier.size(25.dp)
                         )
                         Text(
                             text = "Gestos",
                             color = activeColor,
-                            fontSize = 12.sp,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -181,7 +181,7 @@ fun BottomBarWithFab(
             },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .offset(y = (-38).dp)
+                .offset(y = (-31).dp)
                 .size(fabSize),
             containerColor = activeColor,
             contentColor = Color.White,
@@ -194,7 +194,7 @@ fun BottomBarWithFab(
             Icon(
                 imageVector = Icons.Default.Add,
                 contentDescription = "Menú",
-                modifier = Modifier.size(32.dp),
+                modifier = Modifier.size(28.dp),
                 tint = Color.White
             )
         }

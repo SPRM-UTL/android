@@ -5,59 +5,64 @@
     <Transition
         app:constraintSetEnd="@+id/end"
         app:constraintSetStart="@+id/start"
-        app:duration="1200"
-        app:motionInterpolator="easeInOut">
-    </Transition>
+        app:duration="700"
+        app:motionInterpolator="easeInOut" />
 
     <ConstraintSet android:id="@+id/start">
-
-        <Constraint
-            android:id="@+id/cardBack"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="0dp"
-            android:layout_marginEnd="0dp"
-            android:layout_marginTop="24dp"
-            android:alpha="0"
-            app:layout_constraintBottom_toTopOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent" />
-
         <Constraint
             android:id="@+id/cardSuperior"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="0dp"
-            android:layout_marginEnd="0dp"
-            android:layout_marginTop="24dp"
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="24dp"
+            android:layout_marginTop="12dp"
             android:alpha="0"
-            app:layout_constraintBottom_toTopOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent" />
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Constraint
+            android:id="@+id/cardInferior"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="22dp"
+            android:layout_marginEnd="22dp"
+            android:layout_marginTop="10dp"
+            android:alpha="0"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/cardSuperior" />
 
         <Constraint
             android:id="@+id/tvTituloDispositivos"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="16dp"
             android:alpha="0"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="parent" />
+            app:layout_constraintTop_toBottomOf="@id/cardInferior" />
 
         <Constraint
             android:id="@+id/scrollContainer"
             android:layout_width="match_parent"
             android:layout_height="0dp"
+            android:layout_marginTop="8dp"
             android:alpha="0"
-            app:layout_constraintTop_toBottomOf="parent" />
+            app:layout_constraintBottom_toTopOf="@id/cardResumen"
+            app:layout_constraintTop_toBottomOf="@id/tvTituloDispositivos" />
 
         <Constraint
-            android:id="@+id/cardInferior"
-            android:layout_width="match_parent"
+            android:id="@+id/cardResumen"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
+            android:layout_marginStart="22dp"
+            android:layout_marginEnd="22dp"
+            android:layout_marginBottom="4dp"
             android:alpha="0"
-            app:layout_constraintTop_toBottomOf="parent" />
+            app:layout_constraintBottom_toTopOf="@id/bottom_bar_container"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
 
         <Constraint
             android:id="@+id/bottom_bar_container"
@@ -71,46 +76,56 @@
             android:id="@+id/cardSuperior"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:layout_marginTop="24dp"
-            android:scaleX="1.0"
-            android:scaleY="1.0"
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="24dp"
+            android:layout_marginTop="20dp"
             android:alpha="1"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <Constraint
+            android:id="@+id/cardInferior"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="22dp"
+            android:layout_marginEnd="22dp"
+            android:layout_marginTop="14dp"
+            android:alpha="1"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/cardSuperior" />
+
+        <Constraint
             android:id="@+id/tvTituloDispositivos"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="24dp"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="20dp"
             android:alpha="1"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/cardSuperior" />
+            app:layout_constraintTop_toBottomOf="@id/cardInferior" />
 
         <Constraint
             android:id="@+id/scrollContainer"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp"
             android:alpha="1"
-            app:layout_constraintBottom_toTopOf="@id/cardInferior"
+            app:layout_constraintBottom_toTopOf="@id/cardResumen"
             app:layout_constraintTop_toBottomOf="@id/tvTituloDispositivos" />
 
         <Constraint
-            android:id="@+id/cardInferior"
-            android:layout_width="match_parent"
+            android:id="@+id/cardResumen"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:layout_marginBottom="8dp"
+            android:layout_marginStart="22dp"
+            android:layout_marginEnd="22dp"
+            android:layout_marginBottom="4dp"
             android:alpha="1"
-            app:layout_constraintBottom_toTopOf="@id/bottom_bar_container" />
+            app:layout_constraintBottom_toTopOf="@id/bottom_bar_container"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
 
         <Constraint
             android:id="@+id/bottom_bar_container"

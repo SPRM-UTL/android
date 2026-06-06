@@ -32,14 +32,13 @@ class DeviceAdapter(
         private val tvStatus: TextView = itemView.findViewById(R.id.tvDeviceStatus)
         private val ivIcon: ImageView = itemView.findViewById(R.id.ivDeviceIcon)
         private val switchDevice: SwitchMaterial = itemView.findViewById(R.id.switchDevice)
-        
         private val cardView: View = itemView.findViewById(R.id.deviceCard)
 
         fun bind(dispositivo: Dispositivo) {
             tvName.text = dispositivo.nombre
             tvStatus.text = dispositivo.tipo ?: "Dispositivo"
             
-            ivIcon.setImageResource(android.R.drawable.ic_lock_power_off)
+            ivIcon.setImageResource(R.drawable.ic_power)
 
             switchDevice.setOnCheckedChangeListener { _, isChecked ->
                 onToggleClick(dispositivo, isChecked)

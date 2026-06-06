@@ -48,6 +48,7 @@ class HomeActivity : AppCompatActivity() {
 
     private lateinit var rvDispositivos: RecyclerView
 
+    private lateinit var tvDeviceCount: TextView
     private lateinit var tvRedEstado: TextView
     private lateinit var iconWifiContainer: MaterialCardView
     private lateinit var iconWifi: ImageView
@@ -102,6 +103,8 @@ class HomeActivity : AppCompatActivity() {
         mainHome = findViewById(R.id.mainHome)
 
         rvDispositivos = findViewById(R.id.rvDispositivosHome)
+
+        tvDeviceCount = findViewById(R.id.tvDeviceCount)
 
         tvRedEstado = findViewById(R.id.tvRedEstado)
 
@@ -174,7 +177,12 @@ class HomeActivity : AppCompatActivity() {
             
             // Ajustar el scroll para que el contenido no quede tapado por la barra
             val scrollView = findViewById<androidx.core.widget.NestedScrollView>(R.id.scrollContainer)
-            scrollView?.setPadding(scrollView.paddingLeft, scrollView.paddingTop, scrollView.paddingRight, bars.bottom + (16 * resources.displayMetrics.density).toInt())
+            scrollView?.setPadding(
+                scrollView.paddingLeft,
+                scrollView.paddingTop,
+                scrollView.paddingRight,
+                (6 * resources.displayMetrics.density).toInt()
+            )
 
             insets
         }
@@ -185,10 +193,6 @@ class HomeActivity : AppCompatActivity() {
         iconWifi.setImageResource(R.drawable.wifi)
         iconWifi.imageTintList = ColorStateList.valueOf(getColor(R.color.white))
 
-        findViewById<ImageView>(R.id.ivFlechaDerecha)?.let {
-            it.setImageResource(R.drawable.arrow_right)
-            it.imageTintList = ColorStateList.valueOf(getColor(R.color.teal_primary))
-        }
     }
 
     private fun configurarAnimacionInicial() {
@@ -322,6 +326,10 @@ class HomeActivity : AppCompatActivity() {
                         deviceAdapter.submitList(
                             dispositivos
                         )
+
+                        actualizarContadorDispositivos(
+                            dispositivos.size
+                        )
                     }
 
                     actualizarNombreUsuario()
@@ -345,6 +353,15 @@ class HomeActivity : AppCompatActivity() {
                     "Mayordomo"
                 )
         }
+    }
+
+    private fun actualizarContadorDispositivos(totalDispositivos: Int) {
+
+        tvDeviceCount.text =
+            "$totalDispositivos ${
+                if (totalDispositivos == 1) "dispositivo"
+                else "dispositivos"
+            } en funcionamiento"
     }
 
     private fun sincronizarDatosServidor() {
@@ -454,30 +471,7 @@ class HomeActivity : AppCompatActivity() {
             != null
         ) return
 
-        val menuSheet =
-            MenuBottomSheetDialog(
-
-                onProfileClick = {
-
-                    startActivity(
-                        Intent(
-                            this,
-                            ProfileActivity::class.java
-                        )
-                    )
-                },
-
-                onSettingsClick = {
-                    startActivity(
-                        Intent(
-                            this@HomeActivity,
-                            SettingsActivity::class.java
-                        )
-                    )
-                }
-            )
-
-        menuSheet.show(
+        MenuBottomSheetDialog(this).show(
             supportFragmentManager,
             "MenuBottomSheet"
         )
@@ -519,7 +513,7 @@ class HomeActivity : AppCompatActivity() {
                 )
 
             iconWifiContainer.setCardBackgroundColor(
-                getColor(R.color.text_grey)
+                getColor(R.color.teal_primary)
             )
         }
     }

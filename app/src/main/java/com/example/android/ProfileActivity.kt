@@ -169,48 +169,10 @@ class ProfileActivity : AppCompatActivity() {
     }
 
     private fun cargarBoton() {
-        btnLogout = findViewById<MaterialButton>(R.id.logout)
-        btnLogout.setOnClickListener {
-            logout()
-        }
         btnGuardarPerfil.setOnClickListener { view ->
             if (validarEntradas()) {
                 actualizarDatosAPI(view)
             }
-        }
-    }
-
-    private fun logout() {
-        val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
-        val tokenGuardado = sharedPref.getString("apiToken", "") ?: ""
-
-        if (tokenGuardado.isEmpty()) {
-            Snackbars.info(vistaRaiz, "Aviso: No hay un token guardado localmente", Toast.LENGTH_LONG).show()
-        }
-
-        lifecycleScope.launch {
-            try {
-                val response = RetrofitClient.apiService.logout(tokenGuardado)
-                if (response.isSuccessful) {
-                    Snackbars.success(vistaRaiz, "Sesión cerrada correctamente", Toast.LENGTH_SHORT).show()
-                } else {
-                    Snackbars.error(vistaRaiz, "Error al cerrar sesión (API ${response.code()})", Toast.LENGTH_LONG).show()
-                }
-            } catch (e: Exception) {
-                Snackbars.error(vistaRaiz, "Error de conexión: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
-
-            with(sharedPref.edit()) {
-                putBoolean("isLoggedIn", false)
-                putString("apiToken", "")
-                apply()
-            }
-
-            val intent = Intent(this@ProfileActivity, MainActivity::class.java).apply {
-                putExtra("FROM_LOGOUT", true)
-            }
-            startActivity(intent)
-            finish()
         }
     }
 
