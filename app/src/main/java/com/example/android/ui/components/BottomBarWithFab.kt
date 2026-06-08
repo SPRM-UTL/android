@@ -1,11 +1,8 @@
 package com.example.android.ui.components
 
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.RoundRect
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathOperation
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.GenericShape
@@ -14,10 +11,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.BackHand
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material3.*
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
@@ -36,11 +33,10 @@ fun BottomBarWithFab(
     val density = LocalDensity.current
     val activeColor = colorResource(id = R.color.teal_primary)
 
-    val fabSize = 64.dp
-    val fabRadius = fabSize / 2
-    val notchRadius = with(density) { 38.dp.toPx() }
-    val shoulderRadius = with(density) { 10.dp.toPx() }
-    val barCornerRadius = with(density) { 20.dp.toPx() }
+    val fabSize = 54.dp
+    val notchRadius = with(density) { 32.dp.toPx() }
+    val shoulderRadius = with(density) { 8.dp.toPx() }
+    val barCornerRadius = with(density) { 18.dp.toPx() }
 
     var lastClickTime by remember { mutableLongStateOf(0L) }
     val debounceTime = 800L
@@ -48,27 +44,17 @@ fun BottomBarWithFab(
     val customShape = remember(density, notchRadius, shoulderRadius, barCornerRadius) {
         GenericShape { size, _ ->
             val middle = size.width / 2
-
             moveTo(0f, barCornerRadius)
-
             arcTo(
                 rect = Rect(0f, 0f, barCornerRadius * 2, barCornerRadius * 2),
-                startAngleDegrees = 180f,
-                sweepAngleDegrees = 90f,
-                forceMoveTo = false
+                startAngleDegrees = 180f, sweepAngleDegrees = 90f, forceMoveTo = false
             )
-
-            // Línea hasta el inicio de la curva del hueco (hombro izquierdo)
             lineTo(middle - notchRadius - shoulderRadius, 0f)
-
-            // Hombro izquierdo (Curva convexa hacia abajo)
             cubicTo(
                 x1 = middle - notchRadius - shoulderRadius * 0.5f, y1 = 0f,
                 x2 = middle - notchRadius, y2 = 0f,
                 x3 = middle - notchRadius, y3 = shoulderRadius
             )
-
-            // El Hueco (Círculo cóncavo)
             arcTo(
                 rect = Rect(
                     left = middle - notchRadius,
@@ -76,26 +62,18 @@ fun BottomBarWithFab(
                     right = middle + notchRadius,
                     bottom = shoulderRadius + notchRadius
                 ),
-                startAngleDegrees = 180f,
-                sweepAngleDegrees = -180f,
-                forceMoveTo = false
+                startAngleDegrees = 180f, sweepAngleDegrees = -180f, forceMoveTo = false
             )
-
             cubicTo(
                 x1 = middle + notchRadius, y1 = 0f,
                 x2 = middle + notchRadius + shoulderRadius * 0.5f, y2 = 0f,
                 x3 = middle + notchRadius + shoulderRadius, y3 = 0f
             )
-
             lineTo(size.width - barCornerRadius, 0f)
-
             arcTo(
                 rect = Rect(size.width - barCornerRadius * 2, 0f, size.width, barCornerRadius * 2),
-                startAngleDegrees = 270f,
-                sweepAngleDegrees = 90f,
-                forceMoveTo = false
+                startAngleDegrees = 270f, sweepAngleDegrees = 90f, forceMoveTo = false
             )
-
             lineTo(size.width, size.height)
             lineTo(0f, size.height)
             close()
@@ -105,78 +83,90 @@ fun BottomBarWithFab(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(120.dp)
+            .height(96.dp)
     ) {
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(80.dp)
+                .height(66.dp)
                 .align(Alignment.BottomCenter),
             color = Color.White,
             shape = customShape,
             shadowElevation = 8.dp
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.SpaceAround,
+                modifier = Modifier.fillMaxSize(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    IconButton(
-                        onClick = {
-                            val currentTime = System.currentTimeMillis()
-                            if (currentTime - lastClickTime > debounceTime) {
-                                lastClickTime = currentTime
-                                onHomeClick()
+                // Área Botón Inicio
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = ripple(bounded = true),
+                            onClick = {
+                                val currentTime = System.currentTimeMillis()
+                                if (currentTime - lastClickTime > debounceTime) {
+                                    lastClickTime = currentTime
+                                    onHomeClick()
+                                }
                             }
-                        }
-                    ) {
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
                             imageVector = Icons.Outlined.Home,
                             contentDescription = "Inicio",
                             tint = activeColor,
-                            modifier = Modifier.size(28.dp)
+                            modifier = Modifier.size(25.dp)
+                        )
+                        Text(
+                            text = "Inicio",
+                            color = activeColor,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     }
-                    Text(
-                        text = "Inicio",
-                        color = activeColor,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
                 }
 
-                Column(
-                    modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    IconButton(
-                        onClick = {
-                            val currentTime = System.currentTimeMillis()
-                            if (currentTime - lastClickTime > debounceTime) {
-                                lastClickTime = currentTime
-                                onGesturesClick()
+                // Espacio central para el Notch (FAB)
+                Spacer(modifier = Modifier.width(76.dp))
+
+                // Área Botón Gestos
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = ripple(bounded = true),
+                            onClick = {
+                                val currentTime = System.currentTimeMillis()
+                                if (currentTime - lastClickTime > debounceTime) {
+                                    lastClickTime = currentTime
+                                    onGesturesClick()
+                                }
                             }
-                        }
-                    ) {
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
                             imageVector = Icons.Outlined.BackHand,
                             contentDescription = "Gestos",
                             tint = activeColor,
-                            modifier = Modifier.size(28.dp)
+                            modifier = Modifier.size(25.dp)
+                        )
+                        Text(
+                            text = "Gestos",
+                            color = activeColor,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     }
-                    Text(
-                        text = "Gestos",
-                        color = activeColor,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
                 }
             }
         }
@@ -191,7 +181,7 @@ fun BottomBarWithFab(
             },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .offset(y = (-38).dp)
+                .offset(y = (-31).dp)
                 .size(fabSize),
             containerColor = activeColor,
             contentColor = Color.White,
@@ -204,7 +194,7 @@ fun BottomBarWithFab(
             Icon(
                 imageVector = Icons.Default.Add,
                 contentDescription = "Menú",
-                modifier = Modifier.size(32.dp),
+                modifier = Modifier.size(28.dp),
                 tint = Color.White
             )
         }

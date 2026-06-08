@@ -24,7 +24,9 @@ import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.example.android.view.Snackbars
 import com.google.android.material.progressindicator.CircularProgressIndicator
@@ -63,6 +65,12 @@ class GestureActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_gesture)
         vistaRaiz = findViewById(android.R.id.content)
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.mainGestureScreen)) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(bars.left, bars.top, bars.right, 0)
+            insets
+        }
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 

@@ -6,8 +6,8 @@
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
     <uses-feature android:name="android.hardware.camera.any" />
-    <uses-permission android:name="android.permission.CAMERA" />
 
+    <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -19,55 +19,53 @@
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
+        android:hardwareAccelerated="true"
         android:icon="@drawable/ic_manordomo_icono"
         android:label="@string/app_name"
         android:roundIcon="@drawable/ic_manordomo_icono"
         android:supportsRtl="true"
         android:theme="@style/Theme.Android"
-        android:usesCleartextTraffic="true"
-        android:hardwareAccelerated="true">
-
+        android:usesCleartextTraffic="true">
+        <activity
+            android:name=".EspConfigActivity"
+            android:exported="false" />
         <activity
             android:name=".ProfileActivity"
             android:exported="false" />
-
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false" />
         <activity
             android:name=".RegisterActivity"
-            android:exported="false"/>
-
+            android:exported="false" />
         <activity
             android:name=".NetworkActivity"
             android:exported="false" />
-
         <activity
             android:name=".Gestos"
             android:exported="false" />
-
         <activity
             android:name=".GestureActivity"
             android:exported="false" />
-
         <activity
             android:name=".HomeActivity"
             android:exported="false" />
-
         <activity
             android:name=".DeviceActivity"
             android:exported="false" />
-
         <activity
             android:name=".extra.MusicActivity"
             android:exported="false" />
-
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.AnimatedSplash.MySplash"> <intent-filter>
-            <action android:name="android.intent.action.MAIN" />
-            <category android:name="android.intent.category.LAUNCHER" />
-        </intent-filter>
-        </activity>
+            android:theme="@style/Theme.AnimatedSplash.MySplash">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
 
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

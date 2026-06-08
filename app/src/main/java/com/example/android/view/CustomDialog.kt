@@ -131,6 +131,11 @@ object CustomDialog {
         dialog = builder.create()
         dialog.show()
 
+        // Ajustar el ancho del diálogo para que sea responsivo (90% del ancho de pantalla)
+        val metrics = activity.resources.displayMetrics
+        val width = (metrics.widthPixels * 0.90).toInt()
+        dialog.window?.setLayout(width, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
+
         dialog.window?.setBackgroundDrawable(
             ColorDrawable(Color.TRANSPARENT)
         )

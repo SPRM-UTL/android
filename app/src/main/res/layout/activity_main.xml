@@ -10,8 +10,8 @@
 
     <ImageView
         android:id="@+id/imgLogo"
-        android:layout_width="120dp"
-        android:layout_height="120dp"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
         android:contentDescription="Manordomo Logo"
         android:src="@drawable/ic_manordomo" />
 
@@ -20,11 +20,11 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="32dp"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="16dp"
         android:text="@string/login_title"
         android:textAlignment="center"
         android:textColor="@color/white"
-        android:textSize="26sp"
+        android:textSize="22sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -35,11 +35,11 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="32dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="4dp"
         android:text="@string/login_subtitle"
         android:textAlignment="center"
         android:textColor="#E0F2F1"
-        android:textSize="14sp"
+        android:textSize="13sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tvTitle" />
@@ -48,7 +48,8 @@
         android:id="@+id/scrollContent"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="40dp"
+        android:layout_marginTop="24dp"
+
         android:background="@drawable/bg_login_card"
         android:fillViewport="true"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -56,18 +57,18 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:orientation="vertical"
             android:paddingHorizontal="28dp"
-            android:paddingTop="56dp"
-            android:paddingBottom="32dp">
+            android:paddingTop="32dp"
+            android:paddingBottom="24dp">
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/txtInputUsuario"
                 style="@style/Widget.Custom.TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
+                android:layout_marginBottom="12dp"
                 android:hint="@string/hint_username"
                 app:errorEnabled="true"
                 app:startIconDrawable="@drawable/user">
@@ -86,7 +87,7 @@
                 style="@style/Widget.Custom.TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="36dp"
+                android:layout_marginBottom="24dp"
                 android:hint="@string/hint_password"
                 app:endIconMode="password_toggle"
                 app:errorEnabled="true"
@@ -105,7 +106,7 @@
                 android:id="@+id/btnLogin"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
-                android:layout_marginBottom="28dp"
+                android:layout_marginBottom="20dp"
                 android:text="@string/btn_login"
                 android:textAllCaps="false"
                 android:textColor="@color/white"
@@ -115,58 +116,26 @@
                 app:cornerRadius="16dp"
                 app:elevation="2dp" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginBottom="28dp"
-                android:text="@string/or_login_with"
-                android:textColor="@color/text_grey"
-                android:textSize="14sp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnLoginHuella"
-                style="@style/Widget.Material3.Button.OutlinedButton"
+            <!-- Espacio flexible -->
+            <Space
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:text="@string/btn_fingerprint"
-                android:textAllCaps="false"
-                android:textColor="@color/teal_primary"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                app:cornerRadius="16dp"
-                app:icon="@drawable/fingerprint_pattern"
-                app:iconGravity="textStart"
-                app:iconPadding="12dp"
-                app:iconSize="24dp"
-                app:iconTint="@color/teal_primary"
-                app:strokeColor="@color/teal_primary"
-                app:strokeWidth="1.5dp" />
+                android:layout_height="0dp"
+                android:layout_weight="1" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnLoginGoogle"
-                style="@style/Widget.Material3.Button.OutlinedButton"
+            <!-- Separador -->
+            <View
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:text="inicia sesion con Google"
-                android:textAllCaps="false"
-                android:textColor="@color/teal_primary"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                app:cornerRadius="16dp"
-                app:icon="@drawable/fingerprint_pattern"
-                app:iconGravity="textStart"
-                app:iconPadding="12dp"
-                app:iconSize="24dp"
-                app:iconTint="@color/teal_primary"
-                app:strokeColor="@color/teal_primary"
-                app:strokeWidth="1.5dp" />
+                android:layout_height="1dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="20dp"
+                android:background="#E0E0E0" />
 
+            <!-- Registro -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
                 android:gravity="center"
+                android:layout_marginBottom="50dp"
                 android:orientation="horizontal">
 
                 <TextView
@@ -184,9 +153,11 @@
                     android:textColor="@color/teal_primary"
                     android:textSize="14sp"
                     android:textStyle="bold" />
+
             </LinearLayout>
 
         </LinearLayout>
+
     </ScrollView>
 
 </androidx.constraintlayout.motion.widget.MotionLayout>

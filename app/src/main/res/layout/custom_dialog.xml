@@ -2,11 +2,11 @@
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="320dp"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
     app:cardBackgroundColor="@android:color/white"
     app:cardCornerRadius="28dp"
-    app:cardElevation="8dp"
+    app:cardElevation="0dp"
     app:strokeWidth="0dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -16,22 +16,22 @@
 
         <FrameLayout
             android:id="@+id/iconContainer"
-            android:layout_width="96dp"
-            android:layout_height="96dp"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
             <com.google.android.material.progressindicator.CircularProgressIndicator
                 android:id="@+id/progressBar2"
-                android:layout_width="96dp"
-                android:layout_height="96dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:indeterminate="true"
                 app:indicatorColor="@color/teal_primary"
-                app:indicatorSize="88dp"
+                app:indicatorSize="90dp"
                 app:trackColor="#F5F5F5"
-                app:trackThickness="4dp" />
+                app:trackThickness="6dp" />
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardView"
@@ -45,8 +45,8 @@
 
                 <ImageView
                     android:id="@+id/statusIcon"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
                     android:layout_gravity="center"
                     android:scaleType="fitCenter" />
 
@@ -57,11 +57,11 @@
             android:id="@+id/textView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="20dp"
             android:gravity="center"
             android:text="Título del Diálogo"
             android:textColor="@color/black"
-            android:textSize="22sp"
+            android:textSize="20sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -71,11 +71,11 @@
             android:id="@+id/textView2"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="8dp"
             android:gravity="center"
             android:text="Este es un mensaje de ejemplo para el diálogo personalizado."
             android:textColor="#757575"
-            android:textSize="16sp"
+            android:textSize="15sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/textView" />
@@ -83,13 +83,13 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnPositive"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="32dp"
+            android:layout_height="54dp"
+            android:layout_marginTop="24dp"
             android:text="Aceptar"
             android:textAllCaps="false"
             android:textSize="16sp"
             android:textStyle="bold"
-            app:cornerRadius="16dp"
+            app:cornerRadius="14dp"
             android:textColor="@android:color/white"
             app:layout_constraintTop_toBottomOf="@id/textView2" />
 
@@ -97,12 +97,12 @@
             android:id="@+id/btnNegative"
             style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="8dp"
+            android:layout_height="50dp"
+            android:layout_marginTop="4dp"
             android:text="Cancelar"
             android:textAllCaps="false"
             android:textColor="#757575"
-            android:textSize="16sp"
+            android:textSize="15sp"
             app:layout_constraintTop_toBottomOf="@id/btnPositive" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

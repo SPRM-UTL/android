@@ -29,6 +29,8 @@ import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputEditText
 import android.content.Context
 import android.view.View
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -47,6 +49,10 @@ class Gestos : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = true
+        
         setContentView(R.layout.activity_gestos)
 
         db = AppDatabase.getDatabase(this)
@@ -54,7 +60,17 @@ class Gestos : AppCompatActivity() {
         val mainGestos = findViewById<androidx.constraintlayout.motion.widget.MotionLayout>(R.id.mainGestos)
         ViewCompat.setOnApplyWindowInsetsListener(mainGestos) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
+            
+            val bottomContainer = findViewById<View>(R.id.bottom_bar_container)
+            bottomContainer?.setPadding(0, 0, 0, systemBars.bottom)
+            
+            // Asegurar que el FAB suba con la barra si hay DPI bajo/teclas de navegacion
+            val fab = findViewById<View>(R.id.fabAddGesture)
+            val params = fab.layoutParams as android.view.ViewGroup.MarginLayoutParams
+            params.bottomMargin = (16 * resources.displayMetrics.density).toInt() 
+            fab.layoutParams = params
+
             insets
         }
 
@@ -271,15 +287,9 @@ class Gestos : AppCompatActivity() {
     private fun abrirMenuPrincipal() {
         if (supportFragmentManager.findFragmentByTag("MenuBottomSheet") != null) return
 
-        val menuSheet = MenuBottomSheetDialog(
-            onProfileClick = {
-                val intent = Intent(this@Gestos, ProfileActivity::class.java)
-                startActivity(intent)
-            },
-            onSettingsClick = {
-                Snackbars.info(findViewById<View>(android.R.id.content), "Configuración próximamente", Snackbar.LENGTH_SHORT).show()
-            }
+        MenuBottomSheetDialog(this).show(
+            supportFragmentManager,
+            "MenuBottomSheet"
         )
-        menuSheet.show(supportFragmentManager, "MenuBottomSheet")
     }
 }
