@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.android.db.AppDatabase
+import com.example.android.db.Dispositivo
 import com.example.android.network.BluetoothController
 import com.example.android.network.RetrofitClient
 import com.example.android.ui.AddDeviceAdapter
@@ -119,8 +120,8 @@ class HomeActivity : AppCompatActivity() {
 
         deviceAdapter = DeviceAdapter(
 
-            onEditClick = {
-                abrirPantallaDispositivo()
+            onEditClick = { dispositivo ->
+                abrirPantallaDispositivo(dispositivo)
             },
 
             onDeleteClick = {
@@ -429,14 +430,19 @@ class HomeActivity : AppCompatActivity() {
     // NAVEGACION
     // ==========================================================
 
-    private fun abrirPantallaDispositivo() {
+    private fun abrirPantallaDispositivo(dispositivo: Dispositivo? = null) {
 
-        startActivity(
+        val intent =
             Intent(
                 this,
-                DeviceActivity::class.java
+                AddDeviceActivity::class.java
             )
-        )
+
+        dispositivo?.let {
+            intent.putExtra("EXTRA_DEVICE_ID", it.id)
+        }
+
+        startActivity(intent)
     }
 
     private fun abrirConfiguracionRed() {

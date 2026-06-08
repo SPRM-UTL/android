@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="device_types_array">
+        <item>Luces</item>
+        <item>Bocinas</item>
+        <item>Ventilador</item>
+        <item>Televisión</item>
+    </string-array>
+</resources>

@@ -84,10 +84,10 @@ class NetworkActivity : AppCompatActivity() {
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.mainNetwork)) { v, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(bars.left, bars.top, bars.right, 0)
-            
+
             lvDispositivos.setPadding(lvDispositivos.paddingLeft, lvDispositivos.paddingTop, lvDispositivos.paddingRight, bars.bottom)
             lvDispositivos.clipToPadding = false
-            
+
             insets
         }
 
@@ -148,7 +148,7 @@ class NetworkActivity : AppCompatActivity() {
         discoveredDevices.clear()
         deviceNames.clear()
         listAdapter.notifyDataSetChanged()
-        
+
         progressCargando.visibility = View.VISIBLE
         btnEscanear.isEnabled = false
         btnEscanear.text = "Escaneando..."

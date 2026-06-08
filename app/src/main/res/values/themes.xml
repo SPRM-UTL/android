@@ -61,12 +61,24 @@
         <item name="android:textColorHint">@color/text_grey</item>
         <item name="startIconTint">@color/teal_primary</item>
         <item name="endIconTint">@color/teal_primary</item>
-        <item name="boxCornerRadiusTopStart">16dp</item>
-        <item name="boxCornerRadiusTopEnd">16dp</item>
-        <item name="boxCornerRadiusBottomStart">16dp</item>
-        <item name="boxCornerRadiusBottomEnd">16dp</item>
+        <item name="boxCornerRadiusTopStart">24dp</item>
+        <item name="boxCornerRadiusTopEnd">24dp</item>
+        <item name="boxCornerRadiusBottomStart">24dp</item>
+        <item name="boxCornerRadiusBottomEnd">24dp</item>
         <item name="errorEnabled">true</item>
         <item name="helperTextTextColor">@color/red</item>
+    </style>
+
+    <style name="Widget.Custom.ExposedDropdownMenu" parent="Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+        <item name="boxStrokeColor">@color/input_stroke_color</item>
+        <item name="hintTextColor">@color/teal_primary</item>
+        <item name="android:textColorHint">@color/text_grey</item>
+        <item name="startIconTint">@color/teal_primary</item>
+        <item name="endIconTint">@color/teal_primary</item>
+        <item name="boxCornerRadiusTopStart">24dp</item>
+        <item name="boxCornerRadiusTopEnd">24dp</item>
+        <item name="boxCornerRadiusBottomStart">24dp</item>
+        <item name="boxCornerRadiusBottomEnd">24dp</item>
     </style>
 
     <style name="Widget.Custom.TextInputEditText" parent="Widget.Material3.TextInputEditText.OutlinedBox">
