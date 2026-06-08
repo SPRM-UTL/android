@@ -109,7 +109,7 @@ class HomeActivity : AppCompatActivity() {
         deviceAdapter = DeviceAdapter(
             onEditClick = { dispositivo ->
                 // Abrir DeviceActivity y mostrar directamente el formulario de edición
-                val intent = Intent(this, DeviceActivity::class.java).apply {
+                val intent = Intent(this, AddDeviceActivity::class.java).apply {
                     putExtra("DISPOSITIVO_ID", dispositivo.id)
                 }
                 startActivity(intent)
@@ -214,7 +214,7 @@ class HomeActivity : AppCompatActivity() {
     private fun cargarRecycler() {
         // Abrir DeviceActivity y mostrar directamente el formulario de añadir
         val addDeviceAdapter = AddDeviceAdapter {
-            val intent = Intent(this, DeviceActivity::class.java).apply {
+            val intent = Intent(this, AddDeviceActivity::class.java).apply {
                 putExtra("ABRIR_FORMULARIO_AGREGAR", true)
             }
             startActivity(intent)

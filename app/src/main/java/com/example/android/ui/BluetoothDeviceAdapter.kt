@@ -44,6 +44,7 @@ class BluetoothDeviceAdapter(
 
         fun vincular(dispositivo: ResultadoDispositivoBt) {
             tvNombre.text = dispositivo.nombre
+            // Mostrar MAC en lugar de "No configurado" para saber cuál es
             tvMac.text    = dispositivo.mac
             itemView.setOnClickListener { alSeleccionar(dispositivo) }
         }
