@@ -97,7 +97,7 @@
                 android:textAllCaps="false"
                 app:backgroundTint="@color/teal_primary"
                 app:cornerRadius="12dp"
-                app:icon="@android:drawable/stat_sys_data_bluetooth"
+                app:icon="@drawable/bluetooth"
                 app:iconGravity="textStart"
                 android:layout_marginBottom="12dp"/>
 

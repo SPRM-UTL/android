@@ -65,7 +65,7 @@
                     android:id="@+id/ivIconoEstado"
                     android:layout_width="16dp"
                     android:layout_height="16dp"
-                    android:src="@android:drawable/presence_offline"
+                    android:src="@drawable/wifi_off"
                     app:tint="#F44336" />
 
                 <TextView
@@ -91,7 +91,7 @@
         android:textSize="16sp"
         app:backgroundTint="@color/teal_primary"
         app:cornerRadius="16dp"
-        app:icon="@android:drawable/ic_menu_search"
+        app:icon="@drawable/search"
         app:layout_constraintTop_toBottomOf="@id/cardEstado" />
 
     <com.google.android.material.progressindicator.LinearProgressIndicator

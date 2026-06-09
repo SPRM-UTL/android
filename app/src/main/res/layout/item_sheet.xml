@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -68,6 +67,7 @@
 
             </LinearLayout>
 
+            <!-- CAMBIADO: ic_power → x -->
             <ImageButton
                 android:id="@+id/btnClose"
                 android:layout_width="40dp"
@@ -75,7 +75,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Cerrar"
                 android:padding="8dp"
-                android:src="@drawable/ic_power"
+                android:src="@drawable/x"
                 app:tint="@color/text_grey" />
 
         </LinearLayout>
@@ -98,7 +98,7 @@
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_manordomo_sin_fondo" />
+                android:src="@drawable/user" />
 
             <TextView
                 android:layout_width="0dp"
@@ -134,7 +134,7 @@
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_manordomo_sin_fondo" />
+                android:src="@drawable/settings" />
 
             <TextView
                 android:layout_width="0dp"
@@ -157,7 +157,6 @@
             android:layout_height="1dp"
             android:background="#F2F2F2" />
 
-
         <LinearLayout
             android:id="@+id/logout"
             android:layout_width="match_parent"
@@ -171,7 +170,7 @@
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_manordomo_sin_fondo"
+                android:src="@drawable/log_out"
                 app:tint="#D32F2F" />
 
             <TextView

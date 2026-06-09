@@ -8,6 +8,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BackHand
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.outlined.BackHand
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material3.*
@@ -28,10 +31,13 @@ fun BottomBarWithFab(
     onHomeClick: () -> Unit,
     onGesturesClick: () -> Unit,
     onFabClick: () -> Unit,
+    currentScreen: String = "home",
+    isMenuOpen: Boolean = false, // NUEVO
     modifier: Modifier = Modifier
 ) {
     val density = LocalDensity.current
     val activeColor = colorResource(id = R.color.teal_primary)
+    val inactiveColor = Color.Gray
 
     val fabSize = 54.dp
     val notchRadius = with(density) { 32.dp.toPx() }
@@ -98,7 +104,6 @@ fun BottomBarWithFab(
                 modifier = Modifier.fillMaxSize(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Área Botón Inicio
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -118,24 +123,25 @@ fun BottomBarWithFab(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
-                            imageVector = Icons.Outlined.Home,
+                            imageVector = if (currentScreen == "home")
+                                Icons.Outlined.Home
+                            else
+                                Icons.Filled.Home,
                             contentDescription = "Inicio",
-                            tint = activeColor,
+                            tint = if (currentScreen == "home") activeColor else inactiveColor,
                             modifier = Modifier.size(25.dp)
                         )
                         Text(
                             text = "Inicio",
-                            color = activeColor,
+                            color = if (currentScreen == "home") activeColor else inactiveColor,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
                 }
 
-                // Espacio central para el Notch (FAB)
                 Spacer(modifier = Modifier.width(76.dp))
 
-                // Área Botón Gestos
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -155,14 +161,17 @@ fun BottomBarWithFab(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
-                            imageVector = Icons.Outlined.BackHand,
+                            imageVector = if (currentScreen == "gestos")
+                                Icons.Outlined.BackHand
+                            else
+                                Icons.Filled.BackHand,
                             contentDescription = "Gestos",
-                            tint = activeColor,
+                            tint = if (currentScreen == "gestos") activeColor else inactiveColor,
                             modifier = Modifier.size(25.dp)
                         )
                         Text(
                             text = "Gestos",
-                            color = activeColor,
+                            color = if (currentScreen == "gestos") activeColor else inactiveColor,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -191,8 +200,9 @@ fun BottomBarWithFab(
                 pressedElevation = 10.dp
             )
         ) {
+            // CAMBIADO: muestra X cuando el menu está abierto, + cuando está cerrado
             Icon(
-                imageVector = Icons.Default.Add,
+                imageVector = if (isMenuOpen) Icons.Default.Close else Icons.Default.Add,
                 contentDescription = "Menú",
                 modifier = Modifier.size(28.dp),
                 tint = Color.White

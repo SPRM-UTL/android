@@ -25,7 +25,7 @@
             android:layout_height="40dp"
             android:layout_gravity="center"
             android:contentDescription="@string/desc_device_icon"
-            android:src="@android:drawable/ic_menu_camera"
+            android:src="@drawable/camera"
             app:tint="@color/teal_primary" />
     </com.google.android.material.card.MaterialCardView>
 

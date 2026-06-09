@@ -8,6 +8,7 @@
     android:background="@color/text_grey"
     tools:context=".extra.MusicActivity">
 
+    <!-- CAMBIADO: ic_menu_revert → arrow_left -->
     <ImageButton
         android:id="@+id/btnBack"
         android:layout_width="48dp"
@@ -16,7 +17,7 @@
         android:layout_marginTop="16dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="Atrás"
-        android:src="@android:drawable/ic_menu_revert"
+        android:src="@drawable/arrow_left"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:tint="@color/black" />
@@ -63,12 +64,13 @@
                     app:cardElevation="4dp"
                     app:strokeWidth="0dp">
 
+                    <!-- CAMBIADO: ic_media_play → music -->
                     <ImageView
                         android:layout_width="32dp"
                         android:layout_height="32dp"
                         android:layout_gravity="center"
                         android:contentDescription="Musica"
-                        android:src="@android:drawable/ic_media_play"
+                        android:src="@drawable/music"
                         app:tint="@color/white" />
                 </com.google.android.material.card.MaterialCardView>
 
@@ -97,12 +99,13 @@
                     app:cardElevation="2dp"
                     app:strokeWidth="0dp">
 
+                    <!-- CAMBIADO: ic_menu_compass → wind -->
                     <ImageView
                         android:layout_width="32dp"
                         android:layout_height="32dp"
                         android:layout_gravity="center"
                         android:contentDescription="Enfriadora"
-                        android:src="@android:drawable/ic_menu_compass"
+                        android:src="@drawable/wind"
                         app:tint="@color/text_grey" />
                 </com.google.android.material.card.MaterialCardView>
 
@@ -130,12 +133,13 @@
                     app:cardElevation="2dp"
                     app:strokeWidth="0dp">
 
+                    <!-- CAMBIADO: btn_star_big_on → lightbulb -->
                     <ImageView
                         android:layout_width="32dp"
                         android:layout_height="32dp"
                         android:layout_gravity="center"
                         android:contentDescription="Bombilla"
-                        android:src="@android:drawable/btn_star_big_on"
+                        android:src="@drawable/lightbulb"
                         app:tint="@color/text_grey" />
                 </com.google.android.material.card.MaterialCardView>
 
@@ -163,12 +167,13 @@
                     app:cardElevation="2dp"
                     app:strokeWidth="0dp">
 
+                    <!-- CAMBIADO: ic_dialog_info → wifi -->
                     <ImageView
                         android:layout_width="32dp"
                         android:layout_height="32dp"
                         android:layout_gravity="center"
                         android:contentDescription="Wifi"
-                        android:src="@android:drawable/ic_dialog_info"
+                        android:src="@drawable/wifi"
                         app:tint="@color/text_grey" />
                 </com.google.android.material.card.MaterialCardView>
 
@@ -327,32 +332,35 @@
                 app:layout_constraintStart_toStartOf="@id/tvTitulo"
                 app:layout_constraintTop_toBottomOf="@id/tvArtista">
 
+                <!-- CAMBIADO: ic_media_previous → skip_back -->
                 <ImageButton
                     android:id="@+id/btnAntes"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:backgroundTint="#33FFFFFF"
-                    android:src="@android:drawable/ic_media_previous"
+                    android:src="@drawable/skip_back"
                     app:tint="@color/white"
                     android:contentDescription="Anterior" />
 
+                <!-- CAMBIADO: ic_media_play → play -->
                 <ImageButton
                     android:id="@+id/btnPlay"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:layout_marginStart="16dp"
                     android:backgroundTint="#33FFFFFF"
-                    android:src="@android:drawable/ic_media_play"
+                    android:src="@drawable/play"
                     app:tint="@color/white"
                     android:contentDescription="Reproducir" />
 
+                <!-- CAMBIADO: ic_media_next → skip_forward -->
                 <ImageButton
                     android:id="@+id/btnsiguiente"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:layout_marginStart="16dp"
                     android:backgroundTint="#33FFFFFF"
-                    android:src="@android:drawable/ic_media_next"
+                    android:src="@drawable/skip_forward"
                     app:tint="@color/white"
                     android:contentDescription="Siguiente" />
             </LinearLayout>

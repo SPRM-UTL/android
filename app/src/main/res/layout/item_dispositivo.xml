@@ -34,7 +34,7 @@
             android:layout_alignEnd="@id/circleBluetooth"
             android:layout_alignTop="@id/circleBluetooth"
             android:layout_alignBottom="@id/circleBluetooth"
-            android:src="@android:drawable/stat_sys_data_bluetooth"
+            android:src="@drawable/bluetooth"
             app:tint="@android:color/white" />
 
         <LinearLayout

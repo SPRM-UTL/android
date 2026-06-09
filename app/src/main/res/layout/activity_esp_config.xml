@@ -55,11 +55,12 @@
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
+                        <!-- CAMBIADO: presence_offline → wifi_off -->
                         <ImageView
                             android:id="@+id/ivEstadoConexion"
                             android:layout_width="20dp"
                             android:layout_height="20dp"
-                            android:src="@android:drawable/presence_offline"
+                            android:src="@drawable/wifi_off"
                             app:tint="#F44336" />
 
                         <TextView
@@ -186,6 +187,7 @@
                         android:textSize="14sp"
                         android:visibility="gone" />
 
+                    <!-- CAMBIADO: ic_menu_edit → copy -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnCopiarIp"
                         style="@style/Widget.MaterialComponents.Button.TextButton"
@@ -195,7 +197,7 @@
                         android:text="Copiar IP"
                         android:textAllCaps="false"
                         android:textSize="14sp"
-                        app:icon="@android:drawable/ic_menu_edit"
+                        app:icon="@drawable/copy"
                         app:iconTint="@color/teal_primary" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -222,10 +224,11 @@
                         android:layout_height="wrap_content"
                         android:gravity="center_vertical">
 
+                        <!-- CAMBIADO: ic_menu_manage → settings -->
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
-                            android:src="@android:drawable/ic_menu_manage"
+                            android:src="@drawable/settings"
                             app:tint="@color/teal_primary" />
 
                         <TextView
@@ -238,6 +241,7 @@
                             android:textStyle="bold" />
                     </LinearLayout>
 
+                    <!-- CAMBIADO: ic_menu_search → search -->
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/tilSsid"
                         android:layout_width="match_parent"
@@ -249,7 +253,7 @@
                         app:boxCornerRadiusBottomStart="12dp"
                         app:boxCornerRadiusTopEnd="12dp"
                         app:boxCornerRadiusTopStart="12dp"
-                        app:startIconDrawable="@android:drawable/ic_menu_search">
+                        app:startIconDrawable="@drawable/search">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etSsid"
@@ -259,6 +263,7 @@
                             android:maxLines="1" />
                     </com.google.android.material.textfield.TextInputLayout>
 
+                    <!-- CAMBIADO: ic_lock_lock → lock -->
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/tilPassword"
                         android:layout_width="match_parent"
@@ -271,7 +276,7 @@
                         app:boxCornerRadiusTopEnd="12dp"
                         app:boxCornerRadiusTopStart="12dp"
                         app:passwordToggleEnabled="true"
-                        app:startIconDrawable="@android:drawable/ic_lock_lock">
+                        app:startIconDrawable="@drawable/lock">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etPassword"
@@ -281,6 +286,7 @@
                             android:maxLines="1" />
                     </com.google.android.material.textfield.TextInputLayout>
 
+                    <!-- CAMBIADO: ic_menu_send → send -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnEnviarConfig"
                         android:layout_width="match_parent"
@@ -291,11 +297,12 @@
                         android:textSize="16sp"
                         app:backgroundTint="@color/teal_primary"
                         app:cornerRadius="12dp"
-                        app:icon="@android:drawable/ic_menu_send" />
+                        app:icon="@drawable/send" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
             <!-- Botón de Escaneo -->
+            <!-- CAMBIADO: ic_menu_search → search -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnEscanear"
                 android:layout_width="match_parent"
@@ -306,7 +313,7 @@
                 android:textSize="16sp"
                 app:backgroundTint="@color/teal_primary"
                 app:cornerRadius="16dp"
-                app:icon="@android:drawable/ic_menu_search"
+                app:icon="@drawable/search"
                 app:iconGravity="textStart" />
 
             <com.google.android.material.progressindicator.LinearProgressIndicator
@@ -345,14 +352,14 @@
         </LinearLayout>
     </ScrollView>
 
-    <!-- Snackbar anclado -->
+    <!-- CAMBIADO: ic_popup_sync → refresh_cw -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabRefresh"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="16dp"
-        android:src="@android:drawable/ic_popup_sync"
+        android:src="@drawable/refresh_cw"
         app:backgroundTint="@color/teal_primary"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

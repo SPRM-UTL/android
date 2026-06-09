@@ -150,7 +150,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
                 android:hint="Correo Electrónico"
-                app:startIconDrawable="@android:drawable/ic_dialog_email">
+                app:startIconDrawable="@drawable/mail">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etCorreoPerfil"
@@ -223,7 +223,7 @@
                 app:backgroundTint="@color/teal_primary"
                 app:cornerRadius="10dp"
                 app:elevation="4dp"
-                app:icon="@android:drawable/ic_menu_save"
+                app:icon="@drawable/save"
                 app:iconGravity="textStart"
                 app:iconTint="@color/white" />
 
