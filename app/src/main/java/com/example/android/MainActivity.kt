@@ -54,6 +54,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var txtInputContrasena: TextInputLayout
 
     private lateinit var btnLoginTradicional: Button
+    private lateinit var btnBiometricLogin: MaterialButton
     private lateinit var tvRegistrarse: TextView
 
     private var manteniendoSplash = true
@@ -114,6 +115,7 @@ class MainActivity : AppCompatActivity() {
         txtInputContrasena = findViewById(R.id.txtInputContrasena)
 
         btnLoginTradicional = findViewById(R.id.btnLogin)
+        btnBiometricLogin = findViewById(R.id.btnBiometricLogin)
 
         tvRegistrarse = findViewById(R.id.tvRegistrarse)
     }
@@ -127,6 +129,26 @@ class MainActivity : AppCompatActivity() {
         CustomDialog.loadingDialog(this)
 
         procesarLogout()
+
+        actualizarVisibilidadBiometrica()
+    }
+
+    private fun actualizarVisibilidadBiometrica() {
+        val sharedPref = getSharedPreferences("SesionApp", MODE_PRIVATE)
+        val bioHabilitadaConfig = sharedPref.getBoolean("biometricEnabled", true)
+        val token = sharedPref.getString("apiToken", "") ?: ""
+
+        val biometricManager = BiometricManager.from(this)
+        val authenticators = BiometricManager.Authenticators.BIOMETRIC_STRONG or 
+                            BiometricManager.Authenticators.BIOMETRIC_WEAK
+        
+        val biometriaDisponible = biometricManager.canAuthenticate(authenticators) == BiometricManager.BIOMETRIC_SUCCESS
+
+        if (biometriaDisponible && bioHabilitadaConfig && token.isNotEmpty()) {
+            btnBiometricLogin.visibility = View.VISIBLE
+        } else {
+            btnBiometricLogin.visibility = View.GONE
+        }
     }
 
     // ==========================================================
@@ -137,6 +159,10 @@ class MainActivity : AppCompatActivity() {
 
         btnLoginTradicional.setOnClickListener {
             iniciarSesionTradicional()
+        }
+
+        btnBiometricLogin.setOnClickListener {
+            biometricPrompt.authenticate(promptInfo)
         }
 
         tvRegistrarse.setOnClickListener {
@@ -176,6 +202,11 @@ class MainActivity : AppCompatActivity() {
 
         motionLayout.setOnClickListener(cerrarTecladoLogin)
         findViewById<View>(R.id.scrollContent).setOnClickListener(cerrarTecladoLogin)
+
+        // Refrescar visibilidad biométrica cuando se regresa a esta pantalla (ej. desde Settings)
+        motionLayout.post {
+            actualizarVisibilidadBiometrica()
+        }
 
         // Enter en contraseña para cerrar teclado
         etContrasena.setOnEditorActionListener { v, actionId, _ ->
@@ -277,6 +308,8 @@ class MainActivity : AppCompatActivity() {
             BiometricPrompt.PromptInfo.Builder()
                 .setTitle("Inicio de sesión con huella")
                 .setSubtitle("Toca el sensor de huella para ingresar")
+                .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG or 
+                                        BiometricManager.Authenticators.BIOMETRIC_WEAK)
                 .setNegativeButtonText("Cancelar")
                 .build()
     }
@@ -365,7 +398,7 @@ class MainActivity : AppCompatActivity() {
 
                 manteniendoSplash = false
 
-                delay(300)
+                delay(500) // Un poco más de tiempo para que el splash termine de salir
 
                 intentarLoginBiometrico()
 
@@ -494,21 +527,26 @@ class MainActivity : AppCompatActivity() {
     }
     private fun intentarLoginBiometrico() {
 
-        val biometricManager =
-            BiometricManager.from(this)
-
-        val biometriaDisponible =
-            biometricManager.canAuthenticate(
-                BiometricManager.Authenticators.BIOMETRIC_STRONG
-            ) == BiometricManager.BIOMETRIC_SUCCESS
-
-        if (!biometriaDisponible) return
-
         val sharedPref =
             getSharedPreferences(
                 "SesionApp",
                 Context.MODE_PRIVATE
             )
+
+        // Verificamos si el usuario tiene habilitada la opción en configuración
+        val bioHabilitadaConfig = sharedPref.getBoolean("biometricEnabled", true)
+        if (!bioHabilitadaConfig) return
+
+        val biometricManager =
+            BiometricManager.from(this)
+
+        val authenticators = BiometricManager.Authenticators.BIOMETRIC_STRONG or 
+                            BiometricManager.Authenticators.BIOMETRIC_WEAK
+
+        val biometriaDisponible =
+            biometricManager.canAuthenticate(authenticators) == BiometricManager.BIOMETRIC_SUCCESS
+
+        if (!biometriaDisponible) return
 
         val token =
             sharedPref.getString(
