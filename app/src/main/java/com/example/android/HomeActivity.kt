@@ -11,9 +11,14 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.ComposeView
 import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.view.ViewCompat
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -179,17 +184,30 @@ class HomeActivity : AppCompatActivity() {
         val container = findViewById<FrameLayout>(R.id.bottom_bar_container)
         val composeView = ComposeView(this).apply {
             setContent {
+                var isMenuOpen by remember { mutableStateOf(false) }
                 BottomBarWithFab(
+                    currentScreen = "home",
+                    isMenuOpen = isMenuOpen,
                     onHomeClick = {},
                     onGesturesClick = {
                         startActivity(Intent(this@HomeActivity, Gestos::class.java))
                         overridePendingTransition(0, 0)
                     },
-                    onFabClick = { abrirMenuPrincipal() }
+                    onFabClick = {
+                        isMenuOpen = true
+                        abrirMenuPrincipal(onDismiss = { isMenuOpen = false })
+                    }
                 )
             }
         }
         container.addView(composeView)
+    }
+
+    private fun abrirMenuPrincipal(onDismiss: () -> Unit = {}) {
+        if (supportFragmentManager.findFragmentByTag("MenuBottomSheet") != null) return
+        val sheet = MenuBottomSheetDialog(this)
+        sheet.onDismissCallback = onDismiss
+        sheet.show(supportFragmentManager, "MenuBottomSheet")
     }
 
     // ==========================================================

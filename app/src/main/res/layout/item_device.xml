@@ -31,7 +31,7 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:layout_gravity="center"
-                android:src="@android:drawable/ic_lock_power_off"
+                android:src="@drawable/power"
                 app:tint="@color/white" />
         </com.google.android.material.card.MaterialCardView>
 

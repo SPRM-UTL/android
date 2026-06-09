@@ -1,6 +1,7 @@
 package com.example.android
 
 import android.content.Context
+import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -18,6 +19,14 @@ import kotlinx.coroutines.launch
 class MenuBottomSheetDialog(
     private val appContext: Context
 ) : BottomSheetDialogFragment() {
+
+    // NUEVO: callback para cuando se cierra el sheet
+    var onDismissCallback: (() -> Unit)? = null
+
+    override fun onDismiss(dialog: DialogInterface) {
+        super.onDismiss(dialog)
+        onDismissCallback?.invoke()
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -37,62 +46,36 @@ class MenuBottomSheetDialog(
 
         view.findViewById<LinearLayout>(R.id.profile)
             .setOnClickListener {
-
                 startActivity(
-                    Intent(
-                        context,
-                        ProfileActivity::class.java
-                    )
+                    Intent(context, ProfileActivity::class.java)
                 )
-
                 dismiss()
             }
+
         view.findViewById<LinearLayout>(R.id.settings)
             .setOnClickListener {
-
                 startActivity(
-                    Intent(
-                        context,
-                        SettingsActivity::class.java
-                    )
+                    Intent(context, SettingsActivity::class.java)
                 )
-
                 dismiss()
             }
 
         view.findViewById<LinearLayout>(R.id.logout)
             .setOnClickListener {
-
                 logout()
-
                 dismiss()
             }
     }
 
     private fun logout() {
-
-        val sharedPref =
-            appContext.getSharedPreferences(
-                "SesionApp",
-                Context.MODE_PRIVATE
-            )
-
-        val tokenGuardado =
-            sharedPref.getString(
-                "apiToken",
-                ""
-            ) ?: ""
+        val sharedPref = appContext.getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+        val tokenGuardado = sharedPref.getString("apiToken", "") ?: ""
 
         lifecycleScope.launch {
-
             try {
-
                 if (tokenGuardado.isNotEmpty()) {
-                    RetrofitClient
-                        .apiService
-                        .logout(tokenGuardado)
+                    RetrofitClient.apiService.logout(tokenGuardado)
                 }
-
             } catch (_: Exception) {
             }
 
@@ -107,14 +90,9 @@ class MenuBottomSheetDialog(
                 Toast.LENGTH_SHORT
             ).show()
 
-            val intent = Intent(
-                appContext,
-                MainActivity::class.java
-            ).apply {
+            val intent = Intent(appContext, MainActivity::class.java).apply {
                 putExtra("FROM_LOGOUT", true)
-                flags =
-                    Intent.FLAG_ACTIVITY_NEW_TASK or
-                            Intent.FLAG_ACTIVITY_CLEAR_TASK
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             }
 
             startActivity(intent)

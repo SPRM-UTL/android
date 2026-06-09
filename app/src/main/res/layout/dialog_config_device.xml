@@ -51,7 +51,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
             android:hint="Nombre del dispositivo"
-            app:startIconDrawable="@android:drawable/ic_menu_edit"
+            app:startIconDrawable="@drawable/pencil"
             app:startIconTint="@color/teal_primary">
 
             <com.google.android.material.textfield.TextInputEditText

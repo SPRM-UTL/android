@@ -15,6 +15,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.ui.platform.ComposeView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -29,6 +33,7 @@ import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputEditText
 import android.content.Context
 import android.view.View
+import androidx.compose.runtime.remember
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import kotlinx.coroutines.Dispatchers
@@ -265,7 +270,10 @@ class Gestos : AppCompatActivity() {
         val composeContainer = findViewById<FrameLayout>(R.id.bottom_bar_container)
         val composeView = ComposeView(this).apply {
             setContent {
+                var isMenuOpen by remember { mutableStateOf(false) }
                 BottomBarWithFab(
+                    currentScreen = "gestos",
+                    isMenuOpen = isMenuOpen,
                     onHomeClick = {
                         val intent = Intent(this@Gestos, HomeActivity::class.java)
                         intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
@@ -273,10 +281,10 @@ class Gestos : AppCompatActivity() {
                         overridePendingTransition(0, 0)
                         finish()
                     },
-                    onGesturesClick = {
-                    },
+                    onGesturesClick = {},
                     onFabClick = {
-                        abrirMenuPrincipal()
+                        isMenuOpen = true
+                        abrirMenuPrincipal(onDismiss = { isMenuOpen = false })
                     }
                 )
             }
@@ -284,12 +292,10 @@ class Gestos : AppCompatActivity() {
         composeContainer.addView(composeView)
     }
 
-    private fun abrirMenuPrincipal() {
+    private fun abrirMenuPrincipal(onDismiss: () -> Unit = {}) {
         if (supportFragmentManager.findFragmentByTag("MenuBottomSheet") != null) return
-
-        MenuBottomSheetDialog(this).show(
-            supportFragmentManager,
-            "MenuBottomSheet"
-        )
+        val sheet = MenuBottomSheetDialog(this)
+        sheet.onDismissCallback = onDismiss
+        sheet.show(supportFragmentManager, "MenuBottomSheet")
     }
 }

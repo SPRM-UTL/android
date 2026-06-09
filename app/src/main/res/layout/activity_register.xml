@@ -105,7 +105,7 @@
                 android:layout_marginBottom="8dp"
                 android:hint="Correo Electrónico"
                 app:errorEnabled="true"
-                app:startIconDrawable="@android:drawable/ic_dialog_email">
+                app:startIconDrawable="@drawable/mail">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etCorreoReg"

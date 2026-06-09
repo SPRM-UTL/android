@@ -115,11 +115,12 @@
                         android:id="@+id/ivIconoEstado"
                         android:layout_width="22dp"
                         android:layout_height="22dp"
-                        android:src="@android:drawable/presence_offline"
+                        android:src="@drawable/wifi_off"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintTop_toTopOf="parent"
                         app:tint="#BDBDBD" />
+
                 </androidx.constraintlayout.widget.ConstraintLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -134,7 +135,7 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@android:drawable/stat_sys_data_bluetooth"
+                android:src="@drawable/bluetooth"
                 app:tint="@color/teal_primary" />
 
             <TextView
@@ -178,7 +179,7 @@
         app:backgroundTint="@color/teal_primary"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:srcCompat="@android:drawable/stat_notify_sync"
+        app:srcCompat="@drawable/refresh_cw"
         app:tint="@color/white" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
