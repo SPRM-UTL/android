@@ -81,8 +81,7 @@ class AddDeviceActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        
-        // Estilo de barra de navegación blanca con iconos oscuros
+
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor = Color.TRANSPARENT
         window.navigationBarColor = Color.WHITE 
@@ -385,7 +384,6 @@ class AddDeviceActivity : AppCompatActivity() {
                             db.dispositivoDao().insertDispositivo(guardado)
                         }
                         Snackbars.success(findViewById(android.R.id.content), "Guardado exitoso", Toast.LENGTH_SHORT).show()
-                        // Eliminamos finish() para permitir configurar otros dispositivos
                     } else {
                         manejarErrorServidor(response.code())
                     }

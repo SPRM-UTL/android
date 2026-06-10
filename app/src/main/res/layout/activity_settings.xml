@@ -204,6 +204,7 @@
 
                         <!-- Biometría -->
                         <androidx.constraintlayout.widget.ConstraintLayout
+                            android:id="@+id/containerBiometric"
                             android:layout_width="match_parent"
                             android:layout_height="64dp">
 

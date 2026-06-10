@@ -102,19 +102,43 @@
 
             </com.google.android.material.textfield.TextInputLayout>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnLogin"
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginBottom="20dp"
-                android:text="@string/btn_login"
-                android:textAllCaps="false"
-                android:textColor="@color/white"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                app:backgroundTint="@color/teal_primary"
-                app:cornerRadius="16dp"
-                app:elevation="2dp" />
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="20dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnLogin"
+                    android:layout_width="0dp"
+                    android:layout_height="56dp"
+                    android:layout_weight="1"
+                    android:text="@string/btn_login"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    app:backgroundTint="@color/teal_primary"
+                    app:cornerRadius="16dp"
+                    app:elevation="2dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnBiometricLogin"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:layout_marginStart="12dp"
+                    android:padding="0dp"
+                    app:cornerRadius="16dp"
+                    app:icon="@drawable/ic_manordomo"
+                    app:iconGravity="textStart"
+                    app:iconPadding="0dp"
+                    app:iconSize="24dp"
+                    app:iconTint="@color/teal_primary"
+                    app:strokeColor="@color/teal_primary"
+                    android:visibility="gone" />
+            </LinearLayout>
 
             <!-- Espacio flexible -->
             <Space
