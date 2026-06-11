@@ -303,7 +303,7 @@ class HomeActivity : AppCompatActivity() {
         btnConfigurarRed.isEnabled = false
         lifecycleScope.launch {
             try {
-                startActivity(Intent(this@HomeActivity, NetworkActivity::class.java))
+                startActivity(Intent(this@HomeActivity, EspConfigActivity::class.java))
                 delay(1000)
             } finally {
                 btnConfigurarRed.isEnabled = true
