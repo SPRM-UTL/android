@@ -14,6 +14,8 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
         android:allowBackup="true"
@@ -56,10 +58,20 @@
         <activity
             android:name=".AddDeviceActivity"
             android:exported="false" />
+        <activity
+            android:name=".DeviceControlsActivity"
+            android:exported="false" />
 
         <activity
             android:name=".extra.MusicActivity"
             android:exported="false" />
+
+        <activity
+            android:name=".PortraitCaptureActivity"
+            android:screenOrientation="portrait"
+            android:stateNotNeeded="true"
+            android:theme="@style/zxing_CaptureTheme" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -32,7 +32,6 @@ import java.util.*
 
 class EspConfigActivity : AppCompatActivity() {
 
-    // Vistas
     private lateinit var ivEstadoConexion: ImageView
     private lateinit var tvEstadoConexion: TextView
     private lateinit var layoutDispositivo: LinearLayout
@@ -43,6 +42,8 @@ class EspConfigActivity : AppCompatActivity() {
     private lateinit var tvSsidConectado: TextView
     private lateinit var tvRssi: TextView
     private lateinit var btnCopiarIp: MaterialButton
+    private lateinit var btnCompartirWifi: MaterialButton
+    private lateinit var btnEscanearQr: MaterialButton
     private lateinit var etSsid: TextInputEditText
     private lateinit var etPassword: TextInputEditText
     private lateinit var btnEnviarConfig: MaterialButton
@@ -135,6 +136,12 @@ class EspConfigActivity : AppCompatActivity() {
         setContentView(R.layout.activity_esp_config)
         vistaRaiz = findViewById(android.R.id.content)
 
+        ViewCompat.setOnApplyWindowInsetsListener(vistaRaiz!!) { view, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            insets
+        }
+
         inicializarVistas()
         inicializarBluetooth()
         configurarListeners()
@@ -152,6 +159,8 @@ class EspConfigActivity : AppCompatActivity() {
         tvSsidConectado = findViewById(R.id.tvSsidConectado)
         tvRssi = findViewById(R.id.tvRssi)
         btnCopiarIp = findViewById(R.id.btnCopiarIp)
+        btnCompartirWifi = findViewById(R.id.btnCompartirWifi)
+        btnEscanearQr = findViewById(R.id.btnEscanearQr)
         etSsid = findViewById(R.id.etSsid)
         etPassword = findViewById(R.id.etPassword)
         btnEnviarConfig = findViewById(R.id.btnEnviarConfig)
@@ -186,6 +195,14 @@ class EspConfigActivity : AppCompatActivity() {
 
         btnCopiarIp.setOnClickListener {
             copiarIpAlPortapapeles()
+        }
+
+        btnCompartirWifi.setOnClickListener {
+            autocompletarWifiActual()
+        }
+
+        btnEscanearQr.setOnClickListener {
+            iniciarEscaneoQr()
         }
 
         fabRefresh.setOnClickListener {
@@ -530,6 +547,78 @@ class EspConfigActivity : AppCompatActivity() {
         } else {
             checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) ==
                     PackageManager.PERMISSION_GRANTED
+        }
+    }
+
+    private fun autocompletarWifiActual() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            obtenerSsidYMostrar()
+        } else {
+            pedirPermisos()
+        }
+    }
+
+    private fun obtenerSsidYMostrar() {
+        val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as android.net.wifi.WifiManager
+        val info = wifiManager.connectionInfo
+        var ssid = info.ssid
+
+        if (!ssid.isNullOrEmpty() && ssid != "<unknown ssid>") {
+            if (ssid.startsWith("\"") && ssid.endsWith("\"")) {
+                ssid = ssid.substring(1, ssid.length - 1)
+            }
+            etSsid.setText(ssid)
+            mostrarSnackbar("SSID auto-completado. Ingrese su contraseña.", false)
+            etPassword.requestFocus()
+        } else {
+            mostrarSnackbar("No se obtuvo el Wi-Fi. Revise estar conectado y tener el GPS encendido.", true)
+        }
+    }
+
+    private val qrScanLauncher = registerForActivityResult(
+        com.journeyapps.barcodescanner.ScanContract()
+    ) { result ->
+        if (result.contents != null) {
+            procesarContenidoQr(result.contents)
+        } else {
+            mostrarSnackbar("Escaneo cancelado", true)
+        }
+    }
+
+    private fun iniciarEscaneoQr() {
+        val options = com.journeyapps.barcodescanner.ScanOptions()
+        options.setDesiredBarcodeFormats(com.journeyapps.barcodescanner.ScanOptions.QR_CODE)
+        options.setPrompt("Escanea el código QR del Módem Wi-Fi")
+        options.setCameraId(0)
+        options.setBeepEnabled(true)
+        options.setBarcodeImageEnabled(false)
+        options.setCaptureActivity(PortraitCaptureActivity::class.java)
+        qrScanLauncher.launch(options)
+    }
+
+    private fun procesarContenidoQr(contenido: String) {
+        if (contenido.startsWith("WIFI:")) {
+            var ssid = ""
+            var password = ""
+
+            val partes = contenido.removePrefix("WIFI:").split(";")
+            for (parte in partes) {
+                if (parte.startsWith("S:")) {
+                    ssid = parte.substring(2)
+                } else if (parte.startsWith("P:")) {
+                    password = parte.substring(2)
+                }
+            }
+
+            if (ssid.isNotEmpty()) {
+                etSsid.setText(ssid)
+                etPassword.setText(password)
+                mostrarSnackbar("Datos cargados correctamente desde el QR", false)
+            } else {
+                mostrarSnackbar("El código QR no contiene un nombre de red válido", true)
+            }
+        } else {
+            mostrarSnackbar("El código escaneado no es de una red Wi-Fi", true)
         }
     }
 }
