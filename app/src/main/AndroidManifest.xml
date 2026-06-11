@@ -58,6 +58,9 @@
         <activity
             android:name=".AddDeviceActivity"
             android:exported="false" />
+        <activity
+            android:name=".DeviceControlsActivity"
+            android:exported="false" />
 
         <activity
             android:name=".extra.MusicActivity"

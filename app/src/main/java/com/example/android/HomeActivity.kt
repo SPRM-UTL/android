@@ -112,12 +112,8 @@ class HomeActivity : AppCompatActivity() {
 
     private fun inicializarAdapters() {
         deviceAdapter = DeviceAdapter(
-            onEditClick = { dispositivo ->
-                // Abrir DeviceActivity y mostrar directamente el formulario de edición
-                val intent = Intent(this, AddDeviceActivity::class.java).apply {
-                    putExtra("DISPOSITIVO_ID", dispositivo.id)
-                }
-                startActivity(intent)
+            onEditClick = { dispositivo ->3
+                mostrarInformacionDispositivo(dispositivo)
             },
             onDeleteClick = {},
             onToggleClick = { dispositivo, isChecked ->
@@ -332,5 +328,38 @@ class HomeActivity : AppCompatActivity() {
             iconWifi.imageTintList = ColorStateList.valueOf(getColor(R.color.white))
             iconWifiContainer.setCardBackgroundColor(getColor(R.color.text_grey))
         }
+    }
+
+    private fun mostrarInformacionDispositivo(dispositivo: com.example.android.db.Dispositivo) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_device_info, null)
+        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        dialog.setContentView(dialogView)
+
+        dialogView.findViewById<TextView>(R.id.tvDialogNombre).text = dispositivo.nombre ?: "Desconocido"
+        dialogView.findViewById<TextView>(R.id.tvDialogTipo).text = dispositivo.tipo ?: "Desconocido"
+        dialogView.findViewById<TextView>(R.id.tvDialogAccion).text = dispositivo.accion ?: "N/A"
+        dialogView.findViewById<TextView>(R.id.tvDialogMac).text = dispositivo.macBluetooth ?: "N/A"
+
+        dialogView.findViewById<ImageView>(R.id.btnDialogClose).setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnDialogEditar).setOnClickListener {
+            dialog.dismiss()
+            val intent = Intent(this, AddDeviceActivity::class.java).apply {
+                putExtra("EXTRA_DEVICE_ID", dispositivo.id)
+            }
+            startActivity(intent)
+        }
+
+        dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnDialogControles).setOnClickListener {
+            dialog.dismiss()
+            val intent = Intent(this, DeviceControlsActivity::class.java).apply {
+                putExtra("EXTRA_DEVICE_ID", dispositivo.id)
+            }
+            startActivity(intent)
+        }
+
+        dialog.show()
     }
 }
