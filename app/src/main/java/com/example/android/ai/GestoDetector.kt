@@ -1,4 +1,4 @@
-package com.example.android.ai
+﻿package com.example.android.ai
 
 import com.example.android.db.Gesto
 
@@ -46,7 +46,7 @@ class GestoDetector(private val onGestoDetected: (Gesto) -> Unit) {
         for (gesto in newGestos) {
             trackers.add(GestoTracker(gesto) { detectedGesto ->
                 val currentTime = System.currentTimeMillis()
-                // Evitar triggers múltiples en menos de 2 segundos (Cooldown)
+                // Evitar triggers mÃºltiples en menos de 2 segundos (Cooldown)
                 if (currentTime - lastTriggerTime > 2000) {
                     lastTriggerTime = currentTime
                     onGestoDetected(detectedGesto)
@@ -59,3 +59,4 @@ class GestoDetector(private val onGestoDetected: (Gesto) -> Unit) {
         trackers.forEach { it.processPoses(leftPose, rightPose) }
     }
 }
+

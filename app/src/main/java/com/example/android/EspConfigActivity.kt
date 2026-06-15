@@ -512,6 +512,11 @@ class EspConfigActivity : AppCompatActivity() {
         ) {
             if (characteristic.uuid == IP_CHAR_UUID) {
                 val ip = characteristic.getStringValue(0)
+                
+                // Guardar la IP en las preferencias globales
+                val prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                prefs.edit().putString("saved_device_ip", ip).apply()
+                
                 runOnUiThread {
                     mostrarSnackbar("Conectado! IP: $ip", false)
                     val intent = Intent(this@EspConfigActivity, DeviceCameraActivity::class.java)

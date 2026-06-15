@@ -1,4 +1,5 @@
-package com.example.android.ai
+﻿package com.example.android.ai
+import com.example.android.R
 
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarkerResult
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult
@@ -7,8 +8,8 @@ import kotlin.math.hypot
 
 class GestureAnalyzer {
 
-    var onGestoDetected: ((com.example.android.db.Gesto) -> Unit)? = null
-    val gestoDetector = GestoDetector { gesto -> onGestoDetected?.invoke(gesto) }
+    var onComboCompleted: ((Combo) -> Unit)? = null
+    val sequenceDetector = SecuenciaDetector { combo -> onComboCompleted?.invoke(combo) }
 
     // History for motion tracking
     private var noseXHistory = mutableListOf<Float>()
@@ -134,14 +135,20 @@ class GestureAnalyzer {
         val smoothedLeftPose = leftHandPoseHistory.filter { it.isNotEmpty() }.groupingBy { it }.eachCount().maxByOrNull { it.value }?.key ?: ""
         val smoothedRightPose = rightHandPoseHistory.filter { it.isNotEmpty() }.groupingBy { it }.eachCount().maxByOrNull { it.value }?.key ?: ""
 
-        // Process gesture
-        gestoDetector.processPoses(smoothedLeftPose, smoothedRightPose)
+        // Process sequence
+        sequenceDetector.processPoses(smoothedLeftPose, smoothedRightPose)
 
         if (smoothedLeftPose.isNotEmpty() || smoothedRightPose.isNotEmpty()) {
             val leftStr = if (smoothedLeftPose.isNotEmpty()) "Izq: $smoothedLeftPose" else ""
             val rightStr = if (smoothedRightPose.isNotEmpty()) "Der: $smoothedRightPose" else ""
             val separator = if (leftStr.isNotEmpty() && rightStr.isNotEmpty()) ", " else ""
-            action = "$leftStr$separator$rightStr"
+            action = "$leftStr$separator$rightStr\n\n${sequenceDetector.feedbackText}"
+        } else {
+            if (action == "Ninguno") {
+                action = sequenceDetector.feedbackText
+            } else {
+                action = "$action\n\n${sequenceDetector.feedbackText}"
+            }
         }
 
         return action

@@ -1,4 +1,5 @@
-package com.example.android.ai
+﻿package com.example.android.ai
+import com.example.android.R
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -18,14 +19,9 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import com.example.android.network.MjpegStreamReader
 import com.google.mediapipe.framework.image.BitmapImageBuilder
 import com.google.mediapipe.tasks.core.BaseOptions
 import com.google.mediapipe.tasks.vision.core.RunningMode
-import com.example.android.R
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarker
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarker
 import java.util.Calendar
@@ -67,7 +63,7 @@ class BackgroundCameraService : LifecycleService() {
         cameraExecutor = Executors.newSingleThreadExecutor()
         setupMediaPipe()
         setupGestureAnalyzerCallback()
-        loadGestos()
+        loadCombos()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -101,7 +97,7 @@ class BackgroundCameraService : LifecycleService() {
                 CameraSharedState.isServiceRunning = false
             }
             ACTION_RELOAD_COMBOS -> {
-                loadGestos()
+                loadCombos()
             }
             ACTION_UPDATE_SCHEDULE -> {
                 checkSchedule()
@@ -154,46 +150,30 @@ class BackgroundCameraService : LifecycleService() {
         }
     }
 
-    private fun loadGestos() {
-        CoroutineScope(Dispatchers.IO).launch {
-            val db = com.example.android.db.AppDatabase.getDatabase(this@BackgroundCameraService)
-            db.gestoDao().getAllGestos().collect { gestos ->
-                gestureAnalyzer.gestoDetector.updateGestos(gestos)
-            }
-        }
+    private fun loadCombos() {
+        val combos = SecuenciaConfigManager.loadCombos(this)
+        gestureAnalyzer.sequenceDetector.updateCombos(combos)
     }
 
     private fun startForegroundService(text: String) {
         createNotificationChannel()
         
         val notificationIntent = Intent(this, com.example.android.HomeActivity::class.java)
-        val pendingIntent: PendingIntent = PendingIntent.getActivity(
+        val pendingIntent = PendingIntent.getActivity(
             this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE
         )
 
-        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("IA Gestos")
-            .setContentText(text)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentIntent(pendingIntent)
-            .setOngoing(true)
-
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID).setContentTitle("IA Gestos").setContentText(text).setSmallIcon(R.mipmap.ic_launcher).setContentIntent(pendingIntent).setOngoing(true)
         startForeground(1, builder.build())
     }
 
     private fun updateNotification(title: String, text: String) {
         val notificationIntent = Intent(this, com.example.android.HomeActivity::class.java)
-        val pendingIntent: PendingIntent = PendingIntent.getActivity(
+        val pendingIntent = PendingIntent.getActivity(
             this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE
         )
 
-        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(title)
-            .setContentText(text)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentIntent(pendingIntent)
-            .setOngoing(true)
-
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID).setContentTitle(title).setContentText(text).setSmallIcon(R.mipmap.ic_launcher).setContentIntent(pendingIntent).setOngoing(true)
         val manager = getSystemService(NotificationManager::class.java)
         manager.notify(1, builder.build())
     }
@@ -248,7 +228,7 @@ class BackgroundCameraService : LifecycleService() {
     }
 
     private fun setupGestureAnalyzerCallback() {
-        gestureAnalyzer.onGestoDetected = { gesto ->
+        gestureAnalyzer.onComboCompleted = { combo ->
             try {
                 val toneGen = android.media.ToneGenerator(android.media.AudioManager.STREAM_NOTIFICATION, 100)
                 toneGen.startTone(android.media.ToneGenerator.TONE_PROP_BEEP, 500)
@@ -256,35 +236,9 @@ class BackgroundCameraService : LifecycleService() {
                 Log.e("Audio", "Error al reproducir sonido", e)
             }
             
-            // Execute device action
-            gesto.aparatoId?.let { aparatoId ->
-                CoroutineScope(Dispatchers.IO).launch {
-                    val db = com.example.android.db.AppDatabase.getDatabase(this@BackgroundCameraService)
-                    val dispositivo = db.dispositivoDao().getDispositivoById(aparatoId)
-                    dispositivo?.let {
-                        val mac = it.macBluetooth
-                        val command = it.comandoBluetooth ?: "ON"
-                        if (!mac.isNullOrEmpty()) {
-                            // Obtener dispositivo Bluetooth real
-                            val bluetoothAdapter = android.bluetooth.BluetoothAdapter.getDefaultAdapter()
-                            val bluetoothDevice = bluetoothAdapter?.getRemoteDevice(mac)
-                            
-                            if (bluetoothDevice != null) {
-                                val connected = com.example.android.network.BluetoothController.connectDevice(bluetoothDevice)
-                                if (connected) {
-                                    try {
-                                        com.example.android.network.BluetoothController.bluetoothSocket?.outputStream?.write(command.toByteArray())
-                                        com.example.android.network.BluetoothController.bluetoothSocket?.outputStream?.flush()
-                                    } catch (e: Exception) {
-                                        android.util.Log.e("Bluetooth", "Error enviando comando", e)
-                                    }
-                                    com.example.android.network.BluetoothController.disconnect()
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                gestureAnalyzer.sequenceDetector.resetAll()
+            }, 3000)
         }
     }
 

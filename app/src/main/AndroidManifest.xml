@@ -33,6 +33,11 @@
         <activity android:name=".EspConfigActivity" android:exported="true" />
         <activity android:name=".DeviceCameraActivity" android:exported="true" />
         
+        <!-- IA Simple Activities -->
+        <activity android:name=".ai.ComboListActivity" />
+        <activity android:name=".ai.SecuenciaConfigActivity" />
+        <activity android:name=".ai.PasoWizardActivity" />
+        
         <service
             android:name=".ai.BackgroundCameraService"
             android:enabled="true"

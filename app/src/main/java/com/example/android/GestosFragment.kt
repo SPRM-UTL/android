@@ -1,63 +1,56 @@
 package com.example.android
 
-import android.app.Dialog
+import android.app.TimePickerDialog
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
-import android.util.Log
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.Window
-import android.widget.ArrayAdapter
 import android.widget.Button
-import android.widget.Spinner
-import android.widget.Toast
-import android.widget.ImageView
-import android.widget.TextView
 import android.widget.ImageButton
-import android.os.Handler
-import android.os.Looper
-import android.content.Intent
-import androidx.constraintlayout.motion.widget.MotionLayout
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import android.widget.ImageView
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.widget.SwitchCompat
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.example.android.db.AppDatabase
-import com.example.android.db.Dispositivo
-import com.example.android.db.Gesto
-import com.example.android.network.ApiHandler
-import com.example.android.network.RetrofitClient
-import com.example.android.ui.GestureAdapter
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.textfield.MaterialAutoCompleteTextView
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import com.example.android.ai.CameraSharedState
+import androidx.activity.result.contract.ActivityResultContracts
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 import com.example.android.ai.BackgroundCameraService
+import com.example.android.ai.CameraSharedState
+import com.example.android.ai.ComboListActivity
 import com.example.android.ai.OverlayView
-import com.google.android.material.switchmaterial.SwitchMaterial
+import com.example.android.ai.PrefsManager
 
 class GestosFragment : Fragment() {
 
-    private lateinit var gestureAdapter: GestureAdapter
-    private lateinit var db: AppDatabase
-    private var dispositivosLocales: List<Dispositivo> = emptyList()
-
     private var cameraMode = 0 // 0: Frontal, 1: Trasera, 2: Wi-Fi IP
     private var ipCameraUrl = ""
-    private val uiHandler = Handler(Looper.getMainLooper())
-    private lateinit var overlayView: OverlayView
-    private lateinit var viewFinder: ImageView
-    private lateinit var tvCurrentAction: TextView
-    private lateinit var switchCameraService: SwitchMaterial
 
+    private lateinit var viewFinder: ImageView
+    private lateinit var overlayView: OverlayView
+    private lateinit var switchService: SwitchCompat
+    private lateinit var btnSchedule: Button
+    private lateinit var btnSwitchCamera: ImageButton
+
+    private val requestCameraPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            proceedStartCamera()
+        } else {
+            switchService.isChecked = false
+        }
+    }
+
+    private val uiHandler = Handler(Looper.getMainLooper())
     private val updateRunnable = object : Runnable {
         override fun run() {
+            if (!isAdded) return
+            
             if (CameraSharedState.isServiceRunning) {
                 CameraSharedState.latestBitmap?.let { bmp ->
                     viewFinder.setImageBitmap(bmp)
@@ -70,81 +63,40 @@ class GestosFragment : Fragment() {
                     CameraSharedState.imageHeight
                 )
                 
-                tvCurrentAction.text = CameraSharedState.currentAction
+                overlayView.updateAction(CameraSharedState.currentAction)
             } else {
                 viewFinder.setImageBitmap(null)
                 overlayView.updateResults(null, null, 1, 1)
-                tvCurrentAction.text = "Ninguno"
             }
             uiHandler.postDelayed(this, 33) // ~30 fps
         }
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        return inflater.inflate(R.layout.fragment_gestos, container, false)
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        db = AppDatabase.getDatabase(requireContext())
-
-        val mainGestos = view.findViewById<MotionLayout>(R.id.mainGestos)
-        ViewCompat.setOnApplyWindowInsetsListener(mainGestos) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
-            insets
-        }
-
-        mainGestos.post {
-            mainGestos.transitionToEnd()
-        }
-
-        setupRecyclerView(view)
-
-        view.findViewById<FloatingActionButton>(R.id.fabAddGesture).setOnClickListener {
-            showGestureDialog(null)
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            db.dispositivoDao().getAllDispositivos().collectLatest { dispositivos ->
-                dispositivosLocales = dispositivos
-                gestureAdapter.notifyDataSetChanged()
-            }
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            db.gestoDao().getAllGestos().collectLatest { gestos ->
-                gestureAdapter.submitList(gestos)
-            }
-        }
-
-        syncGestosFromApi()
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        val view = inflater.inflate(R.layout.fragment_gestos, container, false)
         
-        setupAIControls(view)
-    }
-
-    private fun setupAIControls(view: View) {
-        overlayView = view.findViewById(R.id.overlayView)
         viewFinder = view.findViewById(R.id.viewFinder)
-        tvCurrentAction = view.findViewById(R.id.tvCurrentAction)
-        switchCameraService = view.findViewById(R.id.switchCameraService)
+        overlayView = view.findViewById(R.id.overlayView)
+        switchService = view.findViewById(R.id.switchService)
+        btnSchedule = view.findViewById(R.id.btnSchedule)
+        btnSwitchCamera = view.findViewById(R.id.btnSwitchCamera)
 
-        val btnSwitchCamera = view.findViewById<ImageButton>(R.id.btnSwitchCamera)
+        view.setOnLongClickListener {
+            val intent = Intent(requireContext(), ComboListActivity::class.java)
+            startActivity(intent)
+            true
+        }
 
         btnSwitchCamera.setOnClickListener {
             val options = arrayOf("Cámara Frontal", "Cámara Trasera", "Cámara Wi-Fi IP")
-            androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            AlertDialog.Builder(requireContext())
                 .setTitle("Seleccionar Cámara")
                 .setSingleChoiceItems(options, cameraMode) { dialog, which ->
                     cameraMode = which
                     if (cameraMode == 2) {
-                        showIpCameraDialog()
+                        checkEspCamera()
                     } else {
-                        if (switchCameraService.isChecked) {
+                        if (switchService.isChecked) {
                             startCameraService()
                         }
                     }
@@ -153,18 +105,104 @@ class GestosFragment : Fragment() {
                 .show()
         }
 
-        switchCameraService.isChecked = CameraSharedState.isServiceRunning
-        switchCameraService.setOnCheckedChangeListener { _, isChecked ->
+        switchService.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
-                if (cameraMode == 2 && ipCameraUrl.isEmpty()) {
-                    showIpCameraDialog()
-                } else {
-                    startCameraService()
-                }
+                checkAndStartCamera()
             } else {
                 stopCameraService()
             }
         }
+
+        btnSchedule.setOnClickListener {
+            showScheduleDialog()
+        }
+
+        updateScheduleButtonUI()
+        
+        return view
+    }
+
+    private fun checkAndStartCamera() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            proceedStartCamera()
+        } else {
+            requestCameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    private fun proceedStartCamera() {
+        if (cameraMode == 2 && ipCameraUrl.isEmpty()) {
+            checkEspCamera()
+        } else {
+            startCameraService()
+        }
+    }
+
+    private fun checkEspCamera() {
+        val prefs = requireContext().getSharedPreferences("EspConfigPrefs", Context.MODE_PRIVATE)
+        val savedIp = prefs.getString("saved_device_ip", "")
+        
+        if (!savedIp.isNullOrEmpty()) {
+            ipCameraUrl = "http://$savedIp:81/stream"
+            switchService.isChecked = true
+            startCameraService()
+        } else {
+            showIpCameraDialog()
+        }
+    }
+
+    private fun showScheduleDialog() {
+        val options = arrayOf("Activo 24/7", "Programar Horario")
+        val currentSelection = if (PrefsManager.isScheduleEnabled(requireContext())) 1 else 0
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Configurar Horario")
+            .setSingleChoiceItems(options, currentSelection) { dialog, which ->
+                if (which == 0) {
+                    PrefsManager.setScheduleEnabled(requireContext(), false)
+                    updateScheduleButtonUI()
+                    notifyServiceScheduleChanged()
+                    dialog.dismiss()
+                } else {
+                    dialog.dismiss()
+                    showTimePickerForStart()
+                }
+            }
+            .show()
+    }
+
+    private fun showTimePickerForStart() {
+        val currentHour = PrefsManager.getStartHour(requireContext())
+        val currentMinute = PrefsManager.getStartMinute(requireContext())
+        
+        TimePickerDialog(requireContext(), { _, hour, minute ->
+            PrefsManager.setStartHour(requireContext(), hour)
+            PrefsManager.setStartMinute(requireContext(), minute)
+            showTimePickerForEnd()
+        }, currentHour, currentMinute, true).apply {
+            setTitle("Hora de INICIO")
+            show()
+        }
+    }
+
+    private fun showTimePickerForEnd() {
+        val currentHour = PrefsManager.getEndHour(requireContext())
+        val currentMinute = PrefsManager.getEndMinute(requireContext())
+        
+        TimePickerDialog(requireContext(), { _, hour, minute ->
+            PrefsManager.setEndHour(requireContext(), hour)
+            PrefsManager.setEndMinute(requireContext(), minute)
+            PrefsManager.setScheduleEnabled(requireContext(), true)
+            updateScheduleButtonUI()
+            notifyServiceScheduleChanged()
+        }, currentHour, currentMinute, true).apply {
+            setTitle("Hora de FIN")
+            show()
+        }
+    }
+
+    private fun updateScheduleButtonUI() {
+        btnSchedule.text = "🕒 " + PrefsManager.getScheduleString(requireContext())
     }
 
     private fun showIpCameraDialog() {
@@ -172,17 +210,17 @@ class GestosFragment : Fragment() {
         input.hint = "http://192.168.1.100:81/stream"
         input.setText(ipCameraUrl)
         
-        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+        AlertDialog.Builder(requireContext())
             .setTitle("URL de Cámara Wi-Fi")
             .setView(input)
             .setPositiveButton("Conectar") { _, _ ->
                 ipCameraUrl = input.text.toString()
-                switchCameraService.isChecked = true
+                switchService.isChecked = true
                 startCameraService()
             }
             .setNegativeButton("Cancelar") { _, _ ->
                 if (!CameraSharedState.isServiceRunning) {
-                    switchCameraService.isChecked = false
+                    switchService.isChecked = false
                 }
             }
             .show()
@@ -204,23 +242,28 @@ class GestosFragment : Fragment() {
         requireContext().startService(intent)
     }
 
+    private fun notifyServiceScheduleChanged() {
+        if (CameraSharedState.isServiceRunning) {
+            val intent = Intent(requireContext(), BackgroundCameraService::class.java).apply {
+                action = BackgroundCameraService.ACTION_UPDATE_SCHEDULE
+            }
+            requireContext().startService(intent)
+        }
+    }
+
     override fun onResume() {
         super.onResume()
-        if (::switchCameraService.isInitialized) {
-            switchCameraService.setOnCheckedChangeListener(null)
-            switchCameraService.isChecked = CameraSharedState.isServiceRunning
-            switchCameraService.setOnCheckedChangeListener { _, isChecked ->
-                if (isChecked) {
-                    if (cameraMode == 2 && ipCameraUrl.isEmpty()) {
-                        showIpCameraDialog()
-                    } else {
-                        startCameraService()
-                    }
-                } else {
-                    stopCameraService()
-                }
+        switchService.setOnCheckedChangeListener(null)
+        switchService.isChecked = CameraSharedState.isServiceRunning
+        switchService.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                checkAndStartCamera()
+            } else {
+                stopCameraService()
             }
         }
+        updateScheduleButtonUI()
+
         if (CameraSharedState.isServiceRunning) {
             val intent = Intent(requireContext(), BackgroundCameraService::class.java).apply {
                 action = BackgroundCameraService.ACTION_RELOAD_COMBOS
@@ -233,176 +276,5 @@ class GestosFragment : Fragment() {
     override fun onPause() {
         super.onPause()
         uiHandler.removeCallbacks(updateRunnable)
-    }
-
-    private fun setupRecyclerView(view: View) {
-        val rvGestos = view.findViewById<RecyclerView>(R.id.rvGestos)
-        rvGestos.layoutManager = GridLayoutManager(requireContext(), 2)
-        gestureAdapter = GestureAdapter(
-            getDeviceName = { deviceId ->
-                if (deviceId == null) "Sin asignar"
-                else dispositivosLocales.find { it.id == deviceId }?.nombre ?: "Desconocido"
-            },
-            onEditClick = { showGestureDialog(it) },
-            onDeleteClick = { deleteGesto(it) },
-            onToggleClick = { gesto, isChecked ->
-                Toast.makeText(requireContext(), "${gesto.nombre} -> $isChecked", Toast.LENGTH_SHORT).show()
-            }
-        )
-        rvGestos.adapter = gestureAdapter
-    }
-
-    private fun syncGestosFromApi() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            ApiHandler.safeApiCall(
-                activity = requireActivity(),
-                showLoading = false,
-                apiCall = {
-                    val token = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE).getString("apiToken", "") ?: ""
-                    RetrofitClient.gestureService.getGestos("Bearer $token")
-                },
-                onSuccess = { response ->
-                    val apiGestos = response.data
-                    withContext(Dispatchers.IO) {
-                        db.gestoDao().deleteAllGestos()
-                        db.gestoDao().insertAll(apiGestos)
-                    }
-                },
-                onError = {
-                    Log.e("GestosFragment", "Error syncing gestos: $it")
-                }
-            )
-        }
-    }
-
-    private fun showGestureDialog(gestoExistente: Gesto?) {
-        val dialog = Dialog(requireContext())
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-        dialog.setContentView(R.layout.dialog_gesture_form)
-        dialog.window?.setLayout(
-            (resources.displayMetrics.widthPixels * 0.9).toInt(),
-            android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-        )
-
-        val etName = dialog.findViewById<MaterialAutoCompleteTextView>(R.id.etGestureName)
-        val spinnerDevices = dialog.findViewById<Spinner>(R.id.spinnerDevices)
-
-        val deviceNames = dispositivosLocales.map { it.nombre ?: "Desconocido" }.toMutableList()
-        deviceNames.add(0, "Ninguno (Sin asignar)")
-        
-        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, deviceNames)
-        spinnerDevices.adapter = adapter
-
-        val gestosValidos = listOf("Manos Arriba", "Una Mano Arriba", "Agitar la Mano", "Abrir Puño", "Cerrar Puño")
-        val gestoAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, gestosValidos)
-        etName.setAdapter(gestoAdapter)
-
-        if (gestoExistente != null) {
-            etName.setText(gestoExistente.nombre, false)
-            
-            val deviceIndex = dispositivosLocales.indexOfFirst { it.id == gestoExistente.aparatoId }
-            if (deviceIndex != -1) {
-                spinnerDevices.setSelection(deviceIndex + 1)
-            }
-        }
-
-        dialog.findViewById<Button>(R.id.btnCancel).setOnClickListener {
-            dialog.dismiss()
-        }
-
-        dialog.findViewById<Button>(R.id.btnSave).setOnClickListener {
-            val name = etName.text.toString()
-
-            if (name.isNotBlank()) {
-                val selectedPos = spinnerDevices.selectedItemPosition
-                val assignedDeviceId = if (selectedPos > 0) dispositivosLocales[selectedPos - 1].id else null
-
-                val confianzaAutomatica = when (name) {
-                    "Manos Arriba" -> 85.0
-                    "Cerrar Puño" -> 85.0
-                    "Una Mano Arriba" -> 80.0
-                    "Abrir Puño" -> 80.0
-                    "Agitar la Mano" -> 70.0
-                    else -> 80.0
-                }
-
-                val nuevoGesto = Gesto(
-                    id = gestoExistente?.id ?: 0,
-                    bkId = gestoExistente?.bkId ?: 0,
-                    nombre = name,
-                    identificadorIa = gestoExistente?.identificadorIa ?: 1,
-                    nivelConfianzaMinimo = confianzaAutomatica,
-                    tipoDisparadorNombre = "Continuo",
-                    aparatoId = assignedDeviceId
-                )
-                saveGesto(nuevoGesto, isUpdate = gestoExistente != null)
-                dialog.dismiss()
-            } else {
-                Toast.makeText(requireContext(), "Debe seleccionar un gesto", Toast.LENGTH_SHORT).show()
-            }
-        }
-        dialog.show()
-    }
-
-    private fun saveGesto(gesto: Gesto, isUpdate: Boolean) {
-        viewLifecycleOwner.lifecycleScope.launch {
-            ApiHandler.safeApiCall(
-                activity = requireActivity(),
-                showLoading = true,
-                loadingTitle = "Guardando",
-                loadingMessage = "Guardando gesto...",
-                apiCall = {
-                    val token = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE).getString("apiToken", "") ?: ""
-                    val bearer = "Bearer $token"
-                    if (isUpdate) {
-                        RetrofitClient.gestureService.updateGesto(bearer, gesto.id, gesto)
-                        retrofit2.Response.success(com.example.android.network.ApiResponse(true, 200, gesto))
-                    } else {
-                        RetrofitClient.gestureService.createGesto(bearer, gesto)
-                    }
-                },
-                onSuccess = { response ->
-                    val savedGesto = response.data
-                    if (savedGesto != null) {
-                        withContext(Dispatchers.IO) {
-                            db.gestoDao().insertGesto(savedGesto)
-                        }
-                        Toast.makeText(requireContext(), "Guardado exitoso", Toast.LENGTH_SHORT).show()
-                    }
-                },
-                onError = { errorMsg ->
-                    if (errorMsg != "Sesión expirada") {
-                        Toast.makeText(requireContext(), errorMsg, Toast.LENGTH_SHORT).show()
-                    }
-                }
-            )
-        }
-    }
-
-    private fun deleteGesto(gesto: Gesto) {
-        viewLifecycleOwner.lifecycleScope.launch {
-            ApiHandler.safeApiCall(
-                activity = requireActivity(),
-                showLoading = true,
-                loadingTitle = "Eliminando",
-                loadingMessage = "Eliminando gesto...",
-                apiCall = {
-                    val token = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE).getString("apiToken", "") ?: ""
-                    RetrofitClient.gestureService.deleteGesto("Bearer $token", gesto.id)
-                },
-                onSuccess = {
-                    withContext(Dispatchers.IO) {
-                        db.gestoDao().deleteGesto(gesto)
-                    }
-                    Toast.makeText(requireContext(), "Eliminado exitoso", Toast.LENGTH_SHORT).show()
-                },
-                onError = { errorMsg ->
-                    if (errorMsg != "Sesión expirada") {
-                        Toast.makeText(requireContext(), errorMsg, Toast.LENGTH_SHORT).show()
-                    }
-                }
-            )
-        }
     }
 }

@@ -1,4 +1,5 @@
-package com.example.android.ai
+﻿package com.example.android.ai
+import com.example.android.R
 
 import com.google.mediapipe.tasks.components.containers.NormalizedLandmark
 import kotlin.math.hypot

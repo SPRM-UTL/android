@@ -1,4 +1,5 @@
-package com.example.android.ai
+﻿package com.example.android.ai
+import com.example.android.R
 
 import android.content.Context
 import android.graphics.Canvas
