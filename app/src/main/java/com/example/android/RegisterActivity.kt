@@ -14,6 +14,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
+import com.example.android.network.ApiHandler
 import com.example.android.network.RegisterRequest
 import com.example.android.network.RetrofitClient
 import com.example.android.view.CustomDialog
@@ -243,18 +244,17 @@ class RegisterActivity : AppCompatActivity() {
 
         btnCrearCuenta.isEnabled = false
 
-        CustomDialog.showDialog(
-            titleDialog = "Registrando",
-            subtitleDialog = "Creando tu cuenta, por favor espera...",
-            type = CustomDialog.DialogType.LOADING
-        )
-
         lifecycleScope.launch {
-            try {
-                val response = RetrofitClient.apiService.registrar(request)
-
-                if (response.isSuccessful && response.body() != null) {
-                    val mensajeServidor = response.body()!!.data.mensaje
+            ApiHandler.safeApiCall(
+                activity = this@RegisterActivity,
+                showLoading = true,
+                loadingTitle = "Registrando",
+                loadingMessage = "Creando tu cuenta, por favor espera...",
+                apiCall = {
+                    RetrofitClient.apiService.registrar(request)
+                },
+                onSuccess = { response ->
+                    val mensajeServidor = response.data.mensaje
                     
                     CustomDialog.showSuccessDialog(
                         titleDialog = "¡Registro Exitoso!",
@@ -262,8 +262,8 @@ class RegisterActivity : AppCompatActivity() {
                     ) {
                         finish()
                     }
-                } else {
-                    val errorMsg = response.errorBody()?.string() ?: "Error al registrar"
+                },
+                onError = { errorMsg ->
                     CustomDialog.showErrorDialog(
                         titleDialog = "Error de registro",
                         subtitleDialog = errorMsg,
@@ -271,14 +271,7 @@ class RegisterActivity : AppCompatActivity() {
                         backAction = { btnCrearCuenta.isEnabled = true }
                     )
                 }
-            } catch (e: Exception) {
-                CustomDialog.showErrorDialog(
-                    titleDialog = "Error de conexión",
-                    subtitleDialog = "No se pudo conectar con el servidor: ${e.message}",
-                    retryAction = { llamarApiRegistro() },
-                    backAction = { btnCrearCuenta.isEnabled = true }
-                )
-            }
+            )
         }
     }
 }

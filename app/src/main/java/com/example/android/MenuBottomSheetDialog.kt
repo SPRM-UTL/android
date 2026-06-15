@@ -10,11 +10,12 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.Toast
-import androidx.lifecycle.lifecycleScope
+import com.example.android.network.ApiHandler
 import com.example.android.network.RetrofitClient
 import com.example.android.view.Snackbars
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import kotlinx.coroutines.launch
+import androidx.lifecycle.lifecycleScope
 
 class MenuBottomSheetDialog(
     private val appContext: Context
@@ -71,32 +72,45 @@ class MenuBottomSheetDialog(
         val sharedPref = appContext.getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
         val tokenGuardado = sharedPref.getString("apiToken", "") ?: ""
 
-        lifecycleScope.launch {
-            try {
-                if (tokenGuardado.isNotEmpty()) {
-                    RetrofitClient.apiService.logout(tokenGuardado)
-                }
-            } catch (_: Exception) {
-            }
-
-            sharedPref.edit()
-                .putBoolean("isLoggedIn", false)
-                .putString("apiToken", "")
-                .apply()
-
-            Snackbars.success(
-                requireActivity().findViewById(android.R.id.content),
-                "Sesión cerrada correctamente",
-                Toast.LENGTH_SHORT
-            ).show()
-
-            val intent = Intent(appContext, MainActivity::class.java).apply {
-                putExtra("FROM_LOGOUT", true)
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            }
-
-            startActivity(intent)
-            requireActivity().finish()
+        if (tokenGuardado.isEmpty()) {
+            performLocalLogout(sharedPref)
+            return
         }
+
+        lifecycleScope.launch {
+            ApiHandler.safeApiCall(
+                activity = requireActivity(),
+                showLoading = true,
+                loadingTitle = "Cerrando sesión",
+                loadingMessage = "Por favor espera...",
+                apiCall = {
+                    RetrofitClient.apiService.logout("Bearer $tokenGuardado")
+                },
+                onSuccess = {
+                    performLocalLogout(sharedPref)
+                },
+                onError = {
+                    performLocalLogout(sharedPref)
+                }
+            )
+        }
+    }
+
+    private fun performLocalLogout(sharedPref: android.content.SharedPreferences) {
+        sharedPref.edit().clear().apply()
+
+        Snackbars.success(
+            requireActivity().findViewById(android.R.id.content),
+            "Sesión cerrada correctamente",
+            Toast.LENGTH_SHORT
+        ).show()
+
+        val intent = Intent(appContext, MainActivity::class.java).apply {
+            putExtra("FROM_LOGOUT", true)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+
+        startActivity(intent)
+        requireActivity().finish()
     }
 }
