@@ -120,4 +120,7 @@ dependencies {
     // MediaPipe for AI Gesture Detection
     implementation("com.google.mediapipe:tasks-vision:0.10.14")
     implementation("androidx.lifecycle:lifecycle-service:2.6.2")
+    
+    // TapTargetView for App Tutorial
+    implementation("com.getkeepsafe.taptargetview:taptargetview:1.13.3")
 }
