@@ -147,6 +147,20 @@ class GestosFragment : Fragment() {
             bottomSheet.dismiss()
         }
 
+        val switchLandmarks = view.findViewById<androidx.appcompat.widget.SwitchCompat>(R.id.switchShowLandmarks)
+        val switchAction = view.findViewById<androidx.appcompat.widget.SwitchCompat>(R.id.switchShowAction)
+
+        switchLandmarks.isChecked = PrefsManager.isShowLandmarks(requireContext())
+        switchAction.isChecked = PrefsManager.isShowAction(requireContext())
+
+        switchLandmarks.setOnCheckedChangeListener { _, isChecked ->
+            PrefsManager.setShowLandmarks(requireContext(), isChecked)
+        }
+
+        switchAction.setOnCheckedChangeListener { _, isChecked ->
+            PrefsManager.setShowAction(requireContext(), isChecked)
+        }
+
         btnConfigGestos.setOnClickListener {
             bottomSheet.dismiss()
             val intent = Intent(requireContext(), ComboListActivity::class.java)

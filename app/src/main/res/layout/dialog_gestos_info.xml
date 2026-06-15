@@ -61,6 +61,38 @@
             android:paddingVertical="8dp"/>
     </RadioGroup>
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Ajustes Visuales de la Cámara"
+        android:textColor="#6F7E8E"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="12dp"/>
+
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/switchShowLandmarks"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Mostrar Puntos del Cuerpo (Landmarks)"
+        android:textSize="16sp"
+        android:textColor="#073F4C"
+        android:paddingVertical="8dp"
+        app:thumbTint="@color/teal_primary"
+        app:trackTint="#D7E7EA"/>
+
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/switchShowAction"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Mostrar Combo/Acción Actual"
+        android:textSize="16sp"
+        android:textColor="#073F4C"
+        android:paddingVertical="8dp"
+        android:layout_marginBottom="24dp"
+        app:thumbTint="@color/teal_primary"
+        app:trackTint="#D7E7EA"/>
+
     <Button
         android:id="@+id/btnConfigGestos"
         android:layout_width="match_parent"

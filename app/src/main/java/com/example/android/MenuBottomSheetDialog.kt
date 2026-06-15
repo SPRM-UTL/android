@@ -64,7 +64,8 @@ class MenuBottomSheetDialog(
         view.findViewById<LinearLayout>(R.id.logout)
             .setOnClickListener {
                 logout()
-                dismiss()
+                // dismiss() is removed here because if we dismiss, the lifecycleScope gets cancelled 
+                // and the API call hangs, leaving the loading dialog stuck.
             }
     }
 

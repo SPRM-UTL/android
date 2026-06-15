@@ -168,7 +168,9 @@ class ProfileActivity : AppCompatActivity() {
         }
 
         findViewById<MaterialButton>(R.id.logout)?.let { botonLogout ->
-            // Se puede cargar icono local si se requiere
+            botonLogout.setOnClickListener {
+                logout()
+            }
         }
     }
 
@@ -312,6 +314,52 @@ class ProfileActivity : AppCompatActivity() {
                 }
             )
         }
+    }
+
+    private fun logout() {
+        val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+        val tokenGuardado = sharedPref.getString("apiToken", "") ?: ""
+
+        if (tokenGuardado.isEmpty()) {
+            performLocalLogout(sharedPref)
+            return
+        }
+
+        lifecycleScope.launch {
+            ApiHandler.safeApiCall(
+                activity = this@ProfileActivity,
+                showLoading = true,
+                loadingTitle = "Cerrando sesión",
+                loadingMessage = "Por favor espera...",
+                apiCall = {
+                    RetrofitClient.apiService.logout("Bearer $tokenGuardado")
+                },
+                onSuccess = {
+                    performLocalLogout(sharedPref)
+                },
+                onError = {
+                    performLocalLogout(sharedPref)
+                }
+            )
+        }
+    }
+
+    private fun performLocalLogout(sharedPref: android.content.SharedPreferences) {
+        sharedPref.edit().clear().apply()
+
+        Snackbars.success(
+            findViewById(android.R.id.content),
+            "Sesión cerrada correctamente",
+            Toast.LENGTH_SHORT
+        ).show()
+
+        val intent = Intent(this, MainActivity::class.java).apply {
+            putExtra("FROM_LOGOUT", true)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+
+        startActivity(intent)
+        finish()
     }
 
     override fun onDestroy() {

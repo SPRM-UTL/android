@@ -395,18 +395,21 @@ class MainActivity : AppCompatActivity() {
                 )
 
             if (estaLogueado) {
-
                 manteniendoSplash = false
-
-                delay(500) // Un poco más de tiempo para que el splash termine de salir
-
+                delay(300) // Tiempo breve para evitar parpadeos
                 intentarLoginBiometrico()
-
                 return@launch
             }
-            delay(500)
-
+            delay(300)
             manteniendoSplash = false
+
+            // Aseguramos que se muestre el formulario de login si no hay sesión
+            findViewById<MotionLayout>(R.id.motionLayout)?.post {
+                val motionLayout = findViewById<MotionLayout>(R.id.motionLayout)
+                if (motionLayout?.currentState == R.id.start) {
+                    motionLayout.transitionToEnd()
+                }
+            }
         }
     }
 
@@ -489,16 +492,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         splashScreen.setOnExitAnimationListener { splashProvider ->
-
-            lifecycleScope.launch {
-
-                delay(2000)
-
-                splashProvider.remove()
-
-                findViewById<MotionLayout>(
-                    R.id.motionLayout
-                )?.transitionToEnd()
+            splashProvider.remove()
+            findViewById<MotionLayout>(R.id.motionLayout)?.let { motionLayout ->
+                if (motionLayout.currentState == R.id.start) {
+                    motionLayout.transitionToEnd()
+                }
             }
         }
     }

@@ -1,4 +1,4 @@
-﻿package com.example.android.ai
+package com.example.android.ai
 import com.example.android.R
 
 import android.content.Context
@@ -39,4 +39,13 @@ object PrefsManager {
         val em = getEndMinute(context).toString().padStart(2, '0')
         return "$sh:$sm - $eh:$em"
     }
+    
+    private const val KEY_SHOW_LANDMARKS = "show_landmarks"
+    private const val KEY_SHOW_ACTION = "show_action"
+
+    fun isShowLandmarks(context: Context): Boolean = getPrefs(context).getBoolean(KEY_SHOW_LANDMARKS, true)
+    fun setShowLandmarks(context: Context, show: Boolean) = getPrefs(context).edit().putBoolean(KEY_SHOW_LANDMARKS, show).apply()
+
+    fun isShowAction(context: Context): Boolean = getPrefs(context).getBoolean(KEY_SHOW_ACTION, true)
+    fun setShowAction(context: Context, show: Boolean) = getPrefs(context).edit().putBoolean(KEY_SHOW_ACTION, show).apply()
 }

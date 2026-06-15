@@ -1,4 +1,4 @@
-﻿package com.example.android.ai
+package com.example.android.ai
 import com.example.android.R
 
 import android.content.Context
@@ -83,24 +83,26 @@ class OverlayView(context: Context, attrs: AttributeSet?) : View(context, attrs)
         }
 
         // Dibujar puntos de la pose
-        poseResult?.landmarks()?.forEach { landmarkList ->
-            landmarkList.forEach { landmark ->
-                val x = (landmark.x() * imageWidth * scaleFactor) + dx
-                val y = (landmark.y() * imageHeight * scaleFactor) + dy
-                canvas.drawCircle(x, y, 8f, pointPaint)
+        if (PrefsManager.isShowLandmarks(context)) {
+            poseResult?.landmarks()?.forEach { landmarkList ->
+                landmarkList.forEach { landmark ->
+                    val x = (landmark.x() * imageWidth * scaleFactor) + dx
+                    val y = (landmark.y() * imageHeight * scaleFactor) + dy
+                    canvas.drawCircle(x, y, 8f, pointPaint)
+                }
+            }
+
+            // Dibujar puntos de las manos
+            handResult?.landmarks()?.forEach { landmarkList ->
+                landmarkList.forEach { landmark ->
+                    val x = (landmark.x() * imageWidth * scaleFactor) + dx
+                    val y = (landmark.y() * imageHeight * scaleFactor) + dy
+                    canvas.drawCircle(x, y, 8f, pointPaint)
+                }
             }
         }
 
-        // Dibujar puntos de las manos
-        handResult?.landmarks()?.forEach { landmarkList ->
-            landmarkList.forEach { landmark ->
-                val x = (landmark.x() * imageWidth * scaleFactor) + dx
-                val y = (landmark.y() * imageHeight * scaleFactor) + dy
-                canvas.drawCircle(x, y, 8f, pointPaint)
-            }
-        }
-
-        if (currentAction != "Ninguno" && currentAction.isNotBlank()) {
+        if (PrefsManager.isShowAction(context) && currentAction != "Ninguno" && currentAction.isNotBlank()) {
             val lines = currentAction.split("\n").filter { it.isNotBlank() }
             if (lines.isEmpty()) return
 
