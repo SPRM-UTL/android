@@ -12,8 +12,13 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.RadioButton
+import android.widget.RadioGroup
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SwitchCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.activity.result.contract.ActivityResultContracts
 import android.Manifest
@@ -24,6 +29,7 @@ import com.example.android.ai.CameraSharedState
 import com.example.android.ai.ComboListActivity
 import com.example.android.ai.OverlayView
 import com.example.android.ai.PrefsManager
+import com.example.android.ai.ScheduleActivity
 
 class GestosFragment : Fragment() {
 
@@ -33,8 +39,8 @@ class GestosFragment : Fragment() {
     private lateinit var viewFinder: ImageView
     private lateinit var overlayView: OverlayView
     private lateinit var switchService: SwitchCompat
-    private lateinit var btnSchedule: Button
-    private lateinit var btnSwitchCamera: ImageButton
+    private lateinit var btnInfo: ImageButton
+    private lateinit var tvNoCameraInfo: android.widget.TextView
 
     private val requestCameraPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -64,9 +70,11 @@ class GestosFragment : Fragment() {
                 )
                 
                 overlayView.updateAction(CameraSharedState.currentAction)
+                tvNoCameraInfo.visibility = View.GONE
             } else {
                 viewFinder.setImageBitmap(null)
                 overlayView.updateResults(null, null, 1, 1)
+                tvNoCameraInfo.visibility = View.VISIBLE
             }
             uiHandler.postDelayed(this, 33) // ~30 fps
         }
@@ -78,48 +86,80 @@ class GestosFragment : Fragment() {
         viewFinder = view.findViewById(R.id.viewFinder)
         overlayView = view.findViewById(R.id.overlayView)
         switchService = view.findViewById(R.id.switchService)
-        btnSchedule = view.findViewById(R.id.btnSchedule)
-        btnSwitchCamera = view.findViewById(R.id.btnSwitchCamera)
+        btnInfo = view.findViewById(R.id.btnInfo)
+        tvNoCameraInfo = view.findViewById(R.id.tvNoCameraInfo)
 
-        view.setOnLongClickListener {
-            val intent = Intent(requireContext(), ComboListActivity::class.java)
-            startActivity(intent)
-            true
+        ViewCompat.setOnApplyWindowInsetsListener(view) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(bars.left, bars.top, bars.right, bars.bottom + (90 * resources.displayMetrics.density).toInt())
+            insets
         }
 
-        btnSwitchCamera.setOnClickListener {
-            val options = arrayOf("Cámara Frontal", "Cámara Trasera", "Cámara Wi-Fi IP")
-            AlertDialog.Builder(requireContext())
-                .setTitle("Seleccionar Cámara")
-                .setSingleChoiceItems(options, cameraMode) { dialog, which ->
-                    cameraMode = which
-                    if (cameraMode == 2) {
-                        checkEspCamera()
-                    } else {
-                        if (switchService.isChecked) {
-                            startCameraService()
-                        }
-                    }
-                    dialog.dismiss()
-                }
-                .show()
+        btnInfo.setOnClickListener {
+            showInfoDialog()
         }
 
         switchService.setOnCheckedChangeListener { _, isChecked ->
+            switchService.text = if (isChecked) "Encendido" else "Apagado"
             if (isChecked) {
                 checkAndStartCamera()
             } else {
                 stopCameraService()
             }
         }
-
-        btnSchedule.setOnClickListener {
-            showScheduleDialog()
-        }
-
-        updateScheduleButtonUI()
         
         return view
+    }
+
+    private fun showInfoDialog() {
+        val bottomSheet = BottomSheetDialog(requireContext())
+        val view = layoutInflater.inflate(R.layout.dialog_gestos_info, null)
+        bottomSheet.setContentView(view)
+
+        val rgCameraMode = view.findViewById<RadioGroup>(R.id.rgCameraMode)
+        val rbCamFrontal = view.findViewById<RadioButton>(R.id.rbCamFrontal)
+        val rbCamTrasera = view.findViewById<RadioButton>(R.id.rbCamTrasera)
+        val rbCamWifi = view.findViewById<RadioButton>(R.id.rbCamWifi)
+        val btnConfigGestos = view.findViewById<Button>(R.id.btnConfigGestos)
+        val btnHorario = view.findViewById<Button>(R.id.btnHorario)
+
+        btnHorario.text = "🕒 " + PrefsManager.getScheduleString(requireContext())
+
+        when (cameraMode) {
+            0 -> rbCamFrontal.isChecked = true
+            1 -> rbCamTrasera.isChecked = true
+            2 -> rbCamWifi.isChecked = true
+        }
+
+        rgCameraMode.setOnCheckedChangeListener { _, checkedId ->
+            cameraMode = when (checkedId) {
+                R.id.rbCamFrontal -> 0
+                R.id.rbCamTrasera -> 1
+                else -> 2
+            }
+            if (cameraMode == 2) {
+                checkEspCamera()
+            } else {
+                if (switchService.isChecked) {
+                    startCameraService()
+                }
+            }
+            bottomSheet.dismiss()
+        }
+
+        btnConfigGestos.setOnClickListener {
+            bottomSheet.dismiss()
+            val intent = Intent(requireContext(), ComboListActivity::class.java)
+            startActivity(intent)
+        }
+
+        btnHorario.setOnClickListener {
+            bottomSheet.dismiss()
+            val intent = Intent(requireContext(), ScheduleActivity::class.java)
+            startActivity(intent)
+        }
+
+        bottomSheet.show()
     }
 
     private fun checkAndStartCamera() {
@@ -151,59 +191,7 @@ class GestosFragment : Fragment() {
         }
     }
 
-    private fun showScheduleDialog() {
-        val options = arrayOf("Activo 24/7", "Programar Horario")
-        val currentSelection = if (PrefsManager.isScheduleEnabled(requireContext())) 1 else 0
 
-        AlertDialog.Builder(requireContext())
-            .setTitle("Configurar Horario")
-            .setSingleChoiceItems(options, currentSelection) { dialog, which ->
-                if (which == 0) {
-                    PrefsManager.setScheduleEnabled(requireContext(), false)
-                    updateScheduleButtonUI()
-                    notifyServiceScheduleChanged()
-                    dialog.dismiss()
-                } else {
-                    dialog.dismiss()
-                    showTimePickerForStart()
-                }
-            }
-            .show()
-    }
-
-    private fun showTimePickerForStart() {
-        val currentHour = PrefsManager.getStartHour(requireContext())
-        val currentMinute = PrefsManager.getStartMinute(requireContext())
-        
-        TimePickerDialog(requireContext(), { _, hour, minute ->
-            PrefsManager.setStartHour(requireContext(), hour)
-            PrefsManager.setStartMinute(requireContext(), minute)
-            showTimePickerForEnd()
-        }, currentHour, currentMinute, true).apply {
-            setTitle("Hora de INICIO")
-            show()
-        }
-    }
-
-    private fun showTimePickerForEnd() {
-        val currentHour = PrefsManager.getEndHour(requireContext())
-        val currentMinute = PrefsManager.getEndMinute(requireContext())
-        
-        TimePickerDialog(requireContext(), { _, hour, minute ->
-            PrefsManager.setEndHour(requireContext(), hour)
-            PrefsManager.setEndMinute(requireContext(), minute)
-            PrefsManager.setScheduleEnabled(requireContext(), true)
-            updateScheduleButtonUI()
-            notifyServiceScheduleChanged()
-        }, currentHour, currentMinute, true).apply {
-            setTitle("Hora de FIN")
-            show()
-        }
-    }
-
-    private fun updateScheduleButtonUI() {
-        btnSchedule.text = "🕒 " + PrefsManager.getScheduleString(requireContext())
-    }
 
     private fun showIpCameraDialog() {
         val input = android.widget.EditText(requireContext())
@@ -255,14 +243,15 @@ class GestosFragment : Fragment() {
         super.onResume()
         switchService.setOnCheckedChangeListener(null)
         switchService.isChecked = CameraSharedState.isServiceRunning
+        switchService.text = if (switchService.isChecked) "Encendido" else "Apagado"
         switchService.setOnCheckedChangeListener { _, isChecked ->
+            switchService.text = if (isChecked) "Encendido" else "Apagado"
             if (isChecked) {
                 checkAndStartCamera()
             } else {
                 stopCameraService()
             }
         }
-        updateScheduleButtonUI()
 
         if (CameraSharedState.isServiceRunning) {
             val intent = Intent(requireContext(), BackgroundCameraService::class.java).apply {

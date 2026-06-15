@@ -37,6 +37,7 @@
         <activity android:name=".ai.ComboListActivity" />
         <activity android:name=".ai.SecuenciaConfigActivity" />
         <activity android:name=".ai.PasoWizardActivity" />
+        <activity android:name=".ai.ScheduleActivity" />
         
         <service
             android:name=".ai.BackgroundCameraService"

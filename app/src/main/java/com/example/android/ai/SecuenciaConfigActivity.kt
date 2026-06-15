@@ -1,4 +1,4 @@
-﻿package com.example.android.ai
+package com.example.android.ai
 import com.example.android.R
 
 import android.app.Activity
@@ -6,14 +6,18 @@ import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
-import android.view.View
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -25,11 +29,10 @@ class SecuenciaConfigActivity : AppCompatActivity() {
     private lateinit var etComboName: EditText
     private lateinit var tvActivatorDesc: TextView
     private lateinit var btnEditActivator: Button
-    private lateinit var tvDeactivadorDesc: TextView
-    private lateinit var btnEditDeactivador: Button
+    private lateinit var tvAccionDesc: TextView
+    private lateinit var btnEditAccion: Button
     private lateinit var btnSave: Button
     private lateinit var fabAdd: FloatingActionButton
-    private lateinit var toolbar: Toolbar
     
     private lateinit var adapter: SecuenciaAdapter
     
@@ -53,10 +56,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                     comboActual.activador = newStep
                     updateHeaders()
                 }
-                "DEACTIVATOR" -> {
-                    comboActual.deactivador = newStep
-                    updateHeaders()
-                }
+
                 "STEP" -> {
                     adapter.pasos.add(newStep)
                     adapter.notifyItemInserted(adapter.pasos.size - 1)
@@ -74,15 +74,36 @@ class SecuenciaConfigActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightNavigationBars = true
+            isAppearanceLightStatusBars = false 
+        }
         setContentView(R.layout.activity_sequence_config)
 
-        toolbar = findViewById(R.id.toolbar)
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.mainSequenceConfig)) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            
+            v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom + ime.bottom)
+            
+            val cardBack = findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardBack)
+            cardBack?.getChildAt(0)?.setPadding(0, systemBars.top, 0, 0)
+            
+            insets
+        }
+
+        findViewById<android.widget.ImageButton>(R.id.btnBack).setOnClickListener {
+            finish()
+        }
         rvSteps = findViewById(R.id.recyclerView)
         etComboName = findViewById(R.id.etComboName)
         tvActivatorDesc = findViewById(R.id.tvActivatorDesc)
         btnEditActivator = findViewById(R.id.btnEditActivator)
-        tvDeactivadorDesc = findViewById(R.id.tvDeactivadorDesc)
-        btnEditDeactivador = findViewById(R.id.btnEditDeactivador)
+        tvAccionDesc = findViewById(R.id.tvAccionDesc)
+        btnEditAccion = findViewById(R.id.btnEditAccion)
         btnSave = findViewById(R.id.btnSave)
         fabAdd = findViewById(R.id.fabAdd)
 
@@ -104,7 +125,80 @@ class SecuenciaConfigActivity : AppCompatActivity() {
             }
 
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                adapter.removeItem(viewHolder.adapterPosition)
+                val position = viewHolder.adapterPosition
+                val deletedStep = adapter.pasos[position]
+                
+                adapter.removeItem(position)
+
+                com.google.android.material.snackbar.Snackbar.make(
+                    findViewById(R.id.mainSequenceConfig),
+                    "Paso '${deletedStep.nombreGesto}' eliminado",
+                    com.google.android.material.snackbar.Snackbar.LENGTH_LONG
+                ).apply {
+                    setAction("Deshacer") {
+                        adapter.pasos.add(position, deletedStep)
+                        adapter.notifyItemInserted(position)
+                        adapter.notifyItemRangeChanged(0, adapter.pasos.size)
+                    }
+                    setActionTextColor(androidx.core.content.ContextCompat.getColor(this@SecuenciaConfigActivity, R.color.teal_primary))
+                    view.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#073F4C"))
+                    setTextColor(android.graphics.Color.WHITE)
+                    show()
+                }
+            }
+
+            override fun onChildDraw(
+                c: android.graphics.Canvas,
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                dX: Float,
+                dY: Float,
+                actionState: Int,
+                isCurrentlyActive: Boolean
+            ) {
+                if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE) {
+                    val itemView = viewHolder.itemView
+                    val paint = android.graphics.Paint().apply {
+                        color = androidx.core.content.ContextCompat.getColor(this@SecuenciaConfigActivity, R.color.teal_primary)
+                    }
+                    val icon = androidx.core.content.ContextCompat.getDrawable(this@SecuenciaConfigActivity, android.R.drawable.ic_menu_delete)
+                    val cornerRadius = 12 * resources.displayMetrics.density
+                    
+                    if (dX > 0) {
+                        val rect = android.graphics.RectF(
+                            itemView.left.toFloat(), itemView.top.toFloat(),
+                            itemView.left + dX, itemView.bottom.toFloat()
+                        )
+                        c.drawRoundRect(rect, cornerRadius, cornerRadius, paint)
+                        icon?.let {
+                            val iconMargin = (itemView.height - it.intrinsicHeight) / 2
+                            val iconTop = itemView.top + iconMargin
+                            val iconBottom = iconTop + it.intrinsicHeight
+                            val iconLeft = itemView.left + iconMargin
+                            val iconRight = iconLeft + it.intrinsicWidth
+                            it.setBounds(iconLeft, iconTop, iconRight, iconBottom)
+                            it.setTint(android.graphics.Color.WHITE)
+                            it.draw(c)
+                        }
+                    } else if (dX < 0) {
+                        val rect = android.graphics.RectF(
+                            itemView.right + dX, itemView.top.toFloat(),
+                            itemView.right.toFloat(), itemView.bottom.toFloat()
+                        )
+                        c.drawRoundRect(rect, cornerRadius, cornerRadius, paint)
+                        icon?.let {
+                            val iconMargin = (itemView.height - it.intrinsicHeight) / 2
+                            val iconTop = itemView.top + iconMargin
+                            val iconBottom = iconTop + it.intrinsicHeight
+                            val iconRight = itemView.right - iconMargin
+                            val iconLeft = iconRight - it.intrinsicWidth
+                            it.setBounds(iconLeft, iconTop, iconRight, iconBottom)
+                            it.setTint(android.graphics.Color.WHITE)
+                            it.draw(c)
+                        }
+                    }
+                }
+                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
             }
         })
 
@@ -157,21 +251,12 @@ class SecuenciaConfigActivity : AppCompatActivity() {
             }
         }
 
-        btnEditDeactivador.setOnClickListener {
-            if (comboActual.deactivador != null) {
-                comboActual.deactivador = null
-                updateHeaders()
-            } else {
-                launchWizard("DEACTIVATOR", null)
-            }
+        btnEditAccion.setOnClickListener {
+            showActionSelectionDialog()
         }
         
-        findViewById<View>(R.id.cardDeactivador).setOnClickListener {
-            if (comboActual.deactivador != null) {
-                launchWizard("DEACTIVATOR", comboActual.deactivador)
-            } else {
-                launchWizard("DEACTIVATOR", null)
-            }
+        findViewById<View>(R.id.cardAccionVinculada).setOnClickListener {
+            showActionSelectionDialog()
         }
 
         btnSave.setOnClickListener {
@@ -211,26 +296,41 @@ class SecuenciaConfigActivity : AppCompatActivity() {
     private fun updateHeaders() {
         if (comboActual.activador != null) {
             tvActivatorDesc.text = "${comboActual.activador?.nombreGesto} (${comboActual.activador?.manoObjetivo})"
-            tvActivatorDesc.setTextColor(android.graphics.Color.WHITE)
+            tvActivatorDesc.setTextColor(android.graphics.Color.parseColor("#073F4C"))
             btnEditActivator.text = "Quitar"
-            btnEditActivator.setTextColor(android.graphics.Color.parseColor("#CF6679"))
+            btnEditActivator.setTextColor(android.graphics.Color.parseColor("#E53935"))
         } else {
-            tvActivatorDesc.text = "NINGUNO"
-            tvActivatorDesc.setTextColor(android.graphics.Color.GRAY)
+            tvActivatorDesc.text = "Ninguno"
+            tvActivatorDesc.setTextColor(android.graphics.Color.parseColor("#A0AAB5"))
             btnEditActivator.text = "Añadir"
-            btnEditActivator.setTextColor(android.graphics.Color.parseColor("#03DAC5"))
+            btnEditActivator.setTextColor(android.graphics.Color.parseColor("#3aafa9"))
         }
         
-        if (comboActual.deactivador != null) {
-            tvDeactivadorDesc.text = "${comboActual.deactivador?.nombreGesto} (${comboActual.deactivador?.manoObjetivo})"
-            tvDeactivadorDesc.setTextColor(android.graphics.Color.WHITE)
-            btnEditDeactivador.text = "Quitar"
-            btnEditDeactivador.setTextColor(android.graphics.Color.parseColor("#CF6679"))
+        if (comboActual.accionVinculada != null) {
+            tvAccionDesc.text = comboActual.accionVinculada
+            tvAccionDesc.setTextColor(android.graphics.Color.parseColor("#073F4C"))
+            btnEditAccion.text = "Cambiar"
         } else {
-            tvDeactivadorDesc.text = "NINGUNO"
-            tvDeactivadorDesc.setTextColor(android.graphics.Color.GRAY)
-            btnEditDeactivador.text = "Añadir"
-            btnEditDeactivador.setTextColor(android.graphics.Color.parseColor("#03DAC5"))
+            tvAccionDesc.text = "Ninguna"
+            tvAccionDesc.setTextColor(android.graphics.Color.parseColor("#A0AAB5"))
+            btnEditAccion.text = "Seleccionar"
         }
+    }
+
+    private fun showActionSelectionDialog() {
+        val actions = arrayOf("Encender Luces Sala", "Apagar Luces", "Activar Alarma", "Desactivar Alarma", "Abrir Puerta", "Modo Nocturno", "Ninguna")
+        
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle("Seleccionar Acción")
+            .setItems(actions) { dialog, which ->
+                if (which == actions.size - 1) {
+                    comboActual.accionVinculada = null
+                } else {
+                    comboActual.accionVinculada = actions[which]
+                }
+                updateHeaders()
+                dialog.dismiss()
+            }
+            .show()
     }
 }

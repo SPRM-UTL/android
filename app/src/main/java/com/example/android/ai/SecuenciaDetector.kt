@@ -1,4 +1,4 @@
-﻿package com.example.android.ai
+package com.example.android.ai
 import com.example.android.R
 
 enum class ManoObjetivo {
@@ -14,7 +14,6 @@ data class PasoSecuencia(
 enum class SequenceState {
     WAITING_ACTIVATOR,
     IN_SEQUENCE,
-    WAITING_DEACTIVATOR,
     COMPLETED
 }
 
@@ -40,7 +39,7 @@ class RastreadorCombo(val combo: Combo, private val onComboCompleted: (Combo) ->
     }
 
     fun processPoses(leftPose: String, rightPose: String) {
-        if (combo.pasos.isEmpty() && combo.activador == null && combo.deactivador == null) {
+        if (combo.pasos.isEmpty() && combo.activador == null) {
             feedbackText = "${combo.name}: No tiene pasos configurados."
             return
         }
@@ -60,8 +59,8 @@ class RastreadorCombo(val combo: Combo, private val onComboCompleted: (Combo) ->
                     if (framesHeld >= activador.cuadrosRequeridos) {
                         currentState = SequenceState.IN_SEQUENCE
                         framesHeld = 0
-                        // Si no hay pasos ni desactivador, se completó solo con el activador.
-                        if (combo.pasos.isEmpty() && combo.deactivador == null) {
+                        // Si no hay pasos, se completó solo con el activador.
+                        if (combo.pasos.isEmpty()) {
                             completeCombo()
                         } else {
                             updateFeedback()
@@ -74,13 +73,7 @@ class RastreadorCombo(val combo: Combo, private val onComboCompleted: (Combo) ->
             }
             SequenceState.IN_SEQUENCE -> {
                 if (combo.pasos.isEmpty()) {
-                    // Pasar directo al desactivador si no hay pasos
-                    if (combo.deactivador != null) {
-                        currentState = SequenceState.WAITING_DEACTIVATOR
-                        updateFeedback()
-                    } else {
-                        completeCombo()
-                    }
+                    completeCombo()
                     return
                 }
 
@@ -94,28 +87,9 @@ class RastreadorCombo(val combo: Combo, private val onComboCompleted: (Combo) ->
                         currentStepIndex++
                         framesHeld = 0
                         if (currentStepIndex >= combo.pasos.size) {
-                            if (combo.deactivador != null) {
-                                currentState = SequenceState.WAITING_DEACTIVATOR
-                            } else {
-                                completeCombo()
-                            }
+                            completeCombo()
                         }
                         updateFeedback()
-                    }
-                } else {
-                    framesHeld = 0
-                    updateFeedback()
-                }
-            }
-            SequenceState.WAITING_DEACTIVATOR -> {
-                val deactivador = combo.deactivador ?: return
-                if (isPoseMatching(leftPose, rightPose, deactivador)) {
-                    framesHeld++
-                    val percentage = (framesHeld.toFloat() / deactivador.cuadrosRequeridos) * 100
-                    feedbackText = "${combo.name} - Validando Desactivador (${deactivador.nombreGesto}): ${percentage.toInt().coerceAtMost(100)}%"
-                    
-                    if (framesHeld >= deactivador.cuadrosRequeridos) {
-                        completeCombo()
                     }
                 } else {
                     framesHeld = 0
@@ -142,8 +116,6 @@ class RastreadorCombo(val combo: Combo, private val onComboCompleted: (Combo) ->
             } else {
                 "${combo.name}: Secuencia completada..."
             }
-        } else if (currentState == SequenceState.WAITING_DEACTIVATOR) {
-            feedbackText = "${combo.name}: Esperando Desactivador (${combo.deactivador?.nombreGesto})"
         } else if (currentState == SequenceState.COMPLETED) {
             feedbackText = "¡${combo.name.uppercase()} COMPLETADO!"
         }

@@ -1,4 +1,4 @@
-﻿package com.example.android.ai
+package com.example.android.ai
 import com.example.android.R
 
 import android.content.Context
@@ -12,7 +12,7 @@ data class Combo(
     var name: String = "Nuevo Combo",
     var activador: PasoSecuencia? = null,
     var pasos: MutableList<PasoSecuencia> = mutableListOf(),
-    var deactivador: PasoSecuencia? = null
+    var accionVinculada: String? = null
 )
 
 object SecuenciaConfigManager {
@@ -29,7 +29,7 @@ object SecuenciaConfigManager {
             comboObj.put("id", combo.id)
             comboObj.put("name", combo.name)
             if (combo.activador != null) comboObj.put("activador", stepToJson(combo.activador!!))
-            if (combo.deactivador != null) comboObj.put("deactivador", stepToJson(combo.deactivador!!))
+            if (combo.accionVinculada != null) comboObj.put("accionVinculada", combo.accionVinculada)
             
             val pasosArray = JSONArray()
             for (step in combo.pasos) {
@@ -56,7 +56,7 @@ object SecuenciaConfigManager {
                 PasoSecuencia("ROCK", ManoObjetivo.ANY, 10),
                 PasoSecuencia("L", ManoObjetivo.ANY, 10)
             ),
-            deactivador = PasoSecuencia("TE AMO ILY", ManoObjetivo.ANY, 15)
+            accionVinculada = "Encender Luces Sala"
         )
 
         if (combosStr == null) {
@@ -75,8 +75,8 @@ object SecuenciaConfigManager {
                 if (comboObj.has("activador")) {
                     combo.activador = stepFromJson(comboObj.getJSONObject("activador"))
                 }
-                if (comboObj.has("deactivador")) {
-                    combo.deactivador = stepFromJson(comboObj.getJSONObject("deactivador"))
+                if (comboObj.has("accionVinculada")) {
+                    combo.accionVinculada = comboObj.getString("accionVinculada")
                 }
                 if (comboObj.has("pasos")) {
                     val pasosArray = comboObj.getJSONArray("pasos")

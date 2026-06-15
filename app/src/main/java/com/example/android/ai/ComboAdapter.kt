@@ -1,4 +1,4 @@
-﻿package com.example.android.ai
+package com.example.android.ai
 import com.example.android.R
 
 import android.view.LayoutInflater
@@ -15,14 +15,11 @@ class ComboAdapter(
 
     inner class ComboViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val tvComboName: TextView = itemView.findViewById(R.id.tvComboName)
-        val tvComboDetails: TextView = itemView.findViewById(R.id.tvComboDetails)
-        val ivEdit: ImageView = itemView.findViewById(R.id.ivEdit)
+        val tvComboAction: TextView = itemView.findViewById(R.id.tvComboAction)
+        val tvComboDescription: TextView = itemView.findViewById(R.id.tvComboDescription)
 
         init {
             itemView.setOnClickListener {
-                onEditClick(combos[adapterPosition])
-            }
-            ivEdit.setOnClickListener {
                 onEditClick(combos[adapterPosition])
             }
         }
@@ -38,10 +35,10 @@ class ComboAdapter(
         holder.tvComboName.text = combo.name
         
         val actText = combo.activador?.nombreGesto ?: "Ninguno"
-        val deactText = combo.deactivador?.nombreGesto ?: "Ninguno"
         val pasosCount = combo.pasos.size
         
-        holder.tvComboDetails.text = "Act: $actText | Pasos: $pasosCount | Des: $deactText"
+        holder.tvComboAction.text = "Acción: ${combo.accionVinculada ?: "Ninguna"}"
+        holder.tvComboDescription.text = "Act: $actText | Pasos: $pasosCount"
     }
 
     override fun getItemCount(): Int = combos.size

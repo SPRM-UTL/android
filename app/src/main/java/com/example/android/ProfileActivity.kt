@@ -60,8 +60,9 @@ class ProfileActivity : AppCompatActivity() {
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = true
 
         setContentView(R.layout.activity_profile)
+        
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
 
-        cambiarColorStatusBar(R.color.teal_primary, true)
         mainProfile = findViewById(R.id.mainProfile)
         
         ViewCompat.setOnApplyWindowInsetsListener(mainProfile) { v, insets ->
@@ -78,7 +79,9 @@ class ProfileActivity : AppCompatActivity() {
                 }
             }
             
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, ime.bottom)
+            v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom + ime.bottom)
+            val cardBack = findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardBack)
+            cardBack?.getChildAt(0)?.setPadding(0, systemBars.top, 0, 0)
             insets
         }
 

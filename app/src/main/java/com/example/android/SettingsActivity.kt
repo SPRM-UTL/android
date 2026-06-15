@@ -39,14 +39,16 @@ class SettingsActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_settings)
 
-        cambiarColorStatusBar(R.color.teal_primary, true)
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
 
         val mainSettings = findViewById<View>(R.id.mainSettings)
         ViewCompat.setOnApplyWindowInsetsListener(mainSettings) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
             
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, ime.bottom)
+            v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom + ime.bottom)
+            val cardBack = findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardBack)
+            cardBack?.getChildAt(0)?.setPadding(0, systemBars.top, 0, 0)
             insets
         }
 

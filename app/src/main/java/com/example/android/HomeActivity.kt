@@ -18,10 +18,13 @@ import android.content.Context
 import android.content.Intent
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.example.android.ui.components.BottomBarWithFab
+import androidx.viewpager2.widget.ViewPager2
+import androidx.viewpager2.adapter.FragmentStateAdapter
 
 class HomeActivity : AppCompatActivity() {
 
     private var currentScreenState by mutableStateOf("home")
+    private lateinit var viewPager: ViewPager2
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,11 +36,13 @@ class HomeActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_home)
 
-        if (savedInstanceState == null) {
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.fragmentContainer, HomeFragment())
-                .commit()
-        }
+        viewPager = findViewById(R.id.viewPager)
+        viewPager.adapter = HomePagerAdapter(this)
+        viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                currentScreenState = if (position == 0) "home" else "gestos"
+            }
+        })
 
         configurarInsets()
         configurarBottomBar()
@@ -73,7 +78,7 @@ class HomeActivity : AppCompatActivity() {
     private fun configurarInsets() {
         val rootView = findViewById<View>(R.id.mainHomeActivity)
         val bottomBarContainer = findViewById<FrameLayout>(R.id.bottom_bar_container)
-        val fragmentContainer = findViewById<View>(R.id.fragmentContainer)
+        val viewPagerView = findViewById<View>(R.id.viewPager)
 
         ViewCompat.setOnApplyWindowInsetsListener(rootView) { _, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -82,7 +87,7 @@ class HomeActivity : AppCompatActivity() {
             bottomBarContainer.setPadding(0, 0, 0, systemBars.bottom)
 
             // Pasar los insets al contenedor de fragmentos para que la parte superior respete el Status Bar
-            ViewCompat.dispatchApplyWindowInsets(fragmentContainer, insets)
+            ViewCompat.dispatchApplyWindowInsets(viewPagerView, insets)
             
             insets
         }
@@ -99,14 +104,12 @@ class HomeActivity : AppCompatActivity() {
                     isMenuOpen = isMenuOpen,
                     onHomeClick = {
                         if (currentScreenState != "home") {
-                            currentScreenState = "home"
-                            switchFragment(HomeFragment())
+                            viewPager.currentItem = 0
                         }
                     },
                     onGesturesClick = {
                         if (currentScreenState != "gestos") {
-                            currentScreenState = "gestos"
-                            switchFragment(GestosFragment())
+                            viewPager.currentItem = 1
                         }
                     },
                     onFabClick = {
@@ -119,17 +122,20 @@ class HomeActivity : AppCompatActivity() {
         container.addView(composeView)
     }
 
-    private fun switchFragment(fragment: Fragment) {
-        supportFragmentManager.beginTransaction()
-            .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out)
-            .replace(R.id.fragmentContainer, fragment)
-            .commit()
-    }
+
 
     private fun abrirMenuPrincipal(onDismiss: () -> Unit = {}) {
         if (supportFragmentManager.findFragmentByTag("MenuBottomSheet") != null) return
         val sheet = MenuBottomSheetDialog(this)
         sheet.onDismissCallback = onDismiss
         sheet.show(supportFragmentManager, "MenuBottomSheet")
+    }
+
+    private inner class HomePagerAdapter(activity: AppCompatActivity) : FragmentStateAdapter(activity) {
+        override fun getItemCount(): Int = 2
+
+        override fun createFragment(position: Int): Fragment {
+            return if (position == 0) HomeFragment() else GestosFragment()
+        }
     }
 }

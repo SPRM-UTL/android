@@ -1,129 +1,91 @@
-﻿package com.example.android.ai
-import com.example.android.R
+package com.example.android.ai
 
+import com.example.android.R
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.SeekBar
 import android.widget.TextView
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 
 class PasoWizardActivity : AppCompatActivity() {
 
-    private lateinit var layoutStep1: View
-    private lateinit var layoutStep2: View
-    private lateinit var layoutStep3: View
-    private lateinit var toolbarWizard: Toolbar
+    private lateinit var btnFinishWizard: Button
+    private lateinit var tvToolbarTitle: TextView
+    private lateinit var spinnerGesto: AutoCompleteTextView
+    private lateinit var spinnerMano: AutoCompleteTextView
+    private lateinit var tvFramesValue: TextView
+    private lateinit var seekBarFrames: SeekBar
 
     private var selectedPoseName: String = ""
     private var selectedHand: ManoObjetivo = ManoObjetivo.ANY
     private var selectedFrames: Int = 15
 
+    private val allPoses = HandMetrics.HandPose.values().map { it.name.replace("_", " ") }
+    private val handOptions = listOf("Cualquier Mano", "Mano Izquierda", "Mano Derecha")
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightNavigationBars = true
+            isAppearanceLightStatusBars = false 
+        }
         setContentView(R.layout.activity_step_wizard)
 
-        layoutStep1 = findViewById(R.id.layoutStep1)
-        layoutStep2 = findViewById(R.id.layoutStep2)
-        layoutStep3 = findViewById(R.id.layoutStep3)
-        toolbarWizard = findViewById(R.id.toolbarWizard)
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.mainStepWizard)) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            
+            v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom + ime.bottom)
+            
+            val cardBack = findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardBack)
+            cardBack?.getChildAt(0)?.setPadding(0, systemBars.top, 0, 0)
+            
+            insets
+        }
+
+        btnFinishWizard = findViewById(R.id.btnFinishWizard)
+        tvToolbarTitle = findViewById(R.id.tvToolbarTitle)
+        spinnerGesto = findViewById(R.id.spinnerGesto)
+        spinnerMano = findViewById(R.id.spinnerMano)
+        tvFramesValue = findViewById(R.id.tvFramesValue)
+        seekBarFrames = findViewById(R.id.seekBarFrames)
+
+        findViewById<android.widget.ImageButton>(R.id.btnBack).setOnClickListener {
+            finish()
+        }
 
         val initialPose = intent.getStringExtra("INITIAL_POSE")
         if (initialPose != null) {
+            tvToolbarTitle.text = "Editar Gesto"
             selectedPoseName = initialPose
             val handStr = intent.getStringExtra("INITIAL_HAND") ?: ManoObjetivo.ANY.name
             selectedHand = ManoObjetivo.valueOf(handStr)
             selectedFrames = intent.getIntExtra("INITIAL_FRAMES", 15)
-        }
-
-        setupStep1()
-        setupStep2()
-        setupStep3()
-
-        if (initialPose != null) {
-            showStep(3) // Jump to the final step to review/confirm, they can go back if they want
         } else {
-            showStep(1)
-        }
-    }
-
-    private fun showStep(step: Int) {
-        layoutStep1.visibility = if (step == 1) View.VISIBLE else View.GONE
-        layoutStep2.visibility = if (step == 2) View.VISIBLE else View.GONE
-        layoutStep3.visibility = if (step == 3) View.VISIBLE else View.GONE
-
-        when (step) {
-            1 -> toolbarWizard.title = "Paso 1: Seleccionar Gesto"
-            2 -> toolbarWizard.title = "Paso 2: Mano a usar"
-            3 -> toolbarWizard.title = "Paso 3: Veracidad"
-        }
-    }
-
-    private fun setupStep1() {
-        val rvPoses: RecyclerView = findViewById(R.id.rvPoses)
-        val allPoses = HandMetrics.HandPose.values().map { it.name.replace("_", " ") }
-
-        rvPoses.layoutManager = GridLayoutManager(this, 2)
-        rvPoses.adapter = object : RecyclerView.Adapter<PoseViewHolder>() {
-            override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PoseViewHolder {
-                val view = LayoutInflater.from(parent.context).inflate(R.layout.item_pose, parent, false)
-                return PoseViewHolder(view)
+            tvToolbarTitle.text = "Añadir Gesto"
+            if (allPoses.isNotEmpty()) {
+                selectedPoseName = allPoses[0]
             }
-
-            override fun onBindViewHolder(holder: PoseViewHolder, position: Int) {
-                holder.tvPoseName.text = allPoses[position]
-                holder.itemView.setOnClickListener {
-                    selectedPoseName = allPoses[position]
-                    showStep(2)
-                }
-            }
-
-            override fun getItemCount() = allPoses.size
         }
-    }
 
-    inner class PoseViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val tvPoseName: TextView = view.findViewById(R.id.tvPoseName)
-    }
-
-    private fun setupStep2() {
-        findViewById<Button>(R.id.btnHandAny).setOnClickListener {
-            selectedHand = ManoObjetivo.ANY
-            showStep(3)
-        }
-        findViewById<Button>(R.id.btnHandLeft).setOnClickListener {
-            selectedHand = ManoObjetivo.LEFT
-            showStep(3)
-        }
-        findViewById<Button>(R.id.btnHandRight).setOnClickListener {
-            selectedHand = ManoObjetivo.RIGHT
-            showStep(3)
-        }
-    }
-
-    private fun setupStep3() {
-        val seekBarFrames: SeekBar = findViewById(R.id.seekBarFrames)
-        val tvFramesValue: TextView = findViewById(R.id.tvFramesValue)
-        val btnFinishWizard: Button = findViewById(R.id.btnFinishWizard)
-
-        seekBarFrames.progress = selectedFrames - 5
-        tvFramesValue.text = "$selectedFrames cuadros"
-
-        seekBarFrames.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                selectedFrames = progress + 5
-                tvFramesValue.text = "$selectedFrames cuadros"
-            }
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-        })
+        setupSpinners()
+        setupSeekBar()
 
         btnFinishWizard.setOnClickListener {
             val resultIntent = Intent()
@@ -146,13 +108,53 @@ class PasoWizardActivity : AppCompatActivity() {
         }
     }
 
-    override fun onBackPressed() {
-        if (layoutStep3.visibility == View.VISIBLE) {
-            showStep(2)
-        } else if (layoutStep2.visibility == View.VISIBLE) {
-            showStep(1)
-        } else {
-            super.onBackPressed()
+    private fun setupSpinners() {
+        val gestureAdapter = GestureAdapter(this, allPoses)
+        spinnerGesto.setAdapter(gestureAdapter)
+        spinnerGesto.setText(selectedPoseName, false)
+        spinnerGesto.setOnItemClickListener { _, _, position, _ ->
+            selectedPoseName = allPoses[position]
+        }
+
+        val handAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, handOptions)
+        spinnerMano.setAdapter(handAdapter)
+        
+        val handIndex = when (selectedHand) {
+            ManoObjetivo.ANY -> 0
+            ManoObjetivo.LEFT -> 1
+            ManoObjetivo.RIGHT -> 2
+        }
+        spinnerMano.setText(handOptions[handIndex], false)
+        
+        spinnerMano.setOnItemClickListener { _, _, position, _ ->
+            selectedHand = when (position) {
+                1 -> ManoObjetivo.LEFT
+                2 -> ManoObjetivo.RIGHT
+                else -> ManoObjetivo.ANY
+            }
+        }
+    }
+
+    private fun setupSeekBar() {
+        seekBarFrames.progress = selectedFrames - 3
+        tvFramesValue.text = "$selectedFrames cuadros"
+
+        seekBarFrames.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                selectedFrames = progress + 3
+                tvFramesValue.text = "$selectedFrames cuadros"
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+    }
+
+    inner class GestureAdapter(context: Context, private val poses: List<String>) : ArrayAdapter<String>(context, 0, poses) {
+        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+            val view = convertView ?: LayoutInflater.from(context).inflate(R.layout.item_gesture_dropdown, parent, false)
+            val tvName = view.findViewById<TextView>(R.id.tvGestureName)
+            tvName.text = poses[position]
+            return view
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿package com.example.android.ai
+package com.example.android.ai
 import com.example.android.R
 
 import android.app.Notification
@@ -164,7 +164,11 @@ class BackgroundCameraService : LifecycleService() {
         )
 
         val builder = NotificationCompat.Builder(this, CHANNEL_ID).setContentTitle("IA Gestos").setContentText(text).setSmallIcon(R.mipmap.ic_launcher).setContentIntent(pendingIntent).setOngoing(true)
-        startForeground(1, builder.build())
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(1, builder.build(), android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA)
+        } else {
+            startForeground(1, builder.build())
+        }
     }
 
     private fun updateNotification(title: String, text: String) {
@@ -235,6 +239,9 @@ class BackgroundCameraService : LifecycleService() {
             } catch (e: Exception) {
                 Log.e("Audio", "Error al reproducir sonido", e)
             }
+            
+            val accion = combo.accionVinculada ?: "Ninguna"
+            Log.i("Manordomo AI", "Ejecución diferida: Acción '$accion' solicitada por Gesto '${combo.name}'.")
             
             android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                 gestureAnalyzer.sequenceDetector.resetAll()

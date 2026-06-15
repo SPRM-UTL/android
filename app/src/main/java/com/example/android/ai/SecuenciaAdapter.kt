@@ -1,4 +1,4 @@
-﻿package com.example.android.ai
+package com.example.android.ai
 import com.example.android.R
 
 import android.view.LayoutInflater
@@ -16,8 +16,9 @@ class SecuenciaAdapter(
 
     inner class StepViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val tvStepNumber: TextView = itemView.findViewById(R.id.tvStepNumber)
-        val tvPoseName: TextView = itemView.findViewById(R.id.tvPoseName)
-        val tvDetails: TextView = itemView.findViewById(R.id.tvDetails)
+        val tvPoseName: TextView = itemView.findViewById(R.id.tvStepPose)
+        val tvStepHand: TextView = itemView.findViewById(R.id.tvStepHand)
+        val tvStepFrames: TextView = itemView.findViewById(R.id.tvStepFrames)
         val ivDragHandle: ImageView = itemView.findViewById(R.id.ivDragHandle)
 
         init {
@@ -48,7 +49,8 @@ class SecuenciaAdapter(
             ManoObjetivo.RIGHT -> "Mano Derecha"
             ManoObjetivo.ANY -> "Cualquier Mano"
         }
-        holder.tvDetails.text = "$handStr | ${step.cuadrosRequeridos} frames"
+        holder.tvStepHand.text = "Mano: $handStr"
+        holder.tvStepFrames.text = "${step.cuadrosRequeridos}f"
     }
 
     override fun getItemCount(): Int = pasos.size
