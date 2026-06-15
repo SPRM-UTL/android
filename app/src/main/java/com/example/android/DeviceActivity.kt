@@ -26,6 +26,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.android.db.AppDatabase
 import com.example.android.db.Dispositivo
+import com.example.android.network.ApiHandler
 import com.example.android.network.BluetoothScanManager
 import com.example.android.network.RetrofitClient
 import com.example.android.ui.BluetoothDeviceAdapter
@@ -144,24 +145,26 @@ class DeviceActivity : AppCompatActivity() {
     }
 
     private fun sincronizarDesdeServidor() {
-        val preferencias = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
-        val token = preferencias.getString("apiToken", "") ?: ""
-        val encabezado = "Bearer $token"
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val respuesta = RetrofitClient.deviceService.getDispositivos(encabezado)
-                if (respuesta.isSuccessful) {
-                    val dispositivosApi = respuesta.body()?.data ?: emptyList()
-                    baseDatos.dispositivoDao().deleteAllDispositivos()
-                    baseDatos.dispositivoDao().insertAll(dispositivosApi)
+        lifecycleScope.launch {
+            ApiHandler.safeApiCall(
+                activity = this@DeviceActivity,
+                showLoading = false,
+                apiCall = {
+                    val preferencias = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+                    val token = preferencias.getString("apiToken", "") ?: ""
+                    RetrofitClient.deviceService.getDispositivos("Bearer $token")
+                },
+                onSuccess = { respuesta ->
+                    val dispositivosApi = respuesta.data
+                    withContext(Dispatchers.IO) {
+                        baseDatos.dispositivoDao().deleteAllDispositivos()
+                        baseDatos.dispositivoDao().insertAll(dispositivosApi)
+                    }
+                },
+                onError = { errorMsg ->
+                    Log.e("DeviceActivity", "Error al sincronizar dispositivos: $errorMsg")
                 }
-            } catch (e: Exception) {
-                Log.e("DeviceActivity", "Error al sincronizar dispositivos", e)
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(this@DeviceActivity, "Error de red al sincronizar", Toast.LENGTH_SHORT).show()
-                }
-            }
+            )
         }
     }
 
@@ -344,56 +347,65 @@ class DeviceActivity : AppCompatActivity() {
     }
 
     private fun guardarDispositivo(dispositivo: Dispositivo, esActualizacion: Boolean) {
-        val preferencias = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
-        val encabezado   = "Bearer ${preferencias.getString("apiToken", "") ?: ""}"
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val respuesta = if (esActualizacion) {
-                    RetrofitClient.deviceService.updateDispositivo(encabezado, dispositivo.id, dispositivo)
-                    retrofit2.Response.success(com.example.android.network.ApiResponse(true, 200, dispositivo))
-                } else {
-                    RetrofitClient.deviceService.createDispositivo(encabezado, dispositivo)
-                }
-
-                if (respuesta.isSuccessful) {
-                    val guardado = respuesta.body()?.data
+        lifecycleScope.launch {
+            ApiHandler.safeApiCall(
+                activity = this@DeviceActivity,
+                showLoading = true,
+                loadingTitle = "Guardando",
+                loadingMessage = "Sincronizando dispositivo...",
+                apiCall = {
+                    val preferencias = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+                    val encabezado = "Bearer ${preferencias.getString("apiToken", "") ?: ""}"
+                    
+                    if (esActualizacion) {
+                        RetrofitClient.deviceService.updateDispositivo(encabezado, dispositivo.id, dispositivo)
+                        retrofit2.Response.success(com.example.android.network.ApiResponse(true, 200, dispositivo))
+                    } else {
+                        RetrofitClient.deviceService.createDispositivo(encabezado, dispositivo)
+                    }
+                },
+                onSuccess = { respuesta ->
+                    val guardado = respuesta.data
                     if (guardado != null) {
-                        baseDatos.dispositivoDao().insertDispositivo(guardado)
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(this@DeviceActivity, "Guardado exitoso", Toast.LENGTH_SHORT).show()
+                        withContext(Dispatchers.IO) {
+                            baseDatos.dispositivoDao().insertDispositivo(guardado)
                         }
+                        Toast.makeText(this@DeviceActivity, "Guardado exitoso", Toast.LENGTH_SHORT).show()
                     }
-                } else {
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(this@DeviceActivity, "Error al guardar en el servidor", Toast.LENGTH_SHORT).show()
+                },
+                onError = { errorMsg ->
+                    if (errorMsg != "Sesión expirada") {
+                        Toast.makeText(this@DeviceActivity, errorMsg, Toast.LENGTH_SHORT).show()
                     }
                 }
-            } catch (e: Exception) {
-                Log.e("DeviceActivity", "Error al guardar dispositivo", e)
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(this@DeviceActivity, "Error de red", Toast.LENGTH_SHORT).show()
-                }
-            }
+            )
         }
     }
 
     private fun eliminarDispositivo(dispositivo: Dispositivo) {
-        val preferencias = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
-        val encabezado   = "Bearer ${preferencias.getString("apiToken", "") ?: ""}"
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val respuesta = RetrofitClient.deviceService.deleteDispositivo(encabezado, dispositivo.id)
-                if (respuesta.isSuccessful) {
-                    baseDatos.dispositivoDao().deleteDispositivo(dispositivo)
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(this@DeviceActivity, "Dispositivo eliminado", Toast.LENGTH_SHORT).show()
+        lifecycleScope.launch {
+            ApiHandler.safeApiCall(
+                activity = this@DeviceActivity,
+                showLoading = true,
+                loadingTitle = "Eliminando",
+                loadingMessage = "Eliminando dispositivo...",
+                apiCall = {
+                    val preferencias = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+                    val encabezado = "Bearer ${preferencias.getString("apiToken", "") ?: ""}"
+                    RetrofitClient.deviceService.deleteDispositivo(encabezado, dispositivo.id)
+                },
+                onSuccess = {
+                    withContext(Dispatchers.IO) {
+                        baseDatos.dispositivoDao().deleteDispositivo(dispositivo)
+                    }
+                    Toast.makeText(this@DeviceActivity, "Dispositivo eliminado", Toast.LENGTH_SHORT).show()
+                },
+                onError = { errorMsg ->
+                    if (errorMsg != "Sesión expirada") {
+                        Toast.makeText(this@DeviceActivity, errorMsg, Toast.LENGTH_SHORT).show()
                     }
                 }
-            } catch (e: Exception) {
-                Log.e("DeviceActivity", "Error al eliminar dispositivo", e)
-            }
+            )
         }
     }
 }

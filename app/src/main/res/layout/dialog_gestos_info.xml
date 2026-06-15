@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_bottom_sheet"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Información y Ajustes"
+        android:textSize="22sp"
+        android:textColor="#073F4C"
+        android:textStyle="bold"
+        android:layout_marginBottom="20dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Fuente de la cámara"
+        android:textColor="#6F7E8E"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="12dp"/>
+
+    <RadioGroup
+        android:id="@+id/rgCameraMode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="24dp">
+
+        <RadioButton
+            android:id="@+id/rbCamFrontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cámara Frontal"
+            android:textSize="16sp"
+            android:textColor="#073F4C"
+            android:paddingVertical="8dp"/>
+
+        <RadioButton
+            android:id="@+id/rbCamTrasera"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cámara Trasera"
+            android:textSize="16sp"
+            android:textColor="#073F4C"
+            android:paddingVertical="8dp"/>
+
+        <RadioButton
+            android:id="@+id/rbCamWifi"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cámara Wi-Fi IP"
+            android:textSize="16sp"
+            android:textColor="#073F4C"
+            android:paddingVertical="8dp"/>
+    </RadioGroup>
+
+    <Button
+        android:id="@+id/btnConfigGestos"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="Configurar Gestos y Combos"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:backgroundTint="@color/teal_primary"
+        android:textColor="@color/white"
+        app:cornerRadius="16dp"
+        android:layout_marginBottom="12dp"/>
+
+    <Button
+        android:id="@+id/btnHorario"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="Configurar Horario"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        app:strokeColor="@color/teal_primary"
+        android:textColor="@color/teal_primary"
+        app:cornerRadius="16dp"
+        android:layout_marginBottom="8dp"/>
+
+</LinearLayout>

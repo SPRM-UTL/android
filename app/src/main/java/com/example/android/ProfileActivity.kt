@@ -18,6 +18,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
+import com.example.android.network.ApiHandler
 import com.example.android.network.RetrofitClient
 import com.example.android.network.UpdateUserRequest
 import com.example.android.view.CustomDialog
@@ -59,8 +60,9 @@ class ProfileActivity : AppCompatActivity() {
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = true
 
         setContentView(R.layout.activity_profile)
+        
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
 
-        cambiarColorStatusBar(R.color.teal_primary, true)
         mainProfile = findViewById(R.id.mainProfile)
         
         ViewCompat.setOnApplyWindowInsetsListener(mainProfile) { v, insets ->
@@ -77,7 +79,9 @@ class ProfileActivity : AppCompatActivity() {
                 }
             }
             
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, ime.bottom)
+            v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom + ime.bottom)
+            val cardBack = findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardBack)
+            cardBack?.getChildAt(0)?.setPadding(0, systemBars.top, 0, 0)
             insets
         }
 
@@ -233,69 +237,36 @@ class ProfileActivity : AppCompatActivity() {
         btnGuardarPerfil.isEnabled = false
 
         lifecycleScope.launch {
-            CustomDialog.showDialog("Cargando", "Obteniendo datos del perfil...", CustomDialog.DialogType.LOADING)
-            try {
-                val response = RetrofitClient.apiService.getUsuario(tokenGuardado, userIdGuardado)
-
-                if (response.isSuccessful && response.body() != null) {
-                    val datosUsuario = response.body()!!.data
-
+            ApiHandler.safeApiCall(
+                activity = this@ProfileActivity,
+                showLoading = true,
+                loadingTitle = "Cargando",
+                loadingMessage = "Obteniendo datos del perfil...",
+                apiCall = {
+                    val currentToken = getSharedPreferences("SesionApp", Context.MODE_PRIVATE).getString("apiToken", "") ?: ""
+                    RetrofitClient.apiService.getUsuario("Bearer $currentToken", userIdGuardado)
+                },
+                onSuccess = { response ->
+                    val datosUsuario = response.data
                     etNombrePerfil.setText(datosUsuario.nombre)
                     etCorreoPerfil.setText(datosUsuario.correo)
 
                     val primerNombre = datosUsuario.nombre?.split(" ")?.firstOrNull() ?: ""
-                    tvHola.text = "¡Hola, $primerNombre! 👋"
+                    tvHola.text = "¡Hola, $primerNombre! \uD83D\uDC4B"
 
                     btnGuardarPerfil.isEnabled = true
-                    CustomDialog.dismissDialog()
-                }else if (response.code() == 401) {
-
-                    CustomDialog.showErrorDialog(
-                        titleDialog = "Sesión expirada",
-                        subtitleDialog = "Tu sesión ha expirado. Inicia sesión nuevamente.",
-                        positiveText = "Ir al Login",
-                        negativeText = "Cerrar",
-                        retryAction = {
-                            val sharedPref = getSharedPreferences(
-                                "SesionApp",
-                                Context.MODE_PRIVATE
-                            )
-
-                            sharedPref.edit()
-                                .clear()
-                                .apply()
-
-                            val intent = Intent(
-                                this@ProfileActivity,
-                                MainActivity::class.java
-                            ).apply {
-                                putExtra("FROM_LOGOUT", true)
-                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                                        Intent.FLAG_ACTIVITY_CLEAR_TASK
-                            }
-
-                            startActivity(intent)
-                            finish()
-                        },
-                        backAction = { finish() }
-                    )
+                },
+                onError = { errorMsg ->
+                    if (errorMsg != "Sesión expirada") {
+                        CustomDialog.showErrorDialog(
+                            titleDialog = "Error al cargar",
+                            subtitleDialog = errorMsg,
+                            retryAction = { cargarDatosAPI() },
+                            backAction = { finish() }
+                        )
+                    }
                 }
-                else {
-                    CustomDialog.showErrorDialog(
-                        "Error al cargar",
-                        "No se pudieron cargar tus datos desde el servidor.",
-                        retryAction = { cargarDatosAPI() },
-                        backAction = { finish() }
-                    )
-                }
-            } catch (e: Exception) {
-                CustomDialog.showErrorDialog(
-                    "Error de red",
-                    "No fue posible conectar con el servidor. Inténtalo de nuevo.",
-                    retryAction = { cargarDatosAPI() },
-                    backAction = { finish() }
-                )
-            }
+            )
         }
     }
 
@@ -314,47 +285,32 @@ class ProfileActivity : AppCompatActivity() {
         btnGuardarPerfil.isEnabled = false
 
         lifecycleScope.launch {
-            CustomDialog.showDialog("Guardando", "Actualizando tu información...", CustomDialog.DialogType.LOADING)
-            
-            val startTime = System.currentTimeMillis()
-            var success = false
-            var errorTitle = ""
-            var errorMessage = ""
-
-            try {
-                val response = RetrofitClient.apiService.updateUsuario(tokenGuardado, userIdGuardado, request)
-
-                if (response.isSuccessful) {
-                    success = true
-                } else {
-                    errorTitle = "Error al actualizar"
-                    errorMessage = response.errorBody()?.string() ?: "Hubo un problema al guardar los cambios."
+            ApiHandler.safeApiCall(
+                activity = this@ProfileActivity,
+                showLoading = true,
+                loadingTitle = "Guardando",
+                loadingMessage = "Actualizando tu información...",
+                apiCall = {
+                    val currentToken = getSharedPreferences("SesionApp", Context.MODE_PRIVATE).getString("apiToken", "") ?: ""
+                    RetrofitClient.apiService.updateUsuario("Bearer $currentToken", userIdGuardado, request)
+                },
+                onSuccess = {
+                    Snackbars.success(view, "Perfil actualizado correctamente", Snackbar.LENGTH_SHORT).show()
+                    delay(1200)
+                    finish()
+                },
+                onError = { errorMsg ->
+                    if (errorMsg != "Sesión expirada") {
+                        CustomDialog.showErrorDialog(
+                            titleDialog = "Error al actualizar",
+                            subtitleDialog = errorMsg,
+                            retryAction = { actualizarDatosAPI(view) },
+                            backAction = { finish() }
+                        )
+                        btnGuardarPerfil.isEnabled = true
+                    }
                 }
-            } catch (e: Exception) {
-                errorTitle = "Error de red"
-                errorMessage = "No se pudo conectar con el servidor. Inténtalo de nuevo más tarde."
-                android.util.Log.e("ProfileActivity", "Error al actualizar perfil", e)
-            }
-
-            val elapsedTime = System.currentTimeMillis() - startTime
-            if (elapsedTime < 1000) {
-                delay(1000 - elapsedTime)
-            }
-
-            if (success) {
-                CustomDialog.dismissDialog()
-                Snackbars.success(view, "Perfil actualizado correctamente", Snackbar.LENGTH_SHORT).show()
-                delay(1200)
-                finish()
-            } else {
-                CustomDialog.showErrorDialog(
-                    titleDialog = errorTitle,
-                    subtitleDialog = errorMessage,
-                    retryAction = { actualizarDatosAPI(view) },
-                    backAction = { finish() }
-                )
-                btnGuardarPerfil.isEnabled = true
-            }
+            )
         }
     }
 

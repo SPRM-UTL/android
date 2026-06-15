@@ -116,4 +116,8 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.material.icons.extended)
     debugImplementation(libs.androidx.ui.tooling)
+    
+    // MediaPipe for AI Gesture Detection
+    implementation("com.google.mediapipe:tasks-vision:0.10.14")
+    implementation("androidx.lifecycle:lifecycle-service:2.6.2")
 }
