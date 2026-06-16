@@ -113,8 +113,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun actualizarVisibilidadBiometrica() {
 
-        val biometricManager = BiometricManager.from(this)
+        val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+        val bioHabilitadaConfig = sharedPref.getBoolean("biometricEnabled", true)
+        val token = sharedPref.getString("apiToken", "") ?: ""
 
+        val biometricManager = BiometricManager.from(this)
         val authenticators =
             BiometricManager.Authenticators.BIOMETRIC_STRONG or
                     BiometricManager.Authenticators.BIOMETRIC_WEAK
@@ -122,9 +125,8 @@ class MainActivity : AppCompatActivity() {
         val biometriaDisponible =
             biometricManager.canAuthenticate(authenticators) == BiometricManager.BIOMETRIC_SUCCESS
 
-        btnBiometricLogin.visibility = View.VISIBLE
-        btnBiometricLogin.isEnabled  = biometriaDisponible
-        btnBiometricLogin.alpha      = if (biometriaDisponible) 1.0f else 0.4f
+        btnBiometricLogin.visibility =
+            if (biometriaDisponible && bioHabilitadaConfig && token.isNotEmpty()) View.VISIBLE else View.GONE
     }
 
     // ==========================================================
@@ -276,7 +278,7 @@ class MainActivity : AppCompatActivity() {
     private val biometricCallback = object : BiometricPrompt.AuthenticationCallback() {
 
         override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-            // ✅ Ya no entra directo — verifica el token contra el servidor primero
+            // No entra directo — verifica el token contra el servidor primero
             verificarTokenYEntrar()
         }
 
@@ -291,7 +293,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ✅ NUEVA FUNCIÓN: valida el token guardado antes de dejar entrar con huella
     private fun verificarTokenYEntrar() {
 
         val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
@@ -384,8 +385,27 @@ class MainActivity : AppCompatActivity() {
     private fun verificarSesionActiva() {
 
         lifecycleScope.launch {
-            delay(500)
+
+            val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+            val estaLogueado = sharedPref.getBoolean("isLoggedIn", false)
+
+            if (estaLogueado) {
+                manteniendoSplash = false
+                delay(300)
+                intentarLoginBiometrico()
+                return@launch
+            }
+
+            delay(300)
             manteniendoSplash = false
+
+            // Aseguramos que se muestre el formulario de login si no hay sesión
+            findViewById<MotionLayout>(R.id.motionLayout)?.post {
+                val motionLayout = findViewById<MotionLayout>(R.id.motionLayout)
+                if (motionLayout?.currentState == R.id.start) {
+                    motionLayout.transitionToEnd()
+                }
+            }
         }
     }
 
@@ -434,18 +454,11 @@ class MainActivity : AppCompatActivity() {
         splashScreen.setKeepOnScreenCondition { manteniendoSplash }
 
         splashScreen.setOnExitAnimationListener { splashProvider ->
-
-            lifecycleScope.launch {
-
-                delay(2000)
-
-                splashProvider.remove()
-
-                findViewById<MotionLayout>(R.id.motionLayout)?.transitionToEnd()
-
-                delay(300)
-
-                intentarLoginBiometrico()
+            splashProvider.remove()
+            findViewById<MotionLayout>(R.id.motionLayout)?.let { motionLayout ->
+                if (motionLayout.currentState == R.id.start) {
+                    motionLayout.transitionToEnd()
+                }
             }
         }
     }
@@ -479,7 +492,10 @@ class MainActivity : AppCompatActivity() {
 
         if (!biometriaDisponible) return
 
-        biometricPrompt.authenticate(promptInfo)
+        val token = sharedPref.getString("apiToken", "")
+        if (!token.isNullOrEmpty()) {
+            biometricPrompt.authenticate(promptInfo)
+        }
     }
 
     private fun procesarLogout() {

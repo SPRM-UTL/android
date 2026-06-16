@@ -10,16 +10,18 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.Toast
-import androidx.lifecycle.lifecycleScope
+import com.example.android.network.ApiHandler
 import com.example.android.network.RetrofitClient
 import com.example.android.view.Snackbars
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import kotlinx.coroutines.launch
+import androidx.lifecycle.lifecycleScope
 
 class MenuBottomSheetDialog(
     private val appContext: Context
 ) : BottomSheetDialogFragment() {
 
+    // Callback para cuando se cierra el sheet
     var onDismissCallback: (() -> Unit)? = null
 
     override fun onDismiss(dialog: DialogInterface) {
@@ -45,48 +47,71 @@ class MenuBottomSheetDialog(
 
         view.findViewById<LinearLayout>(R.id.profile)
             .setOnClickListener {
-                startActivity(Intent(context, ProfileActivity::class.java))
+                startActivity(
+                    Intent(context, ProfileActivity::class.java)
+                )
                 dismiss()
             }
 
         view.findViewById<LinearLayout>(R.id.settings)
             .setOnClickListener {
-                startActivity(Intent(context, SettingsActivity::class.java))
+                startActivity(
+                    Intent(context, SettingsActivity::class.java)
+                )
                 dismiss()
             }
 
         view.findViewById<LinearLayout>(R.id.logout)
             .setOnClickListener {
                 logout()
+                // dismiss() is removed here because if we dismiss, the lifecycleScope gets cancelled
+                // and the API call hangs, leaving the loading dialog stuck.
             }
     }
 
     private fun logout() {
         val sharedPref = appContext.getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
-        val token = sharedPref.getString("apiToken", "") ?: ""
+        val tokenGuardado = sharedPref.getString("apiToken", "") ?: ""
+
+        if (tokenGuardado.isEmpty()) {
+            performLocalLogout(sharedPref)
+            return
+        }
 
         lifecycleScope.launch {
-            try {
-                if (token.isNotEmpty()) {
-                    // ✅ Bearer corregido
-                    RetrofitClient.apiService.logout("Bearer $token")
+            ApiHandler.safeApiCall(
+                activity = requireActivity(),
+                showLoading = true,
+                loadingTitle = "Cerrando sesión",
+                loadingMessage = "Por favor espera...",
+                apiCall = {
+                    RetrofitClient.apiService.logout("Bearer $tokenGuardado")
+                },
+                onSuccess = {
+                    performLocalLogout(sharedPref)
+                },
+                onError = {
+                    performLocalLogout(sharedPref)
                 }
-            } catch (_: Exception) { }
-
-            // Limpiar sesión
-            sharedPref.edit()
-                .putBoolean("isLoggedIn", false)
-                .putString("apiToken", "")
-                .apply()
-
-            // ✅ dismiss() antes de navegar para evitar race condition con requireActivity()
-            dismiss()
-
-            val intent = Intent(appContext, MainActivity::class.java).apply {
-                putExtra("FROM_LOGOUT", true)
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            }
-            startActivity(intent)
+            )
         }
+    }
+
+    private fun performLocalLogout(sharedPref: android.content.SharedPreferences) {
+        sharedPref.edit().clear().apply()
+
+        Snackbars.success(
+            requireActivity().findViewById(android.R.id.content),
+            "Sesión cerrada correctamente",
+            Toast.LENGTH_SHORT
+        ).show()
+
+        val intent = Intent(appContext, MainActivity::class.java).apply {
+            putExtra("FROM_LOGOUT", true)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+
+        startActivity(intent)
+        requireActivity().finish()
     }
 }

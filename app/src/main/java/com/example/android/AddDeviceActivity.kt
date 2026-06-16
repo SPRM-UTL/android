@@ -29,6 +29,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.android.db.AppDatabase
 import com.example.android.db.Dispositivo
+import com.example.android.network.ApiHandler
 import com.example.android.network.BluetoothController
 import com.example.android.network.BluetoothScanManager
 import com.example.android.network.RetrofitClient
@@ -520,100 +521,60 @@ class AddDeviceActivity : AppCompatActivity() {
     // ==========================================================
 
     private fun startDeleteDevice(id: Int) {
-        val sesionPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
-        val token = sesionPref.getString("apiToken", "") ?: ""
-        if (token.isEmpty()) return
-        val bearer = "Bearer $token"
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val response = RetrofitClient.deviceService.deleteDispositivo(bearer, id)
-                withContext(Dispatchers.Main) {
-                    if (response.isSuccessful) {
-                        existingDevice?.let { db.dispositivoDao().deleteDispositivo(it) }
-                        Snackbars.success(
-                            findViewById(android.R.id.content),
-                            "Dispositivo eliminado",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    } else {
-                        manejarErrorServidor(response.code())
-                    }
+        lifecycleScope.launch {
+            ApiHandler.safeApiCall(
+                activity = this@AddDeviceActivity,
+                showLoading = true,
+                loadingTitle = "Eliminando",
+                loadingMessage = "Eliminando dispositivo...",
+                apiCall = {
+                    val token = getSharedPreferences("SesionApp", Context.MODE_PRIVATE).getString("apiToken", "") ?: ""
+                    RetrofitClient.deviceService.deleteDispositivo("Bearer $token", id)
+                },
+                onSuccess = {
+                    existingDevice?.let { db.dispositivoDao().deleteDispositivo(it) }
+                    Snackbars.success(findViewById(android.R.id.content), "Dispositivo eliminado", Toast.LENGTH_SHORT).show()
+                },
+                onError = { errorMsg ->
+                    Snackbars.error(findViewById(android.R.id.content), errorMsg, Toast.LENGTH_LONG).show()
                 }
-            } catch (_: Exception) {
-                withContext(Dispatchers.Main) {
-                    Snackbars.error(
-                        findViewById(android.R.id.content),
-                        "Error de red al eliminar",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
+            )
         }
     }
 
     private fun guardarEnServidor(dispositivo: Dispositivo) {
-        val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
-        val token = sharedPref.getString("apiToken", "") ?: ""
-        if (token.isEmpty()) return
-        val bearer = "Bearer $token"
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            db.dispositivoDao().insertDispositivo(dispositivo)
-
-            try {
-                val response = if (dispositivo.id == 0) {
-                    RetrofitClient.deviceService.createDispositivo(bearer, dispositivo)
-                } else {
-                    val updateResp = RetrofitClient.deviceService.updateDispositivo(
-                        bearer, dispositivo.id, dispositivo
-                    )
-                    if (updateResp.isSuccessful) {
-                        retrofit2.Response.success(
-                            com.example.android.network.ApiResponse(true, 200, dispositivo)
-                        )
+        lifecycleScope.launch {
+            ApiHandler.safeApiCall(
+                activity = this@AddDeviceActivity,
+                showLoading = true,
+                loadingTitle = "Guardando",
+                loadingMessage = "Sincronizando dispositivo...",
+                apiCall = {
+                    val token = getSharedPreferences("SesionApp", Context.MODE_PRIVATE).getString("apiToken", "") ?: ""
+                    val bearer = "Bearer $token"
+                    if (dispositivo.id == 0) {
+                        RetrofitClient.deviceService.createDispositivo(bearer, dispositivo)
                     } else {
-                        retrofit2.Response.error(updateResp.code(), updateResp.errorBody()!!)
-                    }
-                }
-
-                withContext(Dispatchers.Main) {
-                    if (response.isSuccessful) {
-                        val guardado = response.body()?.data
-                        if (guardado != null) {
-                            lifecycleScope.launch(Dispatchers.IO) {
-                                db.dispositivoDao().insertDispositivo(guardado)
-                            }
+                        val updateResp = RetrofitClient.deviceService.updateDispositivo(bearer, dispositivo.id, dispositivo)
+                        if (updateResp.isSuccessful) {
+                            retrofit2.Response.success(com.example.android.network.ApiResponse(true, 200, dispositivo))
+                        } else {
+                            retrofit2.Response.error(updateResp.code(), updateResp.errorBody()!!)
                         }
-                        Snackbars.success(
-                            findViewById(android.R.id.content),
-                            "Guardado exitoso",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        delay(1000)
-                        finish()
-                    } else {
-                        manejarErrorServidor(response.code())
                     }
+                },
+                onSuccess = { response ->
+                    val guardado = response.data
+                    if (guardado != null) {
+                        db.dispositivoDao().insertDispositivo(guardado)
+                    }
+                    Snackbars.success(findViewById(android.R.id.content), "Guardado exitoso", Toast.LENGTH_SHORT).show()
+                },
+                onError = { errorMsg ->
+                    Snackbars.error(findViewById(android.R.id.content), errorMsg, Toast.LENGTH_LONG).show()
                 }
-            } catch (_: Exception) {
-                withContext(Dispatchers.Main) {
-                    Snackbars.error(
-                        findViewById(android.R.id.content),
-                        "Error de red",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            }
+            )
         }
-    }
-
-    private fun manejarErrorServidor(codigo: Int) {
-        val msg = when (codigo) {
-            401 -> "Sesión expirada"
-            else -> "Error $codigo"
-        }
-        Snackbars.error(findViewById(android.R.id.content), msg, Toast.LENGTH_LONG).show()
     }
 
     // ==========================================================

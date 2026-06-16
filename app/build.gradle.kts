@@ -93,6 +93,8 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:okhttp:4.11.0")
 
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
@@ -114,4 +116,11 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.material.icons.extended)
     debugImplementation(libs.androidx.ui.tooling)
+    
+    // MediaPipe for AI Gesture Detection
+    implementation("com.google.mediapipe:tasks-vision:0.10.14")
+    implementation("androidx.lifecycle:lifecycle-service:2.6.2")
+    
+    // TapTargetView for App Tutorial
+    implementation("com.getkeepsafe.taptargetview:taptargetview:1.13.3")
 }
