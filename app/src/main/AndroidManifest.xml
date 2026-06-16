@@ -56,7 +56,6 @@
         <activity
             android:name=".AddDeviceActivity"
             android:exported="false" />
-
         <activity
             android:name=".extra.MusicActivity"
             android:exported="false" />
@@ -70,6 +69,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".SelectTypeDevice"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
     </application>
 
 </manifest>

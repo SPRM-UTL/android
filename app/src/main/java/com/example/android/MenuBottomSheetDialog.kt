@@ -20,7 +20,6 @@ class MenuBottomSheetDialog(
     private val appContext: Context
 ) : BottomSheetDialogFragment() {
 
-    // NUEVO: callback para cuando se cierra el sheet
     var onDismissCallback: (() -> Unit)? = null
 
     override fun onDismiss(dialog: DialogInterface) {
@@ -46,57 +45,48 @@ class MenuBottomSheetDialog(
 
         view.findViewById<LinearLayout>(R.id.profile)
             .setOnClickListener {
-                startActivity(
-                    Intent(context, ProfileActivity::class.java)
-                )
+                startActivity(Intent(context, ProfileActivity::class.java))
                 dismiss()
             }
 
         view.findViewById<LinearLayout>(R.id.settings)
             .setOnClickListener {
-                startActivity(
-                    Intent(context, SettingsActivity::class.java)
-                )
+                startActivity(Intent(context, SettingsActivity::class.java))
                 dismiss()
             }
 
         view.findViewById<LinearLayout>(R.id.logout)
             .setOnClickListener {
                 logout()
-                dismiss()
             }
     }
 
     private fun logout() {
         val sharedPref = appContext.getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
-        val tokenGuardado = sharedPref.getString("apiToken", "") ?: ""
+        val token = sharedPref.getString("apiToken", "") ?: ""
 
         lifecycleScope.launch {
             try {
-                if (tokenGuardado.isNotEmpty()) {
-                    RetrofitClient.apiService.logout(tokenGuardado)
+                if (token.isNotEmpty()) {
+                    // ✅ Bearer corregido
+                    RetrofitClient.apiService.logout("Bearer $token")
                 }
-            } catch (_: Exception) {
-            }
+            } catch (_: Exception) { }
 
+            // Limpiar sesión
             sharedPref.edit()
                 .putBoolean("isLoggedIn", false)
                 .putString("apiToken", "")
                 .apply()
 
-            Snackbars.success(
-                requireActivity().findViewById(android.R.id.content),
-                "Sesión cerrada correctamente",
-                Toast.LENGTH_SHORT
-            ).show()
+            // ✅ dismiss() antes de navegar para evitar race condition con requireActivity()
+            dismiss()
 
             val intent = Intent(appContext, MainActivity::class.java).apply {
                 putExtra("FROM_LOGOUT", true)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             }
-
             startActivity(intent)
-            requireActivity().finish()
         }
     }
 }

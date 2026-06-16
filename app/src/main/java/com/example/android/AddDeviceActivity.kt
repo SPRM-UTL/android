@@ -1,8 +1,8 @@
 package com.example.android
 
 import android.annotation.SuppressLint
-import android.app.Dialog
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothClass
 import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.content.Intent
@@ -12,7 +12,6 @@ import android.os.Bundle
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.View
-import android.view.Window
 import android.widget.ArrayAdapter
 import android.widget.ImageView
 import android.widget.TextView
@@ -51,7 +50,8 @@ class AddDeviceActivity : AppCompatActivity() {
     private lateinit var tvEstadoConexion: TextView
     private lateinit var viewStatusDot: View
     private lateinit var ivIconoEstado: ImageView
-    
+    private lateinit var ivTipoDispositivo: ImageView
+
     private lateinit var progressCargando: LinearProgressIndicator
     private lateinit var rvDispositivos: RecyclerView
 
@@ -65,16 +65,27 @@ class AddDeviceActivity : AppCompatActivity() {
 
     private var editDeviceId: Int = -1
     private var existingDevice: Dispositivo? = null
+    private var filtroTipo: String? = null
 
-    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+    private var dialogConectando: android.app.Dialog? = null
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
         if (permissions.entries.all { it.value }) {
             verificarYEncenderBluetooth()
         } else {
-            Snackbars.error(findViewById(android.R.id.content), "Permisos necesarios denegados", Toast.LENGTH_LONG).show()
+            Snackbars.error(
+                findViewById(android.R.id.content),
+                "Permisos necesarios denegados",
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 
-    private val enableBluetoothLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+    private val enableBluetoothLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
         if (result.resultCode == RESULT_OK) verificarGPSYScan()
     }
 
@@ -84,14 +95,14 @@ class AddDeviceActivity : AppCompatActivity() {
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor = Color.TRANSPARENT
-        window.navigationBarColor = Color.WHITE 
+        window.navigationBarColor = Color.WHITE
         WindowInsetsControllerCompat(window, window.decorView).apply {
-            isAppearanceLightStatusBars = false 
-            isAppearanceLightNavigationBars = true 
+            isAppearanceLightStatusBars = false
+            isAppearanceLightNavigationBars = true
         }
 
         setContentView(R.layout.activity_add_device)
-        
+
         db = AppDatabase.getDatabase(this)
         gestorBluetooth = BluetoothScanManager(this)
 
@@ -103,8 +114,18 @@ class AddDeviceActivity : AppCompatActivity() {
         ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, 0, systemBars.right, 0)
-            header.setPadding(header.paddingLeft, systemBars.top, header.paddingRight, (12 * resources.displayMetrics.density).toInt())
-            rv.setPadding(rv.paddingLeft, rv.paddingTop, rv.paddingRight, systemBars.bottom + (80 * resources.displayMetrics.density).toInt())
+            header.setPadding(
+                header.paddingLeft,
+                systemBars.top,
+                header.paddingRight,
+                (12 * resources.displayMetrics.density).toInt()
+            )
+            rv.setPadding(
+                rv.paddingLeft,
+                rv.paddingTop,
+                rv.paddingRight,
+                systemBars.bottom + (80 * resources.displayMetrics.density).toInt()
+            )
             val params = fab.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
             params.bottomMargin = systemBars.bottom + (20 * resources.displayMetrics.density).toInt()
             fab.layoutParams = params
@@ -112,6 +133,7 @@ class AddDeviceActivity : AppCompatActivity() {
         }
 
         editDeviceId = intent.getIntExtra("EXTRA_DEVICE_ID", -1)
+        filtroTipo = intent.getStringExtra("FILTRO_TIPO")
 
         inicializarVistas()
         configurarUI()
@@ -124,12 +146,16 @@ class AddDeviceActivity : AppCompatActivity() {
         }
     }
 
+    // ==========================================================
+    // INICIALIZACION
+    // ==========================================================
+
     private fun inicializarVistas() {
         tvDispositivoGuardado = findViewById(R.id.tvDispositivoGuardado)
         tvEstadoConexion = findViewById(R.id.tvEstadoConexion)
         viewStatusDot = findViewById(R.id.viewStatusDot)
         ivIconoEstado = findViewById(R.id.ivIconoEstado)
-        
+        ivTipoDispositivo = findViewById(R.id.ivTipoDispositivo)
         progressCargando = findViewById(R.id.progressCargando)
         rvDispositivos = findViewById(R.id.rvDispositivosBt)
     }
@@ -139,9 +165,21 @@ class AddDeviceActivity : AppCompatActivity() {
             val device = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(resultado.mac)
             intentarConectarDispositivo(device)
         }
-        
+
         rvDispositivos.layoutManager = LinearLayoutManager(this)
         rvDispositivos.adapter = listAdapter
+
+        when (filtroTipo) {
+            "Audífonos" -> {
+                ivTipoDispositivo.setImageResource(R.drawable.headphones)
+                ivTipoDispositivo.visibility = View.VISIBLE
+            }
+            "Bocinas" -> {
+                ivTipoDispositivo.setImageResource(R.drawable.speaker)
+                ivTipoDispositivo.visibility = View.VISIBLE
+            }
+            else -> ivTipoDispositivo.visibility = View.GONE
+        }
 
         actualizarUIEstado()
     }
@@ -150,9 +188,12 @@ class AddDeviceActivity : AppCompatActivity() {
         findViewById<ImageView>(R.id.btnBack).setOnClickListener {
             onBackPressedDispatcher.onBackPressed()
         }
-
         findViewById<View>(R.id.fabRefresh).setOnClickListener { pedirPermisos() }
     }
+
+    // ==========================================================
+    // DATOS
+    // ==========================================================
 
     private fun cargarDatosDispositivo() {
         lifecycleScope.launch {
@@ -168,6 +209,10 @@ class AddDeviceActivity : AppCompatActivity() {
             }
         }
     }
+
+    // ==========================================================
+    // BLUETOOTH
+    // ==========================================================
 
     private fun pedirPermisos() {
         if (gestorBluetooth.tienePermisosNecesarios()) {
@@ -190,7 +235,11 @@ class AddDeviceActivity : AppCompatActivity() {
 
     private fun verificarGPSYScan() {
         if (!gestorBluetooth.isGpsEnabled()) {
-            Snackbars.warning(findViewById(android.R.id.content), "Activa el GPS para escanear", Toast.LENGTH_LONG).show()
+            Snackbars.warning(
+                findViewById(android.R.id.content),
+                "Activa el GPS para escanear",
+                Toast.LENGTH_LONG
+            ).show()
             startActivity(Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS))
         } else {
             iniciarEscaneo()
@@ -204,7 +253,19 @@ class AddDeviceActivity : AppCompatActivity() {
 
         gestorBluetooth.iniciarEscaneo(
             alEncontrarDispositivo = { resultado ->
-                runOnUiThread { listAdapter.agregarDispositivo(resultado) }
+                runOnUiThread {
+                    val deviceLog = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(resultado.mac)
+                    val clase = deviceLog.bluetoothClass?.deviceClass
+                    android.util.Log.d("BT_FILTRO", "Nombre: ${resultado.nombre} | MAC: ${resultado.mac} | Clase: $clase")
+
+                    val pasaFiltro = when (filtroTipo) {
+                        "Audífonos" -> esDispositivoAudio(resultado.mac, resultado.nombre)
+                        "Bocinas"   -> esDispositivoBocina(resultado.mac, resultado.nombre)
+                        else        -> true
+                    }
+
+                    if (pasaFiltro) listAdapter.agregarDispositivo(resultado)
+                }
             },
             alFinalizarEscaneo = {
                 runOnUiThread {
@@ -216,15 +277,90 @@ class AddDeviceActivity : AppCompatActivity() {
     }
 
     @SuppressLint("MissingPermission")
+    private fun esDispositivoAudio(mac: String, nombre: String?): Boolean {
+        return try {
+            val device = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(mac)
+            val claseDispositivo = device.bluetoothClass?.deviceClass
+
+            android.util.Log.d("BT_FILTRO", "Clase obtenida en esDispositivoAudio: $claseDispositivo")
+
+            val esPorClase = claseDispositivo == BluetoothClass.Device.AUDIO_VIDEO_HEADPHONES ||
+                    claseDispositivo == BluetoothClass.Device.AUDIO_VIDEO_HANDSFREE ||
+                    claseDispositivo == BluetoothClass.Device.AUDIO_VIDEO_HIFI_AUDIO
+
+            val nombreUpper = nombre?.uppercase() ?: ""
+            val esPorNombre = nombreUpper.contains("HEADPHONE") ||
+                    nombreUpper.contains("HEADSET") ||
+                    nombreUpper.contains("EARPHONE") ||
+                    nombreUpper.contains("EARBUDS") ||
+                    nombreUpper.contains("AUDIFONOS") ||
+                    nombreUpper.contains("AUDÍFONOS") ||
+                    nombreUpper.contains("AURICULAR") ||
+                    nombreUpper.contains("AUT") ||
+                    nombreUpper.contains("TWS") ||
+                    nombreUpper.contains("BUDS") ||
+                    nombreUpper.contains("AIRPOD") ||
+                    nombreUpper.contains("WH-") ||
+                    nombreUpper.contains("WF-") ||
+                    nombreUpper.contains("QC") ||
+                    nombreUpper.contains("TUNE") ||
+                    nombreUpper.contains("FREEBUDS")
+
+            android.util.Log.d("BT_FILTRO", "esPorClase: $esPorClase | esPorNombre: $esPorNombre")
+
+            esPorClase || esPorNombre
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun esDispositivoBocina(mac: String, nombre: String?): Boolean {
+        return try {
+            val device = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(mac)
+            val claseDispositivo = device.bluetoothClass?.deviceClass
+
+            val esPorClase = claseDispositivo == BluetoothClass.Device.AUDIO_VIDEO_LOUDSPEAKER ||
+                    claseDispositivo == BluetoothClass.Device.AUDIO_VIDEO_PORTABLE_AUDIO ||
+                    claseDispositivo == BluetoothClass.Device.AUDIO_VIDEO_HIFI_AUDIO
+
+            val nombreUpper = nombre?.uppercase() ?: ""
+            val esPorNombre = nombreUpper.contains("SPEAKER") ||
+                    nombreUpper.contains("BOCINA") ||
+                    nombreUpper.contains("ALTAVOZ") ||
+                    nombreUpper.contains("SOUNDBAR") ||
+                    nombreUpper.contains("CHARGE") ||
+                    nombreUpper.contains("FLIP") ||
+                    nombreUpper.contains("XTREME") ||
+                    nombreUpper.contains("BOOMBOX") ||
+                    nombreUpper.contains("SOUNDLINK")
+
+            esPorClase || esPorNombre
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    @SuppressLint("MissingPermission")
     private fun intentarConectarDispositivo(device: BluetoothDevice) {
         gestorBluetooth.detenerEscaneo()
-        
-        tvEstadoConexion.text = "Conectando..."
-        tvEstadoConexion.setTextColor(ContextCompat.getColor(this, android.R.color.holo_orange_dark))
-        viewStatusDot.background = ContextCompat.getDrawable(this, R.drawable.dot_green)
-        
-        progressCargando.visibility = View.VISIBLE
-        
+
+        // Mostrar diálogo de conexión
+        val themedContext = ContextThemeWrapper(this, com.google.android.material.R.style.Theme_Material3_Light_Dialog)
+        val dialogView = LayoutInflater.from(themedContext).inflate(R.layout.dialog_connecting, null)
+
+        dialogView.findViewById<TextView>(R.id.tvConectandoNombre).text =
+            device.name ?: "Dispositivo Bluetooth"
+
+        dialogConectando = MaterialAlertDialogBuilder(themedContext)
+            .setView(dialogView)
+            .setCancelable(false)
+            .create()
+            .also {
+                it.window?.setBackgroundDrawable(null) // <- cambia ColorDrawable(TRANSPARENT) por null
+                it.show()
+            }
+
         lifecycleScope.launch(Dispatchers.IO) {
             var exito = false
             repeat(2) {
@@ -235,23 +371,53 @@ class AddDeviceActivity : AppCompatActivity() {
             }
 
             withContext(Dispatchers.Main) {
-                progressCargando.visibility = View.INVISIBLE
-                
+                dialogConectando?.dismiss()
+                dialogConectando = null
+
                 if (exito) {
                     mostrarAlertaConfiguracion(device)
-                    Snackbars.success(findViewById(android.R.id.content), "¡Vínculo Establecido!", Toast.LENGTH_SHORT).show()
+                    Snackbars.success(
+                        findViewById(android.R.id.content),
+                        "¡Vínculo Establecido!",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 } else {
-                    Snackbars.error(findViewById(android.R.id.content), "No se pudo conectar", Toast.LENGTH_LONG).show()
+                    Snackbars.error(
+                        findViewById(android.R.id.content),
+                        "No se pudo conectar",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
                 actualizarUIEstado()
             }
         }
     }
 
+    // ==========================================================
+    // DIALOGO
+    // ==========================================================
+
+    private fun actualizarIconoTipo(tipo: String, ivTipoIcono: ImageView) {
+        val iconRes = when (tipo) {
+            "Audífonos"  -> R.drawable.headphones
+            "Bocinas"    -> R.drawable.speaker
+            "Luces"      -> R.drawable.lamp_floor
+            "Ventilador" -> R.drawable.wind
+            "Televisión" -> R.drawable.tv_minimal
+            else         -> null
+        }
+        if (iconRes != null) {
+            ivTipoIcono.setImageResource(iconRes)
+            ivTipoIcono.visibility = View.VISIBLE
+        } else {
+            ivTipoIcono.visibility = View.GONE
+        }
+    }
+
     private fun mostrarAlertaConfiguracion(device: BluetoothDevice?, editDevParam: Dispositivo? = null) {
         val themedContext = ContextThemeWrapper(this, com.google.android.material.R.style.Theme_Material3_Light_Dialog)
         val dialogView = LayoutInflater.from(themedContext).inflate(R.layout.dialog_config_device, null)
-        
+
         val dialog = MaterialAlertDialogBuilder(themedContext)
             .setView(dialogView)
             .setCancelable(false)
@@ -265,6 +431,7 @@ class AddDeviceActivity : AppCompatActivity() {
         val btnCancel = dialogView.findViewById<MaterialButton>(R.id.btnCancel)
         val btnConfirm = dialogView.findViewById<MaterialButton>(R.id.btnConfirm)
         val btnDelete = dialogView.findViewById<MaterialButton>(R.id.btnDeleteDialog)
+        val ivTipoIcono = dialogView.findViewById<ImageView>(R.id.ivTipoIcono)
 
         @SuppressLint("MissingPermission")
         val hardwareName = if (device != null) {
@@ -274,15 +441,31 @@ class AddDeviceActivity : AppCompatActivity() {
         }
         tvTarget.text = hardwareName
 
-        val tipos = listOf("Luces", "Bocinas", "Ventilador", "Televisión")
+        val tipos = if (filtroTipo != null) {
+            listOf(filtroTipo!!)
+        } else {
+            listOf("Luces", "Bocinas", "Ventilador", "Televisión", "Audífonos")
+        }
+
         val adapter = ArrayAdapter(themedContext, android.R.layout.simple_spinner_dropdown_item, tipos)
         etType.setAdapter(adapter)
+        etType.setText(tipos[0], false)
+        etType.isEnabled = filtroTipo == null
+        etType.setOnClickListener {
+            if (etType.isEnabled) etType.showDropDown()
+        }
 
-        etType.setOnClickListener { etType.showDropDown() }
+        etType.setOnItemClickListener { _, _, _, _ ->
+            actualizarIconoTipo(etType.text.toString(), ivTipoIcono)
+        }
+
+        actualizarIconoTipo(tipos[0], ivTipoIcono)
 
         if (editDevParam != null) {
             etName.setText(editDevParam.nombre)
-            etType.setText(editDevParam.tipo, false)
+            val tipoEdit = editDevParam.tipo ?: ""
+            etType.setText(tipoEdit, false)
+            actualizarIconoTipo(tipoEdit, ivTipoIcono)
             btnConfirm.text = "Actualizar"
             btnDelete.visibility = View.VISIBLE
         } else {
@@ -290,7 +473,7 @@ class AddDeviceActivity : AppCompatActivity() {
         }
 
         btnCancel.setOnClickListener { dialog.dismiss() }
-        
+
         btnDelete.setOnClickListener {
             if (editDevParam != null) startDeleteDevice(editDevParam.id)
             dialog.dismiss()
@@ -299,18 +482,18 @@ class AddDeviceActivity : AppCompatActivity() {
         btnConfirm.setOnClickListener {
             val finalName = etName.text.toString().trim()
             val finalType = etType.text.toString().trim()
-            
+
             if (finalName.isEmpty()) {
                 etName.error = "Ingresa un nombre"
                 return@setOnClickListener
             }
 
             dialog.dismiss()
-            
+
             val mac = device?.address ?: editDevParam?.macBluetooth
-            val nombreBt = device?.let { 
+            val nombreBt = device?.let {
                 @SuppressLint("MissingPermission")
-                it.name 
+                it.name
             } ?: editDevParam?.nombreBluetooth
 
             val nuevo = Dispositivo(
@@ -324,7 +507,7 @@ class AddDeviceActivity : AppCompatActivity() {
                 nombreBluetooth = nombreBt,
                 fechaSincronizacion = java.time.LocalDateTime.now().toString()
             )
-            
+
             tvDispositivoGuardado.text = finalName
             guardarEnServidor(nuevo)
         }
@@ -332,27 +515,38 @@ class AddDeviceActivity : AppCompatActivity() {
         dialog.show()
     }
 
+    // ==========================================================
+    // SERVIDOR
+    // ==========================================================
+
     private fun startDeleteDevice(id: Int) {
         val sesionPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
         val token = sesionPref.getString("apiToken", "") ?: ""
         if (token.isEmpty()) return
         val bearer = "Bearer $token"
-        
+
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val response = RetrofitClient.deviceService.deleteDispositivo(bearer, id)
                 withContext(Dispatchers.Main) {
                     if (response.isSuccessful) {
                         existingDevice?.let { db.dispositivoDao().deleteDispositivo(it) }
-                        Snackbars.success(findViewById(android.R.id.content), "Dispositivo eliminado", Toast.LENGTH_SHORT).show()
-                        // Aquí sí podríamos salir si eliminamos, o quedarnos. Vamos a quedarnos.
+                        Snackbars.success(
+                            findViewById(android.R.id.content),
+                            "Dispositivo eliminado",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     } else {
                         manejarErrorServidor(response.code())
                     }
                 }
             } catch (_: Exception) {
                 withContext(Dispatchers.Main) {
-                    Snackbars.error(findViewById(android.R.id.content), "Error de red al eliminar", Toast.LENGTH_SHORT).show()
+                    Snackbars.error(
+                        findViewById(android.R.id.content),
+                        "Error de red al eliminar",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }
@@ -365,13 +559,19 @@ class AddDeviceActivity : AppCompatActivity() {
         val bearer = "Bearer $token"
 
         lifecycleScope.launch(Dispatchers.IO) {
+            db.dispositivoDao().insertDispositivo(dispositivo)
+
             try {
                 val response = if (dispositivo.id == 0) {
                     RetrofitClient.deviceService.createDispositivo(bearer, dispositivo)
                 } else {
-                    val updateResp = RetrofitClient.deviceService.updateDispositivo(bearer, dispositivo.id, dispositivo)
+                    val updateResp = RetrofitClient.deviceService.updateDispositivo(
+                        bearer, dispositivo.id, dispositivo
+                    )
                     if (updateResp.isSuccessful) {
-                        retrofit2.Response.success(com.example.android.network.ApiResponse(true, 200, dispositivo))
+                        retrofit2.Response.success(
+                            com.example.android.network.ApiResponse(true, 200, dispositivo)
+                        )
                     } else {
                         retrofit2.Response.error(updateResp.code(), updateResp.errorBody()!!)
                     }
@@ -381,28 +581,44 @@ class AddDeviceActivity : AppCompatActivity() {
                     if (response.isSuccessful) {
                         val guardado = response.body()?.data
                         if (guardado != null) {
-                            db.dispositivoDao().insertDispositivo(guardado)
+                            lifecycleScope.launch(Dispatchers.IO) {
+                                db.dispositivoDao().insertDispositivo(guardado)
+                            }
                         }
-                        Snackbars.success(findViewById(android.R.id.content), "Guardado exitoso", Toast.LENGTH_SHORT).show()
+                        Snackbars.success(
+                            findViewById(android.R.id.content),
+                            "Guardado exitoso",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        delay(1000)
+                        finish()
                     } else {
                         manejarErrorServidor(response.code())
                     }
                 }
             } catch (_: Exception) {
                 withContext(Dispatchers.Main) {
-                    Snackbars.error(findViewById(android.R.id.content), "Error de red", Toast.LENGTH_LONG).show()
+                    Snackbars.error(
+                        findViewById(android.R.id.content),
+                        "Error de red",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         }
     }
 
     private fun manejarErrorServidor(codigo: Int) {
-        val msg = when(codigo) {
+        val msg = when (codigo) {
             401 -> "Sesión expirada"
             else -> "Error $codigo"
         }
         Snackbars.error(findViewById(android.R.id.content), msg, Toast.LENGTH_LONG).show()
     }
+
+    // ==========================================================
+    // HELPERS
+    // ==========================================================
 
     private fun actualizarUIEstado() {
         if (BluetoothController.isConnected) {
@@ -423,5 +639,6 @@ class AddDeviceActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         gestorBluetooth.detenerEscaneo()
+        dialogConectando?.dismiss()
     }
 }

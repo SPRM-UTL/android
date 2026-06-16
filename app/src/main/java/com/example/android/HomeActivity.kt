@@ -11,14 +11,13 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.ComposeView
-import androidx.constraintlayout.motion.widget.MotionLayout
-import androidx.core.view.ViewCompat
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ComposeView
+import androidx.constraintlayout.motion.widget.MotionLayout
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -47,21 +46,15 @@ class HomeActivity : AppCompatActivity() {
     // ==========================================================
 
     private lateinit var db: AppDatabase
-
     private lateinit var vistaRaiz: View
     private lateinit var mainHome: MotionLayout
-
     private lateinit var rvDispositivos: RecyclerView
-
     private lateinit var tvDeviceCount: TextView
     private lateinit var tvRedEstado: TextView
     private lateinit var iconWifiContainer: MaterialCardView
     private lateinit var iconWifi: ImageView
-
     private lateinit var btnConfigurarRed: View
-
     private lateinit var deviceAdapter: DeviceAdapter
-
     private var isLoggingOut = false
 
     // ==========================================================
@@ -87,6 +80,7 @@ class HomeActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         verificarEstadoRedVisual()
+        sincronizarDatosServidor() // 👈 refresca lista al volver de AddDeviceActivity
     }
 
     // ==========================================================
@@ -100,22 +94,21 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun inicializarVistas() {
-        vistaRaiz          = findViewById(android.R.id.content)
-        mainHome           = findViewById(R.id.mainHome)
-        rvDispositivos     = findViewById(R.id.rvDispositivosHome)
-        tvDeviceCount      = findViewById(R.id.tvDeviceCount)
-        tvRedEstado        = findViewById(R.id.tvRedEstado)
-        iconWifiContainer  = findViewById(R.id.iconWifiContainer)
-        iconWifi           = findViewById(R.id.iconWifi)
-        btnConfigurarRed   = findViewById(R.id.btnConfigurarRed)
+        vistaRaiz         = findViewById(android.R.id.content)
+        mainHome          = findViewById(R.id.mainHome)
+        rvDispositivos    = findViewById(R.id.rvDispositivosHome)
+        tvDeviceCount     = findViewById(R.id.tvDeviceCount)
+        tvRedEstado       = findViewById(R.id.tvRedEstado)
+        iconWifiContainer = findViewById(R.id.iconWifiContainer)
+        iconWifi          = findViewById(R.id.iconWifi)
+        btnConfigurarRed  = findViewById(R.id.btnConfigurarRed)
     }
 
     private fun inicializarAdapters() {
         deviceAdapter = DeviceAdapter(
             onEditClick = { dispositivo ->
-                // Abrir DeviceActivity y mostrar directamente el formulario de edición
                 val intent = Intent(this, AddDeviceActivity::class.java).apply {
-                    putExtra("DISPOSITIVO_ID", dispositivo.id)
+                    putExtra("EXTRA_DEVICE_ID", dispositivo.id) // 👈 corregido
                 }
                 startActivity(intent)
             },
@@ -176,7 +169,12 @@ class HomeActivity : AppCompatActivity() {
 
     private fun mostrarMensajeBienvenida() {
         if (intent.getBooleanExtra("SHOW_WELCOME", false)) {
-            Snackbars.info(vistaRaiz, "Bienvenido", Snackbar.LENGTH_SHORT).show()
+            val snackbar = Snackbars.info(mainHome, "Bienvenido", Snackbar.LENGTH_SHORT)
+            val snackbarView = snackbar.view
+            val params = snackbarView.layoutParams as androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams
+            params.bottomMargin = (90 * resources.displayMetrics.density).toInt()
+            snackbarView.layoutParams = params
+            snackbar.show()
         }
     }
 
@@ -203,13 +201,6 @@ class HomeActivity : AppCompatActivity() {
         container.addView(composeView)
     }
 
-    private fun abrirMenuPrincipal(onDismiss: () -> Unit = {}) {
-        if (supportFragmentManager.findFragmentByTag("MenuBottomSheet") != null) return
-        val sheet = MenuBottomSheetDialog(this)
-        sheet.onDismissCallback = onDismiss
-        sheet.show(supportFragmentManager, "MenuBottomSheet")
-    }
-
     // ==========================================================
     // EVENTOS
     // ==========================================================
@@ -230,12 +221,8 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun cargarRecycler() {
-        // Abrir DeviceActivity y mostrar directamente el formulario de añadir
         val addDeviceAdapter = AddDeviceAdapter {
-            val intent = Intent(this, AddDeviceActivity::class.java).apply {
-                putExtra("ABRIR_FORMULARIO_AGREGAR", true)
-            }
-            startActivity(intent)
+            startActivity(Intent(this, SelectTypeDevice::class.java))
         }
 
         rvDispositivos.layoutManager = GridLayoutManager(this, 2)
@@ -311,9 +298,11 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
-    private fun abrirMenuPrincipal() {
+    private fun abrirMenuPrincipal(onDismiss: () -> Unit = {}) {
         if (supportFragmentManager.findFragmentByTag("MenuBottomSheet") != null) return
-        MenuBottomSheetDialog(this).show(supportFragmentManager, "MenuBottomSheet")
+        val sheet = MenuBottomSheetDialog(this)
+        sheet.onDismissCallback = onDismiss
+        sheet.show(supportFragmentManager, "MenuBottomSheet")
     }
 
     // ==========================================================
