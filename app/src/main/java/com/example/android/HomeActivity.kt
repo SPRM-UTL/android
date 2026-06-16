@@ -82,13 +82,13 @@ class HomeActivity : AppCompatActivity() {
 
         ViewCompat.setOnApplyWindowInsetsListener(rootView) { _, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            
+
             // Padding a la barra inferior para que suba según la Navigation Bar del sistema
             bottomBarContainer.setPadding(0, 0, 0, systemBars.bottom)
 
             // Pasar los insets al contenedor de fragmentos para que la parte superior respete el Status Bar
             ViewCompat.dispatchApplyWindowInsets(viewPagerView, insets)
-            
+
             insets
         }
     }
@@ -98,7 +98,7 @@ class HomeActivity : AppCompatActivity() {
         val composeView = ComposeView(this).apply {
             setContent {
                 var isMenuOpen by androidx.compose.runtime.remember { mutableStateOf(false) }
-                
+
                 BottomBarWithFab(
                     currentScreen = currentScreenState,
                     isMenuOpen = isMenuOpen,

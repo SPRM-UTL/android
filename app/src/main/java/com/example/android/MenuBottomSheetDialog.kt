@@ -21,7 +21,7 @@ class MenuBottomSheetDialog(
     private val appContext: Context
 ) : BottomSheetDialogFragment() {
 
-    // NUEVO: callback para cuando se cierra el sheet
+    // Callback para cuando se cierra el sheet
     var onDismissCallback: (() -> Unit)? = null
 
     override fun onDismiss(dialog: DialogInterface) {
@@ -64,7 +64,7 @@ class MenuBottomSheetDialog(
         view.findViewById<LinearLayout>(R.id.logout)
             .setOnClickListener {
                 logout()
-                // dismiss() is removed here because if we dismiss, the lifecycleScope gets cancelled 
+                // dismiss() is removed here because if we dismiss, the lifecycleScope gets cancelled
                 // and the API call hangs, leaving the loading dialog stuck.
             }
     }

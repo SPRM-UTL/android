@@ -105,15 +105,13 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
+                android:orientation="vertical"
                 android:layout_marginBottom="20dp">
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnLogin"
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="56dp"
-                    android:layout_weight="1"
                     android:text="@string/btn_login"
                     android:textAllCaps="false"
                     android:textColor="@color/white"
@@ -126,18 +124,21 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnBiometricLogin"
                     style="@style/Widget.Material3.Button.OutlinedButton"
-                    android:layout_width="56dp"
+                    android:layout_width="match_parent"
                     android:layout_height="56dp"
-                    android:layout_marginStart="12dp"
-                    android:padding="0dp"
+                    android:layout_marginTop="12dp"
+                    android:text="Usar huella digital"
+                    android:textColor="@color/teal_primary"
+                    android:textAllCaps="false"
                     app:cornerRadius="16dp"
-                    app:icon="@drawable/ic_manordomo"
+                    app:icon="@drawable/ic_fingerprint"
                     app:iconGravity="textStart"
-                    app:iconPadding="0dp"
+                    app:iconPadding="8dp"
                     app:iconSize="24dp"
                     app:iconTint="@color/teal_primary"
                     app:strokeColor="@color/teal_primary"
-                    android:visibility="gone" />
+                    android:visibility="visible" />
+
             </LinearLayout>
 
             <!-- Espacio flexible -->

@@ -30,15 +30,16 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Android"
         android:usesCleartextTraffic="true">
-        <activity android:name=".EspConfigActivity" android:exported="true" />
+
+        <activity android:name=".EspConfigActivity" android:exported="false" />
         <activity android:name=".DeviceCameraActivity" android:exported="true" />
-        
+
         <!-- IA Simple Activities -->
         <activity android:name=".ai.ComboListActivity" />
         <activity android:name=".ai.SecuenciaConfigActivity" />
         <activity android:name=".ai.PasoWizardActivity" />
         <activity android:name=".ai.ScheduleActivity" />
-        
+
         <service
             android:name=".ai.BackgroundCameraService"
             android:enabled="true"
@@ -59,6 +60,9 @@
             android:exported="false" />
 
         <activity
+            android:name=".Gestos"
+            android:exported="false" />
+        <activity
             android:name=".GestureActivity"
             android:exported="false" />
         <activity
@@ -73,6 +77,10 @@
         <activity
             android:name=".DeviceControlsActivity"
             android:exported="false" />
+        <activity
+            android:name=".SelectTypeDevice"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".extra.MusicActivity"
@@ -94,6 +102,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
     </application>
 
 </manifest>

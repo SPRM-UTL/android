@@ -1,15 +1,12 @@
 package com.example.android
 
-
 import android.content.Context
 import android.content.Intent
-import android.graphics.drawable.Animatable
 import android.os.Bundle
 import android.util.Patterns
 import androidx.biometric.BiometricManager
 import android.view.View
 import android.widget.Button
-import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricPrompt
@@ -44,19 +41,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var executor: Executor
     private lateinit var biometricPrompt: BiometricPrompt
     private lateinit var promptInfo: BiometricPrompt.PromptInfo
-
     private lateinit var db: AppDatabase
-
     private lateinit var etUsuario: TextInputEditText
     private lateinit var etContrasena: TextInputEditText
-
     private lateinit var txtInputUsuario: TextInputLayout
     private lateinit var txtInputContrasena: TextInputLayout
-
     private lateinit var btnLoginTradicional: Button
     private lateinit var btnBiometricLogin: MaterialButton
     private lateinit var tvRegistrarse: TextView
-
     private var manteniendoSplash = true
 
     // ==========================================================
@@ -72,17 +64,6 @@ class MainActivity : AppCompatActivity() {
         configurarVentana()
 
         setContentView(R.layout.activity_main)
-
-
-        /* 
-        startActivity(
-            Intent(
-                this,
-                EspConfigActivity::class.java
-            )
-        )
-        */
-
 
         inicializar()
 
@@ -108,16 +89,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun inicializarVistas() {
 
-        etUsuario = findViewById(R.id.etUsuario)
-        etContrasena = findViewById(R.id.etContrasena)
-
-        txtInputUsuario = findViewById(R.id.txtInputUsuario)
-        txtInputContrasena = findViewById(R.id.txtInputContrasena)
-
+        etUsuario         = findViewById(R.id.etUsuario)
+        etContrasena      = findViewById(R.id.etContrasena)
+        txtInputUsuario   = findViewById(R.id.txtInputUsuario)
+        txtInputContrasena= findViewById(R.id.txtInputContrasena)
         btnLoginTradicional = findViewById(R.id.btnLogin)
         btnBiometricLogin = findViewById(R.id.btnBiometricLogin)
-
-        tvRegistrarse = findViewById(R.id.tvRegistrarse)
+        tvRegistrarse     = findViewById(R.id.tvRegistrarse)
     }
 
     // ==========================================================
@@ -134,21 +112,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun actualizarVisibilidadBiometrica() {
-        val sharedPref = getSharedPreferences("SesionApp", MODE_PRIVATE)
+
+        val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
         val bioHabilitadaConfig = sharedPref.getBoolean("biometricEnabled", true)
         val token = sharedPref.getString("apiToken", "") ?: ""
 
         val biometricManager = BiometricManager.from(this)
-        val authenticators = BiometricManager.Authenticators.BIOMETRIC_STRONG or 
-                            BiometricManager.Authenticators.BIOMETRIC_WEAK
-        
-        val biometriaDisponible = biometricManager.canAuthenticate(authenticators) == BiometricManager.BIOMETRIC_SUCCESS
+        val authenticators =
+            BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                    BiometricManager.Authenticators.BIOMETRIC_WEAK
 
-        if (biometriaDisponible && bioHabilitadaConfig && token.isNotEmpty()) {
-            btnBiometricLogin.visibility = View.VISIBLE
-        } else {
-            btnBiometricLogin.visibility = View.GONE
-        }
+        val biometriaDisponible =
+            biometricManager.canAuthenticate(authenticators) == BiometricManager.BIOMETRIC_SUCCESS
+
+        btnBiometricLogin.visibility =
+            if (biometriaDisponible && bioHabilitadaConfig && token.isNotEmpty()) View.VISIBLE else View.GONE
     }
 
     // ==========================================================
@@ -173,7 +151,7 @@ class MainActivity : AppCompatActivity() {
 
         ViewCompat.setOnApplyWindowInsetsListener(motionLayout) { v, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            val ime  = insets.getInsets(WindowInsetsCompat.Type.ime())
             val isKeyboardVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
 
             if (isKeyboardVisible) {
@@ -190,7 +168,6 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        // Tocar fuera para cerrar teclado
         val cerrarTecladoLogin = View.OnClickListener {
             val focus = currentFocus
             if (focus is TextInputEditText) {
@@ -203,12 +180,10 @@ class MainActivity : AppCompatActivity() {
         motionLayout.setOnClickListener(cerrarTecladoLogin)
         findViewById<View>(R.id.scrollContent).setOnClickListener(cerrarTecladoLogin)
 
-        // Refrescar visibilidad biométrica cuando se regresa a esta pantalla (ej. desde Settings)
         motionLayout.post {
             actualizarVisibilidadBiometrica()
         }
 
-        // Enter en contraseña para cerrar teclado
         etContrasena.setOnEditorActionListener { v, actionId, _ ->
             if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE) {
                 v.clearFocus()
@@ -227,38 +202,28 @@ class MainActivity : AppCompatActivity() {
 
         if (!validarEntradas()) return
 
-        val usuario =
-            etUsuario.text.toString().trim()
-
-        val password =
-            etContrasena.text.toString().trim()
+        val usuario    = etUsuario.text.toString().trim()
+        val password   = etContrasena.text.toString().trim()
 
         lifecycleScope.launch {
             realizarLogin(usuario, password)
         }
     }
 
-    private suspend fun realizarLogin(
-        usuario: String,
-        password: String
-    ) {
+    private suspend fun realizarLogin(usuario: String, password: String) {
 
         try {
 
             mostrarCarga()
 
             val peticion = LoginRequest(
-                correo = usuario,
+                correo      = usuario,
                 contrasenia = password
             )
 
-            val response =
-                RetrofitClient.apiService.login(peticion)
+            val response = RetrofitClient.apiService.login(peticion)
 
-            if (
-                response.isSuccessful &&
-                response.body()?.success == true
-            ) {
+            if (response.isSuccessful && response.body()?.success == true) {
 
                 guardarSesionExitosa(
                     findViewById(android.R.id.content),
@@ -297,48 +262,90 @@ class MainActivity : AppCompatActivity() {
 
         executor = ContextCompat.getMainExecutor(this)
 
-        biometricPrompt =
-            BiometricPrompt(
-                this,
-                executor,
-                biometricCallback
-            )
+        biometricPrompt = BiometricPrompt(this, executor, biometricCallback)
 
-        promptInfo =
-            BiometricPrompt.PromptInfo.Builder()
-                .setTitle("Inicio de sesión con huella")
-                .setSubtitle("Toca el sensor de huella para ingresar")
-                .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG or 
-                                        BiometricManager.Authenticators.BIOMETRIC_WEAK)
-                .setNegativeButtonText("Cancelar")
-                .build()
+        promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle("Inicio de sesión con huella")
+            .setSubtitle("Toca el sensor de huella para ingresar")
+            .setAllowedAuthenticators(
+                BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                        BiometricManager.Authenticators.BIOMETRIC_WEAK
+            )
+            .setNegativeButtonText("Cancelar")
+            .build()
     }
 
-    private val biometricCallback =
-        object : BiometricPrompt.AuthenticationCallback() {
+    private val biometricCallback = object : BiometricPrompt.AuthenticationCallback() {
 
-            override fun onAuthenticationSucceeded(
-                result: BiometricPrompt.AuthenticationResult
-            ) {
-                irAHome()
-            }
+        override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+            // No entra directo — verifica el token contra el servidor primero
+            verificarTokenYEntrar()
+        }
 
-            override fun onAuthenticationError(
-                errorCode: Int,
-                errString: CharSequence
-            ) {
+        override fun onAuthenticationError(errorCode: Int, errString: CharSequence) { }
 
-            }
+        override fun onAuthenticationFailed() {
+            Snackbars.info(
+                findViewById(android.R.id.content),
+                "Huella no reconocida",
+                Snackbar.LENGTH_SHORT
+            ).show()
+        }
+    }
 
-            override fun onAuthenticationFailed() {
+    private fun verificarTokenYEntrar() {
 
-                Snackbars.info(
+        val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+        val token  = sharedPref.getString("apiToken", "") ?: ""
+        val userId = sharedPref.getInt("userId", -1)
+
+        // Sin token → sesión expirada, debe usar contraseña
+        if (token.isEmpty() || userId == -1) {
+            Snackbars.error(
+                findViewById(android.R.id.content),
+                "Sesión expirada. Ingresa con tu contraseña.",
+                Snackbar.LENGTH_LONG
+            ).show()
+            return
+        }
+
+        lifecycleScope.launch {
+            try {
+                mostrarCarga()
+
+                val response = RetrofitClient.apiService.getUsuario("Bearer $token", userId)
+
+                if (response.isSuccessful) {
+                    // Token vigente → puede entrar
+                    irAHome()
+
+                } else {
+                    // Token inválido (401 / 403) → limpiar y pedir contraseña
+                    sharedPref.edit()
+                        .putString("apiToken", "")
+                        .putBoolean("isLoggedIn", false)
+                        .apply()
+
+                    Snackbars.error(
+                        findViewById(android.R.id.content),
+                        "Sesión expirada. Ingresa con tu contraseña.",
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                }
+
+            } catch (_: Exception) {
+
+                Snackbars.error(
                     findViewById(android.R.id.content),
-                    "Huella no reconocida",
-                    Snackbar.LENGTH_SHORT
+                    "Sin conexión. Intenta más tarde.",
+                    Snackbar.LENGTH_LONG
                 ).show()
+
+            } finally {
+                CustomDialog.dismissDialog()
             }
         }
+    }
 
     // ==========================================================
     // VALIDACIONES
@@ -346,11 +353,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun validarEntradas(): Boolean {
 
-        val usuarioInput =
-            etUsuario.text.toString().trim()
-
-        val contrasenaInput =
-            etContrasena.text.toString().trim()
+        val usuarioInput   = etUsuario.text.toString().trim()
+        val contrasenaInput= etContrasena.text.toString().trim()
 
         var isValid = true
 
@@ -382,24 +386,16 @@ class MainActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
 
-            val sharedPref =
-                getSharedPreferences(
-                    "SesionApp",
-                    Context.MODE_PRIVATE
-                )
-
-            val estaLogueado =
-                sharedPref.getBoolean(
-                    "isLoggedIn",
-                    false
-                )
+            val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+            val estaLogueado = sharedPref.getBoolean("isLoggedIn", false)
 
             if (estaLogueado) {
                 manteniendoSplash = false
-                delay(300) // Tiempo breve para evitar parpadeos
+                delay(300)
                 intentarLoginBiometrico()
                 return@launch
             }
+
             delay(300)
             manteniendoSplash = false
 
@@ -413,30 +409,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun guardarSesionExitosa(
-        view: View,
-        token: String = "",
-        userId: Int = -1
-    ) {
+    private fun guardarSesionExitosa(view: View, token: String = "", userId: Int = -1) {
 
-        val sharedPref =
-            getSharedPreferences(
-                "SesionApp",
-                Context.MODE_PRIVATE
-            )
+        val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
 
         with(sharedPref.edit()) {
-
             putBoolean("isLoggedIn", true)
-
-            if (token.isNotEmpty()) {
-                putString("apiToken", token)
-            }
-
-            if (userId != -1) {
-                putInt("userId", userId)
-            }
-
+            if (token.isNotEmpty()) putString("apiToken", token)
+            if (userId != -1)       putInt("userId", userId)
             apply()
         }
 
@@ -448,34 +428,18 @@ class MainActivity : AppCompatActivity() {
     // ==========================================================
 
     private fun abrirRegistro() {
-
-        startActivity(
-            Intent(
-                this,
-                RegisterActivity::class.java
-            )
-        )
+        startActivity(Intent(this, RegisterActivity::class.java))
     }
 
-    private fun irAHome(
-        mostrarBienvenida: Boolean = false
-    ) {
+    private fun irAHome(mostrarBienvenida: Boolean = false) {
 
-        val intent =
-            Intent(
-                this,
-                HomeActivity::class.java
-            )
+        val intent = Intent(this, HomeActivity::class.java)
 
         if (mostrarBienvenida) {
-            intent.putExtra(
-                "SHOW_WELCOME",
-                true
-            )
+            intent.putExtra("SHOW_WELCOME", true)
         }
 
         startActivity(intent)
-
         finish()
     }
 
@@ -487,9 +451,7 @@ class MainActivity : AppCompatActivity() {
 
         val splashScreen = installSplashScreen()
 
-        splashScreen.setKeepOnScreenCondition {
-            manteniendoSplash
-        }
+        splashScreen.setKeepOnScreenCondition { manteniendoSplash }
 
         splashScreen.setOnExitAnimationListener { splashProvider ->
             splashProvider.remove()
@@ -500,89 +462,53 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
     private fun configurarVentana() {
 
-        WindowCompat.setDecorFitsSystemWindows(
-            window,
-            false
-        )
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        window.statusBarColor =
-            android.graphics.Color.TRANSPARENT
+        window.statusBarColor      = android.graphics.Color.TRANSPARENT
+        window.navigationBarColor  = android.graphics.Color.TRANSPARENT
 
-        window.navigationBarColor =
-            android.graphics.Color.TRANSPARENT
-
-        WindowInsetsControllerCompat(
-            window,
-            window.decorView
-        ).isAppearanceLightStatusBars = false
-
-        WindowInsetsControllerCompat(
-            window,
-            window.decorView
-        ).isAppearanceLightNavigationBars = false
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars     = false
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = false
     }
+
     private fun intentarLoginBiometrico() {
 
-        val sharedPref =
-            getSharedPreferences(
-                "SesionApp",
-                Context.MODE_PRIVATE
-            )
+        val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
 
-        // Verificamos si el usuario tiene habilitada la opción en configuración
         val bioHabilitadaConfig = sharedPref.getBoolean("biometricEnabled", true)
         if (!bioHabilitadaConfig) return
 
-        val biometricManager =
-            BiometricManager.from(this)
+        val biometricManager = BiometricManager.from(this)
 
-        val authenticators = BiometricManager.Authenticators.BIOMETRIC_STRONG or 
-                            BiometricManager.Authenticators.BIOMETRIC_WEAK
+        val authenticators =
+            BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                    BiometricManager.Authenticators.BIOMETRIC_WEAK
 
         val biometriaDisponible =
             biometricManager.canAuthenticate(authenticators) == BiometricManager.BIOMETRIC_SUCCESS
 
         if (!biometriaDisponible) return
 
-        val token =
-            sharedPref.getString(
-                "apiToken",
-                ""
-            )
-
+        val token = sharedPref.getString("apiToken", "")
         if (!token.isNullOrEmpty()) {
-
             biometricPrompt.authenticate(promptInfo)
         }
     }
+
     private fun procesarLogout() {
 
-        if (!intent.getBooleanExtra(
-                "FROM_LOGOUT",
-                false
-            )
-        ) return
+        if (!intent.getBooleanExtra("FROM_LOGOUT", false)) return
 
-        findViewById<MotionLayout>(
-            R.id.motionLayout
-        ).post {
-
-            findViewById<MotionLayout>(
-                R.id.motionLayout
-            ).transitionToEnd()
+        findViewById<MotionLayout>(R.id.motionLayout).post {
+            findViewById<MotionLayout>(R.id.motionLayout).transitionToEnd()
         }
 
-        lifecycleScope.launch(
-            kotlinx.coroutines.Dispatchers.IO
-        ) {
-
-            db.dispositivoDao()
-                .deleteAllDispositivos()
-
-            db.gestoDao()
-                .deleteAllGestos()
+        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            db.dispositivoDao().deleteAllDispositivos()
+            db.gestoDao().deleteAllGestos()
         }
     }
 

@@ -281,9 +281,7 @@ class HomeFragment : Fragment() {
 
     private fun cargarRecycler() {
         val addDeviceAdapter = AddDeviceAdapter {
-            val intent = Intent(requireContext(), AddDeviceActivity::class.java).apply {
-                putExtra("ABRIR_FORMULARIO_AGREGAR", true)
-            }
+            val intent = Intent(requireContext(), SelectTypeDevice::class.java)
             startActivity(intent)
         }
 
