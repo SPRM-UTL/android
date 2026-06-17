@@ -260,11 +260,35 @@ class HomeFragment : Fragment() {
         }
     }
 
+    // ==========================================================
+    // FIX: el Snackbar se muestra anclado a "mainHome" (que ya
+    // respeta los insets) en lugar de android.R.id.content, y se
+    // le agrega un margen inferior calculado según la altura real
+    // de bottom_bar_container, para que no quede pegado al borde
+    // ni tapado por la barra de navegación inferior.
+    // ==========================================================
     private fun mostrarMensajeBienvenida() {
-        if (requireActivity().intent.getBooleanExtra("SHOW_WELCOME", false)) {
-            Snackbars.info(vistaRaiz, "Bienvenido", Snackbar.LENGTH_SHORT).show()
-            // Clear the intent extra so it doesn't show again on rotation/fragment swap
-            requireActivity().intent.removeExtra("SHOW_WELCOME")
+        if (!isAdded) return
+
+        val activity = activity ?: return
+        if (activity.intent.getBooleanExtra("SHOW_WELCOME", false)) {
+
+            activity.intent.removeExtra("SHOW_WELCOME")
+
+            vistaRaiz.post {
+                if (!isAdded) return@post
+
+                val snackbar = Snackbars.info(mainHome, "Bienvenido", Snackbar.LENGTH_SHORT)
+
+                val bottomBar = activity.findViewById<View>(R.id.bottom_bar_container)
+                val bottomBarHeight = bottomBar?.height ?: 0
+
+                val params = snackbar.view.layoutParams as ViewGroup.MarginLayoutParams
+                params.bottomMargin = bottomBarHeight
+                snackbar.view.layoutParams = params
+
+                snackbar.show()
+            }
         }
     }
 
