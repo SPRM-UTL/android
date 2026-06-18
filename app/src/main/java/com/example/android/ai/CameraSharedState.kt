@@ -22,6 +22,9 @@ object CameraSharedState {
     var currentAction: String = "Ninguno"
 
     @Volatile
+    var currentGesture: String = "Ninguno"
+
+    @Volatile
     var imageWidth: Int = 1
 
     @Volatile

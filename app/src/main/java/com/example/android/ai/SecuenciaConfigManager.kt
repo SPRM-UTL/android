@@ -16,11 +16,25 @@ data class Combo(
 )
 
 object SecuenciaConfigManager {
-    private const val PREFS_NAME = "sequence_prefs_v2"
+    private const val PREFS_NAME_BASE = "sequence_prefs_v2"
     private const val KEY_COMBOS = "combos_array"
 
+    // Lee el userId de la sesión actual (guardado en MainActivity al hacer login).
+    // Si no hay sesión activa, usamos -1 como bucket separado.
+    private fun getCurrentUserId(context: Context): Int {
+        val sesionPrefs = context.getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+        return sesionPrefs.getInt("userId", -1)
+    }
+
+    // Cada usuario obtiene su propio archivo de SharedPreferences,
+    // por ejemplo: "sequence_prefs_v2_user_5", "sequence_prefs_v2_user_12", etc.
+    private fun getPrefsName(context: Context): String {
+        val userId = getCurrentUserId(context)
+        return "${PREFS_NAME_BASE}_user_$userId"
+    }
+
     fun saveCombos(context: Context, combos: List<Combo>) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val prefs = context.getSharedPreferences(getPrefsName(context), Context.MODE_PRIVATE)
         val editor = prefs.edit()
 
         val combosArray = JSONArray()
@@ -30,7 +44,7 @@ object SecuenciaConfigManager {
             comboObj.put("name", combo.name)
             if (combo.activador != null) comboObj.put("activador", stepToJson(combo.activador!!))
             if (combo.accionVinculada != null) comboObj.put("accionVinculada", combo.accionVinculada)
-            
+
             val pasosArray = JSONArray()
             for (step in combo.pasos) {
                 pasosArray.put(stepToJson(step))
@@ -44,7 +58,7 @@ object SecuenciaConfigManager {
     }
 
     fun loadCombos(context: Context): List<Combo> {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val prefs = context.getSharedPreferences(getPrefsName(context), Context.MODE_PRIVATE)
         val combosStr = prefs.getString(KEY_COMBOS, null)
 
         val defaultCombo = Combo(
