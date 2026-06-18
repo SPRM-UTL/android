@@ -92,14 +92,14 @@ class GestureAnalyzer {
             for (i in handLandmarks.indices) {
                 val hand = handLandmarks[i]
                 val handedness = handednesses[i].first().categoryName() // "Left" or "Right"
-                
+
                 handDetected = true
                 val pose = HandMetrics.detectPose(hand, handedness, isFrontCamera)
                 val isFrente = HandMetrics.isPalmFacingCamera(hand, handedness)
                 val vistaText = if (isFrente) "Frente" else "Espalda"
-                
+
                 val nombreGesto = "${pose.name.replace("_", " ")} [$vistaText]"
-                
+
                 // Si la cámara es frontal (espejo), la "Izquierda" de la imagen es la "Derecha" real del usuario.
                 val realHandedness = if (isFrontCamera) {
                     if (handedness == "Left") "Right" else "Left"
@@ -121,7 +121,7 @@ class GestureAnalyzer {
         } else {
             leftHandPoseHistory.add("") // Vacío si no se detectó mano izquierda
         }
-        
+
         if (rightPose.isNotEmpty()) {
             rightHandPoseHistory.add(rightPose)
         } else {
@@ -138,17 +138,25 @@ class GestureAnalyzer {
         // Process sequence
         sequenceDetector.processPoses(smoothedLeftPose, smoothedRightPose)
 
-        if (smoothedLeftPose.isNotEmpty() || smoothedRightPose.isNotEmpty()) {
+        // Nombre "limpio" del gesto detectado en este instante, SIN el feedback de los combos.
+        // Este es el valor que se debe usar para GUARDAR una acción/combo nuevo.
+        val gestureName: String = if (smoothedLeftPose.isNotEmpty() || smoothedRightPose.isNotEmpty()) {
             val leftStr = if (smoothedLeftPose.isNotEmpty()) "Izq: $smoothedLeftPose" else ""
             val rightStr = if (smoothedRightPose.isNotEmpty()) "Der: $smoothedRightPose" else ""
             val separator = if (leftStr.isNotEmpty() && rightStr.isNotEmpty()) ", " else ""
-            action = "$leftStr$separator$rightStr\n\n${sequenceDetector.feedbackText}"
+            "$leftStr$separator$rightStr"
         } else {
-            if (action == "Ninguno") {
-                action = sequenceDetector.feedbackText
-            } else {
-                action = "$action\n\n${sequenceDetector.feedbackText}"
-            }
+            action // "Sentadillas", "Aplaudir", "Decir si/no con la cabeza", o "Ninguno"
+        }
+
+        CameraSharedState.currentGesture = gestureName
+
+        // Texto completo para mostrar en el overlay de la cámara
+        // (este sí incluye el feedback de todos los combos configurados)
+        action = if (gestureName != "Ninguno") {
+            "$gestureName\n\n${sequenceDetector.feedbackText}"
+        } else {
+            sequenceDetector.feedbackText
         }
 
         return action

@@ -2,6 +2,7 @@ package com.example.android.ai
 import com.example.android.R
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
@@ -18,10 +19,16 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.android.db.AppDatabase
+import com.example.android.db.Gesto
+import com.example.android.network.ApiHandler
+import com.example.android.network.RetrofitClient
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import kotlinx.coroutines.launch
 
 class SecuenciaConfigActivity : AppCompatActivity() {
 
@@ -33,9 +40,10 @@ class SecuenciaConfigActivity : AppCompatActivity() {
     private lateinit var btnEditAccion: Button
     private lateinit var btnSave: Button
     private lateinit var fabAdd: FloatingActionButton
-    
+
     private lateinit var adapter: SecuenciaAdapter
-    
+    private lateinit var db: AppDatabase
+
     private var todosCombos: MutableList<Combo> = mutableListOf()
     private lateinit var comboActual: Combo
     private var comboIndex: Int = -1
@@ -47,7 +55,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
             val manoObjetivoStr = data.getStringExtra("TARGET_HAND") ?: ManoObjetivo.ANY.name
             val frames = data.getIntExtra("FRAMES", 15)
             val extraType = data.getStringExtra("EXTRA_TYPE")
-            
+
             val manoObjetivo = ManoObjetivo.valueOf(manoObjetivoStr)
             val newStep = PasoSecuencia(nombreGesto, manoObjetivo, frames)
 
@@ -79,19 +87,21 @@ class SecuenciaConfigActivity : AppCompatActivity() {
         window.navigationBarColor = android.graphics.Color.TRANSPARENT
         WindowInsetsControllerCompat(window, window.decorView).apply {
             isAppearanceLightNavigationBars = true
-            isAppearanceLightStatusBars = false 
+            isAppearanceLightStatusBars = false
         }
         setContentView(R.layout.activity_sequence_config)
+
+        db = AppDatabase.getDatabase(this)
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.mainSequenceConfig)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-            
+
             v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom + ime.bottom)
-            
+
             val cardBack = findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardBack)
             cardBack?.getChildAt(0)?.setPadding(0, systemBars.top, 0, 0)
-            
+
             insets
         }
 
@@ -127,7 +137,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 val position = viewHolder.adapterPosition
                 val deletedStep = adapter.pasos[position]
-                
+
                 adapter.removeItem(position)
 
                 com.google.android.material.snackbar.Snackbar.make(
@@ -163,7 +173,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                     }
                     val icon = androidx.core.content.ContextCompat.getDrawable(this@SecuenciaConfigActivity, android.R.drawable.ic_menu_delete)
                     val cornerRadius = 12 * resources.displayMetrics.density
-                    
+
                     if (dX > 0) {
                         val rect = android.graphics.RectF(
                             itemView.left.toFloat(), itemView.top.toFloat(),
@@ -208,13 +218,13 @@ class SecuenciaConfigActivity : AppCompatActivity() {
             val intent = Intent(this, PasoWizardActivity::class.java)
             intent.putExtra("EXTRA_TYPE", "EDIT_STEP")
             intent.putExtra("EDIT_INDEX", position)
-            
+
             // Pass the existing values to pre-select them in the wizard
             val step = comboActual.pasos[position]
             intent.putExtra("INITIAL_POSE", step.nombreGesto)
             intent.putExtra("INITIAL_HAND", step.manoObjetivo.name)
             intent.putExtra("INITIAL_FRAMES", step.cuadrosRequeridos)
-            
+
             wizardLauncher.launch(intent)
         })
         rvSteps.layoutManager = LinearLayoutManager(this)
@@ -242,7 +252,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                 launchWizard("ACTIVATOR", null)
             }
         }
-        
+
         findViewById<View>(R.id.cardActivator).setOnClickListener {
             if (comboActual.activador != null) {
                 launchWizard("ACTIVATOR", comboActual.activador)
@@ -254,15 +264,16 @@ class SecuenciaConfigActivity : AppCompatActivity() {
         btnEditAccion.setOnClickListener {
             showActionSelectionDialog()
         }
-        
+
         findViewById<View>(R.id.cardAccionVinculada).setOnClickListener {
             showActionSelectionDialog()
         }
 
         btnSave.setOnClickListener {
+            // 1. Guarda localmente (pasos + activador + nombre, como siempre)
             SecuenciaConfigManager.saveCombos(this, todosCombos)
-            Toast.makeText(this, "Combo guardado", Toast.LENGTH_SHORT).show()
-            finish()
+            // 2. Sincroniza un registro simple (nombre + metadata) con el backend
+            sincronizarGestoConServidor()
         }
     }
 
@@ -280,14 +291,14 @@ class SecuenciaConfigActivity : AppCompatActivity() {
     private fun loadCurrentConfig(): Boolean {
         val comboId = intent.getStringExtra("COMBO_ID")
         todosCombos = SecuenciaConfigManager.loadCombos(this).toMutableList()
-        
+
         comboIndex = todosCombos.indexOfFirst { it.id == comboId }
         if (comboIndex == -1) {
             Toast.makeText(this, "Error cargando combo", Toast.LENGTH_SHORT).show()
             finish()
             return false
         }
-        
+
         comboActual = todosCombos[comboIndex]
         updateHeaders()
         return true
@@ -305,7 +316,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
             btnEditActivator.text = "Añadir"
             btnEditActivator.setTextColor(android.graphics.Color.parseColor("#3aafa9"))
         }
-        
+
         if (comboActual.accionVinculada != null) {
             tvAccionDesc.text = comboActual.accionVinculada
             tvAccionDesc.setTextColor(android.graphics.Color.parseColor("#073F4C"))
@@ -319,7 +330,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
 
     private fun showActionSelectionDialog() {
         val actions = arrayOf("Encender Luces Sala", "Apagar Luces", "Activar Alarma", "Desactivar Alarma", "Abrir Puerta", "Modo Nocturno", "Ninguna")
-        
+
         com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle("Seleccionar Acción")
             .setItems(actions) { dialog, which ->
@@ -332,5 +343,73 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                 dialog.dismiss()
             }
             .show()
+    }
+
+    // ==========================================================
+    // SINCRONIZACIÓN CON BACKEND
+    // ==========================================================
+
+    private fun sincronizarGestoConServidor() {
+        // Nombre representativo del combo: el activador si existe, si no el primer paso, si no el nombre del combo.
+        val nombreRepresentativo = comboActual.activador?.nombreGesto
+            ?: comboActual.pasos.firstOrNull()?.nombreGesto
+            ?: comboActual.name
+
+        val nombreValido = GestureBackendMapper.mapToValidBackendName(nombreRepresentativo)
+        val tipoDisparador = if (comboActual.activador != null) "Activador" else "Secuencia"
+
+        val gesto = Gesto(
+            id = comboActual.backendGestoId ?: 0,
+            bkId = comboActual.backendGestoId ?: 0, // TODO: confirmar qué valor real espera bk_gesto_id
+            nombre = nombreValido,
+            identificadorIa = 0, // TODO: confirmar significado de identificador_ia
+            nivelConfianzaMinimo = 0.7, // TODO: ajustar umbral real si aplica
+            tipoDisparadorNombre = tipoDisparador,
+            aparatoId = null
+        )
+
+        lifecycleScope.launch {
+            ApiHandler.safeApiCall(
+                activity = this@SecuenciaConfigActivity,
+                showLoading = true,
+                loadingTitle = "Guardando",
+                loadingMessage = "Sincronizando gesto...",
+                apiCall = {
+                    val token = getSharedPreferences("SesionApp", Context.MODE_PRIVATE).getString("apiToken", "") ?: ""
+                    val bearer = "Bearer $token"
+                    if (gesto.id == 0) {
+                        RetrofitClient.gestureService.createGesto(bearer, gesto)
+                    } else {
+                        val updateResp = RetrofitClient.gestureService.updateGesto(bearer, gesto.id, gesto)
+                        if (updateResp.isSuccessful) {
+                            retrofit2.Response.success(com.example.android.network.ApiResponse(true, 200, gesto))
+                        } else {
+                            retrofit2.Response.error(updateResp.code(), updateResp.errorBody()!!)
+                        }
+                    }
+                },
+                onSuccess = { response ->
+                    val guardado = response.data
+                    if (guardado != null) {
+                        comboActual.backendGestoId = guardado.id
+                        todosCombos[comboIndex] = comboActual
+                        SecuenciaConfigManager.saveCombos(this@SecuenciaConfigActivity, todosCombos)
+                        lifecycleScope.launch {
+                            db.gestoDao().insertGesto(guardado)
+                        }
+                    }
+                    Toast.makeText(this@SecuenciaConfigActivity, "Combo guardado", Toast.LENGTH_SHORT).show()
+                    finish()
+                },
+                onError = { errorMsg ->
+                    Toast.makeText(
+                        this@SecuenciaConfigActivity,
+                        "Combo guardado localmente, pero falló la sincronización: $errorMsg",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    finish()
+                }
+            )
+        }
     }
 }

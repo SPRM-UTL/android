@@ -26,10 +26,16 @@ import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import com.example.android.ai.BackgroundCameraService
 import com.example.android.ai.CameraSharedState
+import com.example.android.ai.Combo
 import com.example.android.ai.ComboListActivity
 import com.example.android.ai.OverlayView
 import com.example.android.ai.PrefsManager
 import com.example.android.ai.ScheduleActivity
+import com.example.android.ai.SecuenciaConfigActivity
+import com.example.android.ai.SecuenciaConfigManager
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+import com.google.android.material.snackbar.Snackbar
+import java.util.UUID
 
 class GestosFragment : Fragment() {
 
@@ -41,6 +47,7 @@ class GestosFragment : Fragment() {
     private lateinit var switchService: SwitchCompat
     private lateinit var btnInfo: ImageButton
     private lateinit var tvNoCameraInfo: android.widget.TextView
+    private lateinit var btnGuardarAccion: ExtendedFloatingActionButton
 
     private val requestCameraPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -56,7 +63,7 @@ class GestosFragment : Fragment() {
     private val updateRunnable = object : Runnable {
         override fun run() {
             if (!isAdded) return
-            
+
             if (CameraSharedState.isServiceRunning) {
                 CameraSharedState.latestBitmap?.let { bmp ->
                     viewFinder.setImageBitmap(bmp)
@@ -68,8 +75,8 @@ class GestosFragment : Fragment() {
                     CameraSharedState.imageWidth,
                     CameraSharedState.imageHeight
                 )
-                
-                overlayView.updateAction(CameraSharedState.currentAction)
+
+                overlayView.updateAction(CameraSharedState.currentGesture)
                 tvNoCameraInfo.visibility = View.GONE
             } else {
                 viewFinder.setImageBitmap(null)
@@ -82,12 +89,13 @@ class GestosFragment : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_gestos, container, false)
-        
+
         viewFinder = view.findViewById(R.id.viewFinder)
         overlayView = view.findViewById(R.id.overlayView)
         switchService = view.findViewById(R.id.switchService)
         btnInfo = view.findViewById(R.id.btnInfo)
         tvNoCameraInfo = view.findViewById(R.id.tvNoCameraInfo)
+        btnGuardarAccion = view.findViewById(R.id.btnGuardarAccion)
 
         ViewCompat.setOnApplyWindowInsetsListener(view) { v, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -99,6 +107,10 @@ class GestosFragment : Fragment() {
             showInfoDialog()
         }
 
+        btnGuardarAccion.setOnClickListener {
+            guardarAccionActual()
+        }
+
         switchService.setOnCheckedChangeListener { _, isChecked ->
             switchService.text = if (isChecked) "Encendido" else "Apagado"
             if (isChecked) {
@@ -107,8 +119,42 @@ class GestosFragment : Fragment() {
                 stopCameraService()
             }
         }
-        
+
         return view
+    }
+
+    private fun guardarAccionActual() {
+        if (!CameraSharedState.isServiceRunning) {
+            Snackbar.make(requireView(), "Activa el servicio para detectar un gesto", Snackbar.LENGTH_SHORT).show()
+            return
+        }
+
+        // Usamos currentGesture (nombre limpio del gesto), NO currentAction
+        // (que incluye el feedback de la lista completa de combos).
+        val accionActual = CameraSharedState.currentGesture
+
+        if (accionActual.isNullOrEmpty() || accionActual == "Ninguno") {
+            Snackbar.make(requireView(), "No se detectó ningún gesto todavía", Snackbar.LENGTH_SHORT).show()
+            return
+        }
+
+        // Crea un nuevo Combo con el gesto actual como nombre, igual que hace fabAddCombo
+        // en ComboListActivity, y lo guarda con SecuenciaConfigManager.
+        val nuevoCombo = Combo(
+            id = UUID.randomUUID().toString(),
+            name = "Combo: $accionActual"
+        )
+
+        val combosActuales = SecuenciaConfigManager.loadCombos(requireContext()).toMutableList()
+        combosActuales.add(nuevoCombo)
+        SecuenciaConfigManager.saveCombos(requireContext(), combosActuales)
+
+        Snackbar.make(requireView(), "Acción '$accionActual' guardada como combo", Snackbar.LENGTH_SHORT).show()
+
+        val intent = Intent(requireContext(), SecuenciaConfigActivity::class.java).apply {
+            putExtra("COMBO_ID", nuevoCombo.id)
+        }
+        startActivity(intent)
     }
 
     private fun showInfoDialog() {
@@ -195,7 +241,7 @@ class GestosFragment : Fragment() {
     private fun checkEspCamera() {
         val prefs = requireContext().getSharedPreferences("EspConfigPrefs", Context.MODE_PRIVATE)
         val savedIp = prefs.getString("saved_device_ip", "")
-        
+
         if (!savedIp.isNullOrEmpty()) {
             ipCameraUrl = "http://$savedIp:81/stream"
             switchService.isChecked = true
@@ -211,7 +257,7 @@ class GestosFragment : Fragment() {
         val input = android.widget.EditText(requireContext())
         input.hint = "http://192.168.1.100:81/stream"
         input.setText(ipCameraUrl)
-        
+
         AlertDialog.Builder(requireContext())
             .setTitle("URL de Cámara Wi-Fi")
             .setView(input)
