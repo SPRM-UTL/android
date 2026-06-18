@@ -12,22 +12,19 @@ data class Combo(
     var name: String = "Nuevo Combo",
     var activador: PasoSecuencia? = null,
     var pasos: MutableList<PasoSecuencia> = mutableListOf(),
-    var accionVinculada: String? = null
+    var accionVinculada: String? = null,
+    var backendGestoId: Int? = null // ID del registro 'gesto' en el backend (null = aún no sincronizado)
 )
 
 object SecuenciaConfigManager {
     private const val PREFS_NAME_BASE = "sequence_prefs_v2"
     private const val KEY_COMBOS = "combos_array"
 
-    // Lee el userId de la sesión actual (guardado en MainActivity al hacer login).
-    // Si no hay sesión activa, usamos -1 como bucket separado.
     private fun getCurrentUserId(context: Context): Int {
         val sesionPrefs = context.getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
         return sesionPrefs.getInt("userId", -1)
     }
 
-    // Cada usuario obtiene su propio archivo de SharedPreferences,
-    // por ejemplo: "sequence_prefs_v2_user_5", "sequence_prefs_v2_user_12", etc.
     private fun getPrefsName(context: Context): String {
         val userId = getCurrentUserId(context)
         return "${PREFS_NAME_BASE}_user_$userId"
@@ -44,6 +41,7 @@ object SecuenciaConfigManager {
             comboObj.put("name", combo.name)
             if (combo.activador != null) comboObj.put("activador", stepToJson(combo.activador!!))
             if (combo.accionVinculada != null) comboObj.put("accionVinculada", combo.accionVinculada)
+            if (combo.backendGestoId != null) comboObj.put("backendGestoId", combo.backendGestoId)
 
             val pasosArray = JSONArray()
             for (step in combo.pasos) {
@@ -91,6 +89,9 @@ object SecuenciaConfigManager {
                 }
                 if (comboObj.has("accionVinculada")) {
                     combo.accionVinculada = comboObj.getString("accionVinculada")
+                }
+                if (comboObj.has("backendGestoId")) {
+                    combo.backendGestoId = comboObj.getInt("backendGestoId")
                 }
                 if (comboObj.has("pasos")) {
                     val pasosArray = comboObj.getJSONArray("pasos")
