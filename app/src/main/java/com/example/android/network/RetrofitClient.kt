@@ -63,6 +63,44 @@ data class UpdateUserRequest(
     val contrasenia: String?
 )
 
+// ---- Configuración de red del ESP32 ----
+
+data class ConfiguracionRedRequest(
+    @com.google.gson.annotations.SerializedName("ip_address")
+    val ipAddress: String?,
+    @com.google.gson.annotations.SerializedName("mac_address")
+    val macAddress: String?,
+    @com.google.gson.annotations.SerializedName("host_name")
+    val hostName: String?,
+    @com.google.gson.annotations.SerializedName("device_key")
+    val deviceKey: String?,
+    @com.google.gson.annotations.SerializedName("puerto_socket")
+    val puertoSocket: Int? = 81,
+    @com.google.gson.annotations.SerializedName("protocolo_socket")
+    val protocoloSocket: String? = "ws",
+    @com.google.gson.annotations.SerializedName("ruta_socket")
+    val rutaSocket: String? = "/ws",
+    @com.google.gson.annotations.SerializedName("activo")
+    val activo: Boolean = true
+)
+
+data class ConfiguracionRedResponse(
+    @com.google.gson.annotations.SerializedName("sk_aparato_configuracion_red_id")
+    val id: Int,
+    @com.google.gson.annotations.SerializedName("sk_aparato_id")
+    val aparatoId: Int,
+    @com.google.gson.annotations.SerializedName("ip_address")
+    val ipAddress: String?,
+    @com.google.gson.annotations.SerializedName("mac_address")
+    val macAddress: String?,
+    @com.google.gson.annotations.SerializedName("host_name")
+    val hostName: String?,
+    @com.google.gson.annotations.SerializedName("device_key")
+    val deviceKey: String?,
+    @com.google.gson.annotations.SerializedName("activo")
+    val activo: Boolean
+)
+
 interface AuthApiService {
     @POST("api/Auth/login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
