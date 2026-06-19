@@ -37,4 +37,10 @@ interface DeviceApiService {
         @Path("sk_aparato_id") aparatoId: Int,
         @Body config: ConfiguracionRedRequest
     ): Response<ApiResponse<ConfiguracionRedResponse>>
+
+    @GET("ws/accion")
+    suspend fun enviarComandoWebSocket(
+        @retrofit2.http.Query("comando") comando: String,
+        @retrofit2.http.Query("deviceKey") deviceKey: String
+    ): Response<ResponseBody>
 }

@@ -16,10 +16,21 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.android.db.AppDatabase
 import com.example.android.db.Dispositivo
+import com.example.android.actions.DeviceActionManager
+import com.example.android.network.BluetoothController
+import com.example.android.network.RetrofitClient
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.slider.Slider
 import com.google.android.material.switchmaterial.SwitchMaterial
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import android.annotation.SuppressLint
+import android.bluetooth.BluetoothAdapter
+import android.widget.Toast
+import android.media.AudioManager
+import android.content.Context
+import android.view.KeyEvent
 
 class DeviceControlsActivity : AppCompatActivity() {
 
@@ -107,12 +118,16 @@ class DeviceControlsActivity : AppCompatActivity() {
                 tvPowerState.setTextColor(Color.parseColor("#757575"))
                 switchPower.trackTintList = ColorStateList.valueOf(Color.parseColor("#E0E0E0"))
             }
-            // Aquí en el futuro se llamaría al BluetoothController para enviar el comando
+            currentDevice?.let { dev ->
+                DeviceActionManager.ejecutarAccion(this, dev, DeviceActionManager.ACTION_POWER, isChecked)
+            }
         }
 
         sliderVolume.addOnChangeListener { _, value, _ ->
             tvVolumeValue.text = "${value.toInt()}%"
-            // Aquí en el futuro se llamaría al BluetoothController para ajustar el volumen
+            currentDevice?.let { dev ->
+                DeviceActionManager.ejecutarAccion(this, dev, DeviceActionManager.ACTION_VOLUME, value)
+            }
         }
     }
 
@@ -123,19 +138,78 @@ class DeviceControlsActivity : AppCompatActivity() {
                 tvControlDeviceName.text = dispositivo.nombre ?: "Dispositivo"
                 
                 // Configuración dinámica por tipo
-                val tipo = (dispositivo.tipo ?: "").lowercase()
+                val tipo = (dispositivo.tipo ?: "")
+                val tipoLower = tipo.lowercase()
                 
-                if (tipo.contains("bocina") || tipo.contains("audio") || tipo.contains("speaker")) {
+                if (tipoLower.contains("bocina") || tipoLower.contains("audio") || tipoLower.contains("speaker") || tipoLower.contains("audífono") || tipoLower.contains("audifono")) {
                     cardVolumeControl.visibility = View.VISIBLE
-                    // ivDeviceIcon.setImageResource(R.drawable.speaker) // Opcional
-                } else if (tipo.contains("ventilador") || tipo.contains("fan")) {
-                    cardVolumeControl.visibility = View.GONE
-                    // ivDeviceIcon.setImageResource(R.drawable.fan) // Opcional
+                    actualizarSliderDesdeSistema()
                 } else {
-                    // Por defecto (Luces, etc)
                     cardVolumeControl.visibility = View.GONE
                 }
+
+                validarConexionYConectar(dispositivo)
             }
+        }
+    }
+
+    private fun actualizarSliderDesdeSistema() {
+        val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        val maxVol = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        val currVol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+        val percent = (currVol.toFloat() / maxVol) * 100f
+        
+        // Asignar el valor sin disparar el listener de forma destructiva
+        sliderVolume.value = percent
+        tvVolumeValue.text = "${percent.toInt()}%"
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            val handled = super.onKeyDown(keyCode, event)
+            // Esperamos un instante a que el sistema aplique el cambio de volumen
+            sliderVolume.postDelayed({
+                actualizarSliderDesdeSistema()
+            }, 100)
+            return handled
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
+    @SuppressLint("MissingPermission")
+    private suspend fun validarConexionYConectar(dispositivo: Dispositivo) {
+        try {
+            val sharedPref = getSharedPreferences("SesionApp", MODE_PRIVATE)
+            val token = sharedPref.getString("token", "") ?: ""
+            
+            // Consultamos los tipos al backend
+            val response = RetrofitClient.deviceService.getTiposAparato("Bearer $token")
+            if (response.isSuccessful && response.body()?.success == true) {
+                val tipos = response.body()?.data ?: emptyList()
+                val tipoObj = tipos.find { it.nombreTipo == dispositivo.tipo }
+                
+                if (tipoObj?.soportaBluetooth == true) {
+                    val mac = dispositivo.macBluetooth
+                    if (!mac.isNullOrEmpty()) {
+                        withContext(Dispatchers.IO) {
+                            try {
+                                val adapter = BluetoothAdapter.getDefaultAdapter()
+                                val remoteDevice = adapter.getRemoteDevice(mac)
+                                val exito = BluetoothController.connectDevice(remoteDevice)
+                                withContext(Dispatchers.Main) {
+                                    if (exito) {
+                                        Toast.makeText(this@DeviceControlsActivity, "Conectado por Bluetooth", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 }
