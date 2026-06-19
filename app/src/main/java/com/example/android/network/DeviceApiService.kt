@@ -30,4 +30,11 @@ interface DeviceApiService {
 
     @DELETE("api/Dim_Aparatos/{id}")
     suspend fun deleteDispositivo(@Header("Authorization") token: String, @Path("id") id: Int): Response<ResponseBody>
+
+    @PUT("api/Dim_Aparatos/{sk_aparato_id}/configuracion-red")
+    suspend fun saveConfiguracionRed(
+        @Header("Authorization") token: String,
+        @Path("sk_aparato_id") aparatoId: Int,
+        @Body config: ConfiguracionRedRequest
+    ): Response<ApiResponse<ConfiguracionRedResponse>>
 }

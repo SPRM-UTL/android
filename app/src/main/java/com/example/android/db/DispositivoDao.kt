@@ -12,6 +12,9 @@ interface DispositivoDao {
     @Query("SELECT * FROM dispositivos")
     fun getAllDispositivos(): Flow<List<Dispositivo>>
 
+    @Query("SELECT * FROM dispositivos")
+    suspend fun getAllDispositivosOnce(): List<Dispositivo>
+
     @Query("SELECT * FROM dispositivos WHERE id = :id")
     suspend fun getDispositivoById(id: Int): Dispositivo?
 

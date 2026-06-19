@@ -20,13 +20,23 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.lifecycleScope
+import com.example.android.db.AppDatabase
+import com.example.android.db.Dispositivo
+import com.example.android.network.ApiHandler
+import com.example.android.network.ConfiguracionRedRequest
+import com.example.android.network.RetrofitClient
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputEditText
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.*
 
 class EspConfigActivity : AppCompatActivity() {
@@ -65,6 +75,15 @@ class EspConfigActivity : AppCompatActivity() {
     // Listas
     private val discoveredDevices = mutableListOf<BluetoothDevice>()
     private lateinit var listAdapter: DeviceAdapter
+
+    // Base de datos local y datos del ESP32 vinculado
+    private lateinit var db: AppDatabase
+    private var aparatosLocales: List<Dispositivo> = emptyList()
+    private var connectedEspMac: String = ""
+    private var connectedEspName: String = ""
+    // Flag para evitar que el diálogo de asociación se abra en bucle
+    // (BLE puede disparar onCharacteristicChanged varias veces con la misma IP)
+    private var dialogEspMostrado = false
 
     // Constantes
     companion object {
@@ -141,6 +160,10 @@ class EspConfigActivity : AppCompatActivity() {
         inicializarVistas()
         inicializarBluetooth()
         configurarListeners()
+
+        // Inicializar BD y precargar aparatos para el diálogo de asociación
+        db = AppDatabase.getDatabase(this)
+        cargarAparatosLocales()
     }
 
     private fun inicializarVistas() {
@@ -477,6 +500,9 @@ class EspConfigActivity : AppCompatActivity() {
                     runOnUiThread {
                         @SuppressLint("MissingPermission")
                         val deviceName = gatt.device.name ?: "ESP32"
+                        connectedEspMac = gatt.device.address
+                        connectedEspName = deviceName
+                        dialogEspMostrado = false  // reset al conectar un nuevo dispositivo
                         guardarDispositivo(deviceName, gatt.device.address)
 
                         tvSubEstadoConexion.text = "Conectado a $deviceName."
@@ -512,17 +538,18 @@ class EspConfigActivity : AppCompatActivity() {
         ) {
             if (characteristic.uuid == IP_CHAR_UUID) {
                 val ip = characteristic.getStringValue(0)
-                
+
                 // Guardar la IP en las preferencias globales
                 val prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
                 prefs.edit().putString("saved_device_ip", ip).apply()
-                
+
                 runOnUiThread {
-                    mostrarSnackbar("Conectado! IP: $ip", false)
-                    val intent = Intent(this@EspConfigActivity, DeviceCameraActivity::class.java)
-                    intent.putExtra("EXTRA_IP", ip)
-                    startActivity(intent)
-                    finish()
+                    // Evitar que el diálogo se repita si BLE notifica la IP más de una vez
+                    if (!dialogEspMostrado) {
+                        dialogEspMostrado = true
+                        mostrarSnackbar("¡IP recibida: $ip! Asociando al aparato...", false)
+                        mostrarDialogoAsociarEsp(ip)
+                    }
                 }
             }
         }
@@ -587,6 +614,104 @@ class EspConfigActivity : AppCompatActivity() {
             }
             snackbar.show()
         }
+    }
+
+    // --- Configuración de Red ESP32 ---
+
+    private fun cargarAparatosLocales() {
+        lifecycleScope.launch {
+            aparatosLocales = withContext(Dispatchers.IO) {
+                db.dispositivoDao().getAllDispositivosOnce()
+            }
+        }
+    }
+
+    private fun mostrarDialogoAsociarEsp(ip: String) {
+        val sheet = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.dialog_esp_vinculado, null)
+        sheet.setContentView(view)
+        sheet.setCancelable(false)
+
+        // Mostrar datos del ESP32
+        view.findViewById<TextView>(R.id.tvEspIp).text = ip
+        view.findViewById<TextView>(R.id.tvEspMac).text =
+            connectedEspMac.ifBlank { "N/D" }
+
+        // Poblar spinner con aparatos disponibles
+        val spinnerAparato = view.findViewById<MaterialAutoCompleteTextView>(R.id.spinnerAparato)
+        val nombresAparatos = aparatosLocales.map { it.nombre ?: "Aparato ${it.id}" }
+        val adapterSpinner = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, nombresAparatos)
+        spinnerAparato.setAdapter(adapterSpinner)
+        if (nombresAparatos.isNotEmpty()) {
+            spinnerAparato.setText(nombresAparatos[0], false)
+        }
+
+        // Botón guardar
+        view.findViewById<MaterialButton>(R.id.btnGuardarConfig).setOnClickListener {
+            if (aparatosLocales.isEmpty()) {
+                mostrarSnackbar("No hay aparatos registrados. Agrega uno primero.", true)
+                return@setOnClickListener
+            }
+            val textoSeleccionado = spinnerAparato.text.toString().trim()
+            val idx = nombresAparatos.indexOf(textoSeleccionado)
+            if (idx >= 0) {
+                sheet.dismiss()
+                guardarConfiguracionRed(aparatosLocales[idx].id, ip)
+            } else {
+                mostrarSnackbar("Selecciona un aparato de la lista", true)
+            }
+        }
+
+        // Botón saltar
+        view.findViewById<MaterialButton>(R.id.btnSaltarConfig).setOnClickListener {
+            sheet.dismiss()
+            navegarACamara(ip)
+        }
+
+        sheet.show()
+    }
+
+    /** Llama al endpoint PUT /api/Dim_Aparatos/{id}/configuracion-red */
+    private fun guardarConfiguracionRed(aparatoId: Int, ip: String) {
+        lifecycleScope.launch {
+            ApiHandler.safeApiCall(
+                activity = this@EspConfigActivity,
+                showLoading = true,
+                loadingTitle = "Guardando",
+                loadingMessage = "Guardando configuración de red...",
+                apiCall = {
+                    val token = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+                        .getString("apiToken", "") ?: ""
+                    val config = ConfiguracionRedRequest(
+                        ipAddress = ip,
+                        macAddress = connectedEspMac.ifBlank { null },
+                        hostName = connectedEspName.ifBlank { null },
+                        deviceKey = if (connectedEspMac.isNotBlank()) "${connectedEspMac}_${aparatoId}" else null,
+                        puertoSocket = 81,
+                        protocoloSocket = "ws",
+                        rutaSocket = "/ws",
+                        activo = true
+                    )
+                    RetrofitClient.deviceService.saveConfiguracionRed("Bearer $token", aparatoId, config)
+                },
+                onSuccess = {
+                    mostrarSnackbar("Configuración guardada correctamente", false)
+                    navegarACamara(ip)
+                },
+                onError = { errorMsg ->
+                    mostrarSnackbar("Error al guardar: $errorMsg", true)
+                    // Navegar igualmente para no bloquear al usuario
+                    navegarACamara(ip)
+                }
+            )
+        }
+    }
+
+    private fun navegarACamara(ip: String) {
+        val intent = Intent(this, DeviceCameraActivity::class.java)
+        intent.putExtra("EXTRA_IP", ip)
+        startActivity(intent)
+        finish()
     }
 
     // --- Ciclo de Vida ---
