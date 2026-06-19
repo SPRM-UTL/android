@@ -41,12 +41,15 @@ class BluetoothDeviceAdapter(
     inner class VistaBtHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val tvNombre: TextView = itemView.findViewById(R.id.tvBtDeviceName)
         private val tvMac: TextView    = itemView.findViewById(R.id.tvBtDeviceMac)
+        private val btnConectar: View  = itemView.findViewById(R.id.btnItemConectar)
 
         fun vincular(dispositivo: ResultadoDispositivoBt) {
             tvNombre.text = dispositivo.nombre
-            // Mostrar MAC en lugar de "No configurado" para saber cuál es
-            tvMac.text    = dispositivo.mac
+            tvMac.text    = "Bluetooth"
+            
+            // Hacer que toda la tarjeta o el botón lancen la acción
             itemView.setOnClickListener { alSeleccionar(dispositivo) }
+            btnConectar.setOnClickListener { alSeleccionar(dispositivo) }
         }
     }
 }

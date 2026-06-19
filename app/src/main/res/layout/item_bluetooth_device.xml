@@ -4,12 +4,10 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="4dp"
-    android:layout_marginVertical="2dp"
-    app:cardBackgroundColor="#F9FAFB"
-    app:cardCornerRadius="12dp"
-    app:strokeColor="#E0E0E0"
-    app:strokeWidth="1dp"
+    android:layout_marginBottom="4dp"
+    app:cardBackgroundColor="@color/white"
+    app:cardCornerRadius="16dp"
+    app:strokeWidth="0dp"
     app:cardElevation="0dp">
 
     <LinearLayout
@@ -19,18 +17,19 @@
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
+        <!-- Solid Teal Circle with White Icon -->
         <FrameLayout
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:background="@drawable/circle"
-            android:backgroundTint="#E0F2F1">
+            android:background="@drawable/bg_circle_solid"
+            android:backgroundTint="@color/teal_primary">
 
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
                 android:layout_gravity="center"
                 android:src="@drawable/bluetooth"
-                app:tint="@color/teal_primary" />
+                app:tint="@color/white" />
         </FrameLayout>
 
         <LinearLayout
@@ -56,15 +55,27 @@
                 android:layout_marginTop="2dp"
                 android:text="00:11:22:33:44:55"
                 android:textColor="#757575"
-                android:textSize="12sp"
-                android:fontFamily="monospace" />
+                android:textSize="12sp" />
         </LinearLayout>
+
+        <!-- Outlined Button "Conectar" -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnItemConectar"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_marginEnd="8dp"
+            android:text="Conectar"
+            android:textSize="12sp"
+            android:textColor="@color/teal_primary"
+            app:strokeColor="@color/teal_primary"
+            app:cornerRadius="20dp" />
 
         <ImageView
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:src="@drawable/arrow_right"
-            app:tint="@color/teal_primary" />
+            android:src="@android:drawable/ic_menu_more"
+            app:tint="#BDBDBD" />
 
     </LinearLayout>
 
