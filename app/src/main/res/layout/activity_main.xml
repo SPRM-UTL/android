@@ -8,12 +8,13 @@
     android:background="@color/teal_primary"
     app:layoutDescription="@xml/activity_main_scene">
 
-    <ImageView
+    <androidx.constraintlayout.utils.widget.ImageFilterView
         android:id="@+id/imgLogo"
         android:layout_width="80dp"
         android:layout_height="80dp"
         android:contentDescription="Manordomo Logo"
-        android:src="@drawable/ic_manordomo" />
+        android:src="@drawable/ic_manordomo"
+        app:roundPercent="0.45" />
 
     <TextView
         android:id="@+id/tvTitle"

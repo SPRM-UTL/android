@@ -21,10 +21,8 @@
     <ConstraintSet android:id="@+id/start">
         <Constraint
             android:id="@+id/imgLogo"
-            android:layout_width="160dp"
-            android:layout_height="160dp"
-            android:scaleX="1.2"
-            android:scaleY="1.2"
+            android:layout_width="192dp"
+            android:layout_height="192dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"

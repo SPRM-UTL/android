@@ -282,9 +282,18 @@ class MainActivity : AppCompatActivity() {
             verificarTokenYEntrar()
         }
 
-        override fun onAuthenticationError(errorCode: Int, errString: CharSequence) { }
+        override fun onAuthenticationError(errorCode: Int, errString: CharSequence) { 
+            manteniendoSplash = false
+            findViewById<MotionLayout>(R.id.motionLayout)?.post {
+                val motionLayout = findViewById<MotionLayout>(R.id.motionLayout)
+                if (motionLayout?.currentState == R.id.start) {
+                    motionLayout.transitionToEnd()
+                }
+            }
+        }
 
         override fun onAuthenticationFailed() {
+            manteniendoSplash = false
             Snackbars.info(
                 findViewById(android.R.id.content),
                 "Huella no reconocida",
@@ -301,6 +310,8 @@ class MainActivity : AppCompatActivity() {
 
         // Sin token → sesión expirada, debe usar contraseña
         if (token.isEmpty() || userId == -1) {
+            manteniendoSplash = false
+            findViewById<MotionLayout>(R.id.motionLayout)?.transitionToEnd()
             Snackbars.error(
                 findViewById(android.R.id.content),
                 "Sesión expirada. Ingresa con tu contraseña.",
@@ -320,6 +331,8 @@ class MainActivity : AppCompatActivity() {
                     irAHome()
 
                 } else {
+                    manteniendoSplash = false
+                    findViewById<MotionLayout>(R.id.motionLayout)?.transitionToEnd()
                     // Token inválido (401 / 403) → limpiar y pedir contraseña
                     sharedPref.edit()
                         .putString("apiToken", "")
@@ -334,6 +347,8 @@ class MainActivity : AppCompatActivity() {
                 }
 
             } catch (_: Exception) {
+                manteniendoSplash = false
+                findViewById<MotionLayout>(R.id.motionLayout)?.transitionToEnd()
 
                 Snackbars.error(
                     findViewById(android.R.id.content),
@@ -383,27 +398,34 @@ class MainActivity : AppCompatActivity() {
     // ==========================================================
 
     private fun verificarSesionActiva() {
-
         lifecycleScope.launch {
+            delay(1500)
 
             val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
-            val estaLogueado = sharedPref.getBoolean("isLoggedIn", false)
+            val isLoggedIn = sharedPref.getBoolean("isLoggedIn", false)
 
-            if (estaLogueado) {
+            if (isLoggedIn) {
+                val bioHabilitadaConfig = sharedPref.getBoolean("biometricEnabled", true)
+                val canAuthenticate = BiometricManager.from(this@MainActivity).canAuthenticate(
+                    BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK
+                ) == BiometricManager.BIOMETRIC_SUCCESS
+
+                if (bioHabilitadaConfig && canAuthenticate) {
+                    // Si tiene biometría habilitada, mostramos el prompt automáticamente
+                    biometricPrompt.authenticate(promptInfo)
+                } else {
+                    // Si no, entramos directo
+                    irAHome(false)
+                }
+            } else {
                 manteniendoSplash = false
-                delay(300)
-                intentarLoginBiometrico()
-                return@launch
-            }
 
-            delay(300)
-            manteniendoSplash = false
-
-            // Aseguramos que se muestre el formulario de login si no hay sesión
-            findViewById<MotionLayout>(R.id.motionLayout)?.post {
-                val motionLayout = findViewById<MotionLayout>(R.id.motionLayout)
-                if (motionLayout?.currentState == R.id.start) {
-                    motionLayout.transitionToEnd()
+                // Aseguramos que se muestre el formulario de login si no hay sesión
+                findViewById<MotionLayout>(R.id.motionLayout)?.post {
+                    val motionLayout = findViewById<MotionLayout>(R.id.motionLayout)
+                    if (motionLayout?.currentState == R.id.start) {
+                        motionLayout.transitionToEnd()
+                    }
                 }
             }
         }
