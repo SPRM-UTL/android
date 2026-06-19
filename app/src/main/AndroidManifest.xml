@@ -19,6 +19,8 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
     <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" />
 
@@ -33,11 +35,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Android"
         android:usesCleartextTraffic="true">
-
-        <activity android:name=".EspConfigActivity" android:exported="false" />
-        <activity android:name=".DeviceCameraActivity" android:exported="true" />
-
-        <!-- IA Simple Activities -->
+        <activity
+            android:name=".ai.PermisosActivity"
+            android:exported="false" />
+        <activity
+            android:name=".EspConfigActivity"
+            android:exported="false" />
+        <activity
+            android:name=".DeviceCameraActivity"
+            android:exported="true" /> <!-- IA Simple Activities -->
         <activity android:name=".ai.ComboListActivity" />
         <activity android:name=".ai.SecuenciaConfigActivity" />
         <activity android:name=".ai.PasoWizardActivity" />
@@ -61,7 +67,6 @@
         <activity
             android:name=".NetworkActivity"
             android:exported="false" />
-
         <activity
             android:name=".Gestos"
             android:exported="false" />
@@ -91,17 +96,14 @@
             android:name=".SelectTypeDevice"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
-
         <activity
             android:name=".extra.MusicActivity"
             android:exported="false" />
-
         <activity
             android:name=".PortraitCaptureActivity"
             android:screenOrientation="portrait"
             android:stateNotNeeded="true"
             android:theme="@style/zxing_CaptureTheme" />
-
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -112,7 +114,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
     </application>
 
 </manifest>
