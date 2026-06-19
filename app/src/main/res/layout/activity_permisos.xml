@@ -1,285 +1,206 @@
 <?xml version="1.0" encoding="utf-8"?>
-
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="24dp"
-    android:gravity="center_horizontal"
     android:background="#F5F7FA">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Preparando el Sistema"
-        android:textColor="#17252A"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        android:layout_marginTop="32dp" />
+    <!--
+        Safe area: el CoordinatorLayout ocupa toda la pantalla (edge-to-edge).
+        El padding dinámico (status bar + nav bar) se aplica desde el Kotlin
+        con ViewCompat.setOnApplyWindowInsetsListener sobre este root.
+    -->
 
-    <TextView
+    <LinearLayout
+        android:id="@+id/rootContent"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Antes de continuar necesitamos algunos permisos para acceder a la cámara y descubrir dispositivos Bluetooth cercanos."
-        android:textColor="#6F7EA8"
-        android:textSize="16sp"
-        android:textAlignment="center"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="32dp" />
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp">
 
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="360dp"
-        android:layout_weight="1">
+        <!-- ── ENCABEZADO ──────────────────────────────────────── -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Preparando el Sistema"
+            android:textColor="#03DAC5"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp" />
 
+        <!-- Indicador de paso: "Paso 1 de 5" -->
+        <TextView
+            android:id="@+id/tvStepCounter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Paso 1 de 5"
+            android:textColor="#6F7EA8"
+            android:textSize="13sp"
+            android:layout_marginTop="4dp" />
+
+        <!-- Barra de progreso de pasos -->
+        <LinearLayout
+            android:id="@+id/stepDotsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="6dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="24dp"
+            android:orientation="horizontal"
+            android:weightSum="5">
+
+            <View android:id="@+id/dot1"
+                android:layout_width="0dp"
+                android:layout_height="6dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:background="@drawable/step_dot_inactive" />
+            <View android:id="@+id/dot2"
+                android:layout_width="0dp"
+                android:layout_height="6dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:background="@drawable/step_dot_inactive" />
+            <View android:id="@+id/dot3"
+                android:layout_width="0dp"
+                android:layout_height="6dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:background="@drawable/step_dot_inactive" />
+            <View android:id="@+id/dot4"
+                android:layout_width="0dp"
+                android:layout_height="6dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:background="@drawable/step_dot_inactive" />
+            <View android:id="@+id/dot5"
+                android:layout_width="0dp"
+                android:layout_height="6dp"
+                android:layout_weight="1"
+                android:background="@drawable/step_dot_inactive" />
+        </LinearLayout>
+
+        <!-- ── TARJETA DEL PERMISO ACTUAL ────────────────────────── -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardPermiso"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="#FFFFFF">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="32dp">
+
+                <!-- Ícono SVG Lucide (se cambia por código) -->
+                <ImageView
+                    android:id="@+id/ivPermisoIcon"
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:src="@drawable/camera"
+                    app:tint="#03DAC5"
+                    android:layout_marginBottom="24dp" />
+
+                <!-- Nombre del permiso -->
+                <TextView
+                    android:id="@+id/tvPermisoNombre"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Cámara"
+                    android:textColor="#17252A"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:gravity="center" />
+
+                <!-- Descripción -->
+                <TextView
+                    android:id="@+id/tvPermisoDesc"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Necesaria para capturar imágenes."
+                    android:textColor="#6F7EA8"
+                    android:textSize="15sp"
+                    android:textAlignment="center"
+                    android:gravity="center"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="32dp" />
+
+                <!-- Ícono de estado (check / x) -->
+                <ImageView
+                    android:id="@+id/ivEstado"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/circle_x"
+                    android:visibility="gone"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Botón de acción del paso actual -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAccion"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:text="Conceder permiso"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    app:cornerRadius="12dp"
+                    app:backgroundTint="#03DAC5"
+                    android:textColor="#000000" />
+
+                <!-- Etiqueta cuando ya está concedido -->
+                <TextView
+                    android:id="@+id/tvYaConcedido"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="✓ Permiso concedido"
+                    android:textColor="#03DAC5"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="12dp"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- ── BOTONES DE NAVEGACIÓN ──────────────────────────────── -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
-            <!-- Cámara -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:background="#FFFFFF"
-                android:orientation="horizontal"
-                android:padding="16dp">
+            android:orientation="horizontal"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="16dp">
 
-                <TextView
-                    android:id="@+id/tvStatusCamera"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="❌"
-                    android:textSize="20sp" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAnterior"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="Anterior"
+                android:textColor="#17252A"
+                app:strokeColor="#17252A"
+                app:cornerRadius="12dp"
+                android:visibility="invisible" />
 
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSiguiente"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:text="Siguiente"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                app:cornerRadius="12dp"
+                app:backgroundTint="#03DAC5"
+                android:textColor="#000000" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Cámara"
-                        android:textColor="#17252A"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Necesaria para capturar imágenes."
-                        android:textColor="#6F7EA8"
-                        android:textSize="14sp" />
-                </LinearLayout>
-
-                <Button
-                    android:id="@+id/btnCamera"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="PEDIR" />
-            </LinearLayout>
-
-            <!-- Bluetooth -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:background="#FFFFFF"
-                android:orientation="horizontal"
-                android:padding="16dp">
-
-                <TextView
-                    android:id="@+id/tvStatusBluetooth"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="❌"
-                    android:textSize="20sp" />
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Bluetooth"
-                        android:textColor="#17252A"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Permite descubrir y controlar dispositivos Bluetooth."
-                        android:textColor="#6F7EA8"
-                        android:textSize="14sp" />
-                </LinearLayout>
-
-                <Button
-                    android:id="@+id/btnBluetooth"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="PEDIR" />
-            </LinearLayout>
-
-            <!-- Ubicación -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:background="#FFFFFF"
-                android:orientation="horizontal"
-                android:padding="16dp">
-
-                <TextView
-                    android:id="@+id/tvStatusLocation"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="❌"
-                    android:textSize="20sp" />
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Ubicación"
-                        android:textColor="#17252A"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Necesaria para encontrar dispositivos cercanos."
-                        android:textColor="#6F7EA8"
-                        android:textSize="14sp" />
-                </LinearLayout>
-
-                <Button
-                    android:id="@+id/btnLocation"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="PEDIR" />
-            </LinearLayout>
-
-            <!-- Overlay -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:background="#FFFFFF"
-                android:orientation="horizontal"
-                android:padding="16dp">
-
-                <TextView
-                    android:id="@+id/tvStatusOverlay"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="❌"
-                    android:textSize="20sp" />
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Sobre otras aplicaciones"
-                        android:textColor="#17252A"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Permite mostrar elementos encima de otras aplicaciones."
-                        android:textColor="#6F7EA8"
-                        android:textSize="14sp" />
-                </LinearLayout>
-
-                <Button
-                    android:id="@+id/btnOverlay"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="PEDIR" />
-            </LinearLayout>
-
-            <!-- Batería -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:background="#FFFFFF"
-                android:orientation="horizontal"
-                android:padding="16dp">
-
-                <TextView
-                    android:id="@+id/tvStatusBattery"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="❌"
-                    android:textSize="20sp" />
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Ignorar optimización de batería"
-                        android:textColor="#17252A"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Permite que la aplicación siga funcionando en segundo plano."
-                        android:textColor="#6F7EA8"
-                        android:textSize="14sp" />
-                </LinearLayout>
-
-                <Button
-                    android:id="@+id/btnBattery"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="PEDIR" />
-            </LinearLayout>
         </LinearLayout>
-    </ScrollView>
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="0.5" />
 
-    <Button
-        android:id="@+id/btnContinue"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:text="CONTINUAR"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:backgroundTint="#03DAC5"
-        android:textColor="#000000"
-        android:enabled="false" />
-</LinearLayout>
+    </LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

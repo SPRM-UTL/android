@@ -48,6 +48,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var biometricPrompt: BiometricPrompt
     private lateinit var promptInfo: BiometricPrompt.PromptInfo
     private lateinit var db: AppDatabase
+    private lateinit var motionLayout: MotionLayout          // ← referencia cacheada
     private lateinit var etUsuario: TextInputEditText
     private lateinit var etContrasena: TextInputEditText
     private lateinit var txtInputUsuario: TextInputLayout
@@ -95,13 +96,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun inicializarVistas() {
 
-        etUsuario         = findViewById(R.id.etUsuario)
-        etContrasena      = findViewById(R.id.etContrasena)
-        txtInputUsuario   = findViewById(R.id.txtInputUsuario)
-        txtInputContrasena= findViewById(R.id.txtInputContrasena)
-        btnLoginTradicional = findViewById(R.id.btnLogin)
-        btnBiometricLogin = findViewById(R.id.btnBiometricLogin)
-        tvRegistrarse     = findViewById(R.id.tvRegistrarse)
+        motionLayout          = findViewById(R.id.motionLayout)   // ← se inicializa aquí
+        etUsuario             = findViewById(R.id.etUsuario)
+        etContrasena          = findViewById(R.id.etContrasena)
+        txtInputUsuario       = findViewById(R.id.txtInputUsuario)
+        txtInputContrasena    = findViewById(R.id.txtInputContrasena)
+        btnLoginTradicional   = findViewById(R.id.btnLogin)
+        btnBiometricLogin     = findViewById(R.id.btnBiometricLogin)
+        tvRegistrarse         = findViewById(R.id.tvRegistrarse)
     }
 
     // ==========================================================
@@ -152,8 +154,6 @@ class MainActivity : AppCompatActivity() {
         tvRegistrarse.setOnClickListener {
             abrirRegistro()
         }
-
-        val motionLayout = findViewById<MotionLayout>(R.id.motionLayout)
 
         ViewCompat.setOnApplyWindowInsetsListener(motionLayout) { v, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -288,17 +288,17 @@ class MainActivity : AppCompatActivity() {
             verificarTokenYEntrar()
         }
 
-        override fun onAuthenticationError(errorCode: Int, errString: CharSequence) { 
+        override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+            // FIX: usa la referencia cacheada y llama transitionToEnd() directamente
+            // sin condición de estado, evitando que la animación quede bloqueada al cancelar
             manteniendoSplash = false
-            findViewById<MotionLayout>(R.id.motionLayout)?.post {
-                val motionLayout = findViewById<MotionLayout>(R.id.motionLayout)
-                if (motionLayout?.currentState == R.id.start) {
-                    motionLayout.transitionToEnd()
-                }
+            motionLayout.post {
+                motionLayout.transitionToEnd()
             }
         }
 
         override fun onAuthenticationFailed() {
+            // FIX: también libera el splash en caso de huella no reconocida
             manteniendoSplash = false
             Snackbars.info(
                 findViewById(android.R.id.content),
@@ -350,7 +350,7 @@ class MainActivity : AppCompatActivity() {
         // Sin token → sesión expirada, debe usar contraseña
         if (token.isEmpty() || userId == -1) {
             manteniendoSplash = false
-            findViewById<MotionLayout>(R.id.motionLayout)?.transitionToEnd()
+            motionLayout.transitionToEnd()   // ← usa referencia cacheada
             Snackbars.error(
                 findViewById(android.R.id.content),
                 "Sesión expirada. Ingresa con tu contraseña.",
@@ -371,7 +371,8 @@ class MainActivity : AppCompatActivity() {
 
                 } else {
                     manteniendoSplash = false
-                    findViewById<MotionLayout>(R.id.motionLayout)?.transitionToEnd()
+                    motionLayout.transitionToEnd()   // ← usa referencia cacheada
+
                     // Token inválido (401 / 403) → limpiar y pedir contraseña
                     sharedPref.edit()
                         .putString("apiToken", "")
@@ -387,7 +388,7 @@ class MainActivity : AppCompatActivity() {
 
             } catch (_: Exception) {
                 manteniendoSplash = false
-                findViewById<MotionLayout>(R.id.motionLayout)?.transitionToEnd()
+                motionLayout.transitionToEnd()   // ← usa referencia cacheada
 
                 Snackbars.error(
                     findViewById(android.R.id.content),
@@ -459,10 +460,9 @@ class MainActivity : AppCompatActivity() {
             } else {
                 manteniendoSplash = false
 
-                // Aseguramos que se muestre el formulario de login si no hay sesión
-                findViewById<MotionLayout>(R.id.motionLayout)?.post {
-                    val motionLayout = findViewById<MotionLayout>(R.id.motionLayout)
-                    if (motionLayout?.currentState == R.id.start) {
+                // FIX: usa referencia cacheada en lugar de buscar el view otra vez
+                motionLayout.post {
+                    if (motionLayout.currentState == R.id.start) {
                         motionLayout.transitionToEnd()
                     }
                 }
@@ -532,9 +532,12 @@ class MainActivity : AppCompatActivity() {
 
         splashScreen.setOnExitAnimationListener { splashProvider ->
             splashProvider.remove()
-            findViewById<MotionLayout>(R.id.motionLayout)?.let { motionLayout ->
-                if (motionLayout.currentState == R.id.start) {
-                    motionLayout.transitionToEnd()
+            // FIX: usa referencia cacheada; pero aquí motionLayout aún no está
+            // inicializado (se llama antes de setContentView), así que se
+            // mantiene el findViewById puntual solo en este listener
+            findViewById<MotionLayout>(R.id.motionLayout)?.let { ml ->
+                if (ml.currentState == R.id.start) {
+                    ml.transitionToEnd()
                 }
             }
         }
@@ -579,8 +582,9 @@ class MainActivity : AppCompatActivity() {
 
         if (!intent.getBooleanExtra("FROM_LOGOUT", false)) return
 
-        findViewById<MotionLayout>(R.id.motionLayout).post {
-            findViewById<MotionLayout>(R.id.motionLayout).transitionToEnd()
+        // FIX: usa referencia cacheada
+        motionLayout.post {
+            motionLayout.transitionToEnd()
         }
 
         lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {

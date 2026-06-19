@@ -103,7 +103,7 @@ class AddDeviceWifiActivity : AppCompatActivity() {
 
         configurarInsets()
         configurarUI()
-        
+
         gestorWifi = WifiScanManager(
             this,
             onWifiDeviceFound = { result ->
@@ -131,7 +131,7 @@ class AddDeviceWifiActivity : AppCompatActivity() {
         connectionManager = DeviceConnectionManager(this) { msg ->
             // log to verify connection
         }
-        
+
         socketClient = SocketClient { msg -> }
 
         pedirPermisos()
@@ -181,8 +181,8 @@ class AddDeviceWifiActivity : AppCompatActivity() {
         findViewById<ImageView>(R.id.btnBack).setOnClickListener {
             onBackPressedDispatcher.onBackPressed()
         }
-        findViewById<View>(R.id.fabRefresh).setOnClickListener { 
-            pedirPermisos() 
+        findViewById<View>(R.id.fabRefresh).setOnClickListener {
+            pedirPermisos()
         }
     }
 
@@ -237,7 +237,7 @@ class AddDeviceWifiActivity : AppCompatActivity() {
         shimmerViewContainer.startShimmer()
 
         gestorWifi.startWifiScan()
-        
+
         window.decorView.postDelayed({
             if (!isDestroyed && !isFinishing) {
                 progressCargando.visibility = View.INVISIBLE
@@ -352,7 +352,7 @@ class AddDeviceWifiActivity : AppCompatActivity() {
                     dispositivo.SSID
                 }
                 val apSsidLimpio = apSsidStr?.removePrefix("\"")?.removeSuffix("\"") ?: ""
-                
+
                 ejecutarVinculacionWifi(apSsidLimpio, nuevoSsid, nuevaPassword)
             }
         }
@@ -399,15 +399,15 @@ class AddDeviceWifiActivity : AppCompatActivity() {
     private fun ejecutarVinculacionWifi(apSsid: String, homeSsid: String, homePass: String) {
         headerSubtitle.text = "Conectando y vinculando..."
         progressCargando.visibility = View.VISIBLE
-        
+
         connectionManager.connectToWifiAp(apSsid)
-        
+
         lifecycleScope.launch(Dispatchers.IO) {
             delay(5000)
-            
+
             socketClient.provisionMagicHome("10.10.123.3", homeSsid, homePass)
             socketClient.provisionMagicHome("192.168.4.1", homeSsid, homePass)
-            
+
             withContext(Dispatchers.Main) {
                 progressCargando.visibility = View.INVISIBLE
                 Toast.makeText(this@AddDeviceWifiActivity, "Credenciales enviadas correctamente", Toast.LENGTH_LONG).show()
@@ -440,10 +440,54 @@ class AddDeviceWifiActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Detecta automáticamente el tipo de dispositivo a partir del nombre/SSID/clase
+     * Bluetooth-Wi-Fi anunciado por el hardware (p. ej. "LEDnet-Bulb-AABBCC",
+     * "LEDnet-Strip-XYZ", "LEDnet-Speaker-001").
+     *
+     * Devuelve el nombre de tipo tal como existe en [tiposDisponibles] cuando hay
+     * coincidencia con el catálogo del servidor; si no, cae en una lista local de
+     * tipos conocidos; si tampoco coincide, devuelve "General".
+     */
+    private fun detectarTipoPorNombre(nombreCrudo: String?): String {
+        val nombre = (nombreCrudo ?: "").uppercase()
+
+        // Palabras clave -> tipo. Se evalúan en orden, la primera coincidencia gana.
+        val reglas = listOf(
+            listOf("BULB", "FOCO", "LIGHT", "LAMP", "STRIP", "LED") to "Focos",
+            listOf("SPEAKER", "BOCINA", "AUDIO", "SOUND") to "Bocinas",
+            listOf("FAN", "VENTILADOR") to "Ventilador",
+            listOf("TV", "TELEVISION", "TELEVISIÓN", "TELEVISOR") to "Televisión",
+            listOf("HEADPHONE", "AUDIFONO", "AUDÍFONO", "EARBUD") to "Audífonos",
+            listOf("PLUG", "ENCHUFE", "SOCKET", "OUTLET") to "Enchufe",
+            listOf("CAM", "CAMERA", "CAMARA", "CÁMARA") to "Cámara"
+        )
+
+        for ((claves, tipo) in reglas) {
+            if (claves.any { nombre.contains(it) }) {
+                // Si el catálogo del servidor tiene un tipo equivalente, se prioriza
+                // ese nombre exacto para mantener consistencia con el backend.
+                val coincidenciaServidor = tiposDisponibles.find {
+                    it.nombreTipo.equals(tipo, ignoreCase = true)
+                }
+                return coincidenciaServidor?.nombreTipo ?: tipo
+            }
+        }
+
+        return "General"
+    }
+
     private fun actualizarIconoTipo(tipo: String, ivTipoIcono: ImageView) {
         val tipoObj = tiposDisponibles.find { it.nombreTipo == tipo }
         val iconName = tipoObj?.icono ?: "ic_default"
-        
+
+        // Tamaño fijo para todos los tipos (consistente con el layout: 48dp).
+        val tamanoFijoPx = (48 * resources.displayMetrics.density).toInt()
+        val params = ivTipoIcono.layoutParams
+        params.width = tamanoFijoPx
+        params.height = tamanoFijoPx
+        ivTipoIcono.layoutParams = params
+
         val resId = resources.getIdentifier(iconName, "drawable", packageName)
         if (resId != 0 && iconName != "ic_default") {
             ivTipoIcono.setImageResource(resId)
@@ -456,14 +500,12 @@ class AddDeviceWifiActivity : AppCompatActivity() {
                 "Luces"      -> R.drawable.lightbulb
                 "Ventilador" -> R.drawable.wind
                 "Televisión" -> R.drawable.tv_minimal
-                else         -> null
+                "Enchufe"    -> R.drawable.plug
+                "Cámara"     -> R.drawable.camera
+                else         -> R.drawable.circle_question
             }
-            if (iconRes != null) {
-                ivTipoIcono.setImageResource(iconRes)
-                ivTipoIcono.visibility = View.VISIBLE
-            } else {
-                ivTipoIcono.visibility = View.GONE
-            }
+            ivTipoIcono.setImageResource(iconRes)
+            ivTipoIcono.visibility = View.VISIBLE
         }
     }
 
@@ -480,6 +522,7 @@ class AddDeviceWifiActivity : AppCompatActivity() {
 
         val tvTarget = dialogView.findViewById<TextView>(R.id.tvDeviceTarget)
         val etName = dialogView.findViewById<TextInputEditText>(R.id.etDeviceName)
+        val layoutTipo = dialogView.findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.layoutTipo)
         val etType = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.etDeviceType)
         val btnCancel = dialogView.findViewById<MaterialButton>(R.id.btnCancel)
         val btnConfirm = dialogView.findViewById<MaterialButton>(R.id.btnConfirm)
@@ -496,19 +539,14 @@ class AddDeviceWifiActivity : AppCompatActivity() {
         tvTarget.text = ssidLimpio
         etName.setText(ssidLimpio)
 
-        val tipos = if (tiposDisponibles.isNotEmpty()) {
-            tiposDisponibles.map { it.nombreTipo }
-        } else {
-            listOf("Focos", "Bocinas", "Ventilador", "Televisión", "Audífonos")
-        }
+        // --- Detección automática del tipo (sin selección manual del usuario) ---
+        val tipoDetectado = detectarTipoPorNombre(ssidLimpio)
+        etType.setText(tipoDetectado, false)
+        actualizarIconoTipo(tipoDetectado, ivTipoIcono)
 
-        val adapter = ArrayAdapter(themedContext, android.R.layout.simple_spinner_dropdown_item, tipos)
-        etType.setAdapter(adapter)
-        etType.setText(tipos[0], false)
-        etType.setOnClickListener { etType.showDropDown() }
-        etType.setOnItemClickListener { _, _, _, _ -> actualizarIconoTipo(etType.text.toString(), ivTipoIcono) }
-
-        actualizarIconoTipo(tipos[0], ivTipoIcono)
+        // El campo de tipo queda oculto/bloqueado: el valor ya se asignó solo.
+        layoutTipo.visibility = View.GONE
+        etType.isEnabled = false
 
         btnCancel.setOnClickListener { dialog.dismiss() }
         btnDelete.visibility = View.GONE
