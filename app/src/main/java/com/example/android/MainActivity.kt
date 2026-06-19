@@ -1,8 +1,13 @@
 package com.example.android
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
+import android.provider.Settings
 import android.util.Patterns
 import androidx.biometric.BiometricManager
 import android.view.View
@@ -30,6 +35,7 @@ import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.concurrent.Executor
+import com.example.android.ai.PermisosActivity
 
 
 class MainActivity : AppCompatActivity() {
@@ -293,6 +299,39 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun verificarPermisos(): Boolean{
+        val permisos = arrayOf(
+            Manifest.permission.CAMERA,
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.BLUETOOTH_SCAN,
+            Manifest.permission.BLUETOOTH_CONNECT
+        )
+
+        val overlayGranted =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+                Settings.canDrawOverlays(this)
+            else
+                true
+
+        val batteryGranted =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                val powerManager =
+                    getSystemService(Context.POWER_SERVICE) as PowerManager
+
+                powerManager.isIgnoringBatteryOptimizations(packageName)
+            } else {
+                true
+            }
+
+        return permisos.all {
+            ContextCompat.checkSelfPermission(
+                this,
+                it
+            ) == PackageManager.PERMISSION_GRANTED
+        } && overlayGranted && batteryGranted
+    }
+
     private fun verificarTokenYEntrar() {
 
         val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
@@ -433,7 +472,23 @@ class MainActivity : AppCompatActivity() {
 
     private fun irAHome(mostrarBienvenida: Boolean = false) {
 
-        val intent = Intent(this, HomeActivity::class.java)
+        if(!verificarPermisos()){
+            pedirPermisos()
+        }else{
+            val intent = Intent(this, HomeActivity::class.java)
+
+            if (mostrarBienvenida) {
+                intent.putExtra("SHOW_WELCOME", true)
+            }
+
+            startActivity(intent)
+            finish()
+        }
+    }
+
+    private fun pedirPermisos(mostrarBienvenida: Boolean = false) {
+
+        val intent = Intent(this, PermisosActivity::class.java)
 
         if (mostrarBienvenida) {
             intent.putExtra("SHOW_WELCOME", true)

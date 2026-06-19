@@ -13,6 +13,7 @@ import android.os.PowerManager
 import android.provider.Settings
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -28,8 +29,11 @@ class PermisosActivity : AppCompatActivity() {
     private lateinit var tvStatusBattery: TextView
     private lateinit var btnBattery: Button
 
-    private lateinit var tvStatusAutoStart: TextView
-    private lateinit var btnAutoStart: Button
+    private lateinit var tvStatusBluetooth: TextView
+    private lateinit var btnBluetooth: Button
+
+    private lateinit var tvStatusLocation: TextView
+    private lateinit var btnLocation: Button
 
     private lateinit var btnContinue: Button
 
@@ -39,6 +43,12 @@ class PermisosActivity : AppCompatActivity() {
 
         tvStatusCamera = findViewById(R.id.tvStatusCamera)
         btnCamera = findViewById(R.id.btnCamera)
+
+        tvStatusBluetooth = findViewById(R.id.tvStatusBluetooth)
+        btnBluetooth = findViewById(R.id.btnBluetooth)
+
+        tvStatusLocation = findViewById(R.id.tvStatusLocation)
+        btnLocation = findViewById(R.id.btnLocation)
         
         tvStatusOverlay = findViewById(R.id.tvStatusOverlay)
         btnOverlay = findViewById(R.id.btnOverlay)
@@ -46,13 +56,47 @@ class PermisosActivity : AppCompatActivity() {
         tvStatusBattery = findViewById(R.id.tvStatusBattery)
         btnBattery = findViewById(R.id.btnBattery)
 
-        tvStatusAutoStart = findViewById(R.id.tvStatusAutoStart)
-        btnAutoStart = findViewById(R.id.btnAutoStart)
-
         btnContinue = findViewById(R.id.btnContinue)
 
         btnCamera.setOnClickListener {
+            Toast.makeText(this,"Hola",Toast.LENGTH_SHORT).show()
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), 100)
+        }
+
+        btnBluetooth.setOnClickListener {
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(
+                        Manifest.permission.BLUETOOTH_SCAN,
+                        Manifest.permission.BLUETOOTH_CONNECT
+                    ),
+                    101
+                )
+
+            } else {
+
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION
+                    ),
+                    101
+                )
+            }
+        }
+
+        btnLocation.setOnClickListener {
+
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ),
+                102
+            )
         }
 
         btnOverlay.setOnClickListener {
@@ -73,19 +117,6 @@ class PermisosActivity : AppCompatActivity() {
             }
         }
 
-        btnAutoStart.setOnClickListener {
-            try {
-                val intent = Intent()
-                intent.component = ComponentName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity")
-                startActivity(intent)
-            } catch (e: Exception) {
-                // Not a Xiaomi device or different version, fallback to generic app settings
-                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                intent.data = Uri.parse("package:$packageName")
-                startActivity(intent)
-            }
-        }
-
         btnContinue.setOnClickListener {
             val intent = Intent(this, com.example.android.HomeActivity::class.java)
             startActivity(intent)
@@ -101,8 +132,14 @@ class PermisosActivity : AppCompatActivity() {
     private fun checkPermissions() {
         var allGranted = true
 
-        // 1. Camera
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+        // Cámara
+        val cameraGranted =
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
+
+        if (cameraGranted) {
             tvStatusCamera.text = "✅"
             btnCamera.isEnabled = false
             btnCamera.text = "OK"
@@ -113,8 +150,62 @@ class PermisosActivity : AppCompatActivity() {
             allGranted = false
         }
 
-        // 2. Overlay
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Settings.canDrawOverlays(this)) {
+        // Bluetooth
+        val bluetoothGranted =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+
+                ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.BLUETOOTH_SCAN
+                ) == PackageManager.PERMISSION_GRANTED &&
+
+                        ContextCompat.checkSelfPermission(
+                            this,
+                            Manifest.permission.BLUETOOTH_CONNECT
+                        ) == PackageManager.PERMISSION_GRANTED
+
+            } else {
+                true
+            }
+
+        if (bluetoothGranted) {
+            tvStatusBluetooth.text = "✅"
+            btnBluetooth.isEnabled = false
+            btnBluetooth.text = "OK"
+        } else {
+            tvStatusBluetooth.text = "❌"
+            btnBluetooth.isEnabled = true
+            btnBluetooth.text = "PEDIR"
+            allGranted = false
+        }
+
+        // Ubicación
+        val locationGranted =
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+
+        if (locationGranted) {
+            tvStatusLocation.text = "✅"
+            btnLocation.isEnabled = false
+            btnLocation.text = "OK"
+        } else {
+            tvStatusLocation.text = "❌"
+            btnLocation.isEnabled = true
+            btnLocation.text = "PEDIR"
+            allGranted = false
+        }
+
+        // Overlay
+        val overlayGranted =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                Settings.canDrawOverlays(this)
+            } else {
+                true
+            }
+
+        if (overlayGranted) {
             tvStatusOverlay.text = "✅"
             btnOverlay.isEnabled = false
             btnOverlay.text = "OK"
@@ -125,9 +216,18 @@ class PermisosActivity : AppCompatActivity() {
             allGranted = false
         }
 
-        // 3. Battery
-        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && powerManager.isIgnoringBatteryOptimizations(packageName)) {
+        // Batería
+        val batteryGranted =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                val powerManager =
+                    getSystemService(Context.POWER_SERVICE) as PowerManager
+
+                powerManager.isIgnoringBatteryOptimizations(packageName)
+            } else {
+                true
+            }
+
+        if (batteryGranted) {
             tvStatusBattery.text = "✅"
             btnBattery.isEnabled = false
             btnBattery.text = "OK"
@@ -137,9 +237,6 @@ class PermisosActivity : AppCompatActivity() {
             btnBattery.text = "PEDIR"
             allGranted = false
         }
-
-        // 4. AutoStart (Cannot be verified programmatically, we assume warning)
-        // We will just let the user go there and then click continue.
 
         if (allGranted) {
             btnContinue.isEnabled = true
