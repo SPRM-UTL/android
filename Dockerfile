@@ -1,4 +1,4 @@
-# --- Fase 1: Compilación del APK ---
+# --- Fase 1: Compilación del APK (Modo Debug para evitar errores de firma) ---
 FROM eclipse-temurin:17-jdk-jammy AS build
 
 # Configurar variables de entorno para el SDK de Android
@@ -24,9 +24,9 @@ WORKDIR /app
 # Copiar los archivos del proyecto
 COPY . .
 
-# Dar permisos de ejecución al gradle wrapper y compilar el APK en modo Release
+# Dar permisos de ejecución al gradle wrapper y compilar el APK en modo Debug
 RUN chmod +x ./gradlew
-RUN ./gradlew assembleRelease
+RUN ./gradlew assembleDebug
 
 
 # --- Fase 2: Servidor con Interfaz de Selección ---
@@ -40,10 +40,10 @@ RUN rm -rf ./*
 # Crear carpeta para las descargas de APKs
 RUN mkdir -p downloads
 
-# 1. Copiar todo el contenido de la carpeta de outputs de release
-COPY --from=build /app/app/build/outputs/apk/release/ .
+# 1. Copiar todo el contenido de la carpeta de outputs de DEBUG
+COPY --from=build /app/app/build/outputs/apk/debug/ .
 
-# 2. Detectar dinámicamente el nombre del APK, renombrarlo a 'app-latest.apk' 
+# 2. Detectar dinámicamente el APK, renombrarlo a 'app-latest.apk' 
 #    y clonarlo con la marca de tiempo para el historial
 RUN apk_file=$(ls *.apk | head -n 1) && \
     cp "$apk_file" ./downloads/app-latest.apk && \
