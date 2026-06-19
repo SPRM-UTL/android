@@ -245,16 +245,16 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@drawable/bluetooth"
+                android:src="@drawable/wifi"
                 app:tint="@color/teal_primary" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="Dispositivos disponibles"
-                android:textColor="#333333"
-                android:textSize="14sp"
+                android:layout_marginStart="16dp"
+                android:text="Redes Disponibles"
+                android:textColor="#1A1A1A"
+                android:textSize="18sp"
                 android:textStyle="bold" />
 
         </LinearLayout>
@@ -282,7 +282,7 @@
         app:layout_constraintTop_toBottomOf="@id/layoutFixedTop">
 
         <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvDispositivosBt"
+            android:id="@+id/rvDispositivosWifi"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"

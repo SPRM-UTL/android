@@ -46,6 +46,17 @@
             android:textColor="#9E9E9E"
             android:textSize="13sp" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCancelConnecting"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="24dp"
+            android:text="Cancelar Conexión"
+            android:textColor="@color/teal_primary"
+            app:strokeColor="@color/teal_primary"
+            app:cornerRadius="16dp" />
+
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>

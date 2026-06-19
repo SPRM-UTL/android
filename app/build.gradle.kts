@@ -107,6 +107,7 @@ dependencies {
     implementation("io.coil-kt:coil-svg:2.6.0")
     implementation("io.coil-kt:coil:2.6.0")
     implementation("com.google.android.material:material:1.12.0")
+    implementation("com.facebook.shimmer:shimmer:0.5.0")
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)

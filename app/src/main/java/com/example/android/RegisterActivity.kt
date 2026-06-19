@@ -42,6 +42,8 @@ class RegisterActivity : AppCompatActivity() {
     private lateinit var btnBackRegister: ImageView
     private lateinit var btnCrearCuenta: MaterialButton
     private lateinit var tvVolverLogin: TextView
+    private lateinit var cbPrivacy: com.google.android.material.checkbox.MaterialCheckBox
+    private lateinit var tvPrivacyPolicy: TextView
     
     private lateinit var mainRegister: MotionLayout
 
@@ -86,6 +88,8 @@ class RegisterActivity : AppCompatActivity() {
         btnBackRegister = findViewById(R.id.btnBackRegister)
         btnCrearCuenta = findViewById(R.id.btnCrearCuenta)
         tvVolverLogin = findViewById(R.id.tvVolverLogin)
+        cbPrivacy = findViewById(R.id.cbPrivacy)
+        tvPrivacyPolicy = findViewById(R.id.tvPrivacyPolicy)
     }
 
     // ==========================================================
@@ -140,6 +144,10 @@ class RegisterActivity : AppCompatActivity() {
             if (validarEntradas()) {
                 llamarApiRegistro()
             }
+        }
+
+        tvPrivacyPolicy.setOnClickListener {
+            mostrarAvisoPrivacidad()
         }
 
         // ACTIVACIÓN DE ANIMACIÓN AL TOCAR CUALQUIER INPUT
@@ -232,7 +240,50 @@ class RegisterActivity : AppCompatActivity() {
             txtInputConfirmarReg.error = null
         }
 
+        if (!cbPrivacy.isChecked) {
+            android.widget.Toast.makeText(this, "Debes aceptar el aviso de privacidad", android.widget.Toast.LENGTH_SHORT).show()
+            isValid = false
+        }
+
         return isValid
+    }
+
+    private fun mostrarAvisoPrivacidad() {
+        val bottomSheet = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        
+        val scrollLayout = android.widget.ScrollView(this)
+        val padding = (24 * resources.displayMetrics.density).toInt()
+        scrollLayout.setPadding(padding, padding, padding, padding)
+
+        val textLayout = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+        }
+
+        val title = TextView(this).apply {
+            text = "Aviso de Privacidad"
+            textSize = 20f
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setTextColor(android.graphics.Color.parseColor("#1a1a1a"))
+            setPadding(0, 0, 0, (16 * resources.displayMetrics.density).toInt())
+        }
+
+        val body = TextView(this).apply {
+            text = "En SPRM, respetamos tu privacidad y protegemos tus datos personales.\n\n" +
+                   "1. Información que recopilamos: La información que proporcionas (nombre y correo electrónico) será utilizada para crear y gestionar tu cuenta.\n\n" +
+                   "2. Uso de la información: Usaremos estos datos únicamente para brindarte acceso a las funcionalidades de control de dispositivos inteligentes dentro de tu hogar y aplicación.\n\n" +
+                   "3. Protección: Tus contraseñas viajan de manera encriptada y no compartiremos tus datos con terceros sin tu consentimiento explícito.\n\n" +
+                   "4. Permisos locales: La aplicación requiere acceso a Bluetooth, Wi-Fi y Ubicación de manera temporal con el fin único de vincular dispositivos cercanos."
+            textSize = 14f
+            setTextColor(android.graphics.Color.parseColor("#757575"))
+            setLineSpacing(4f, 1f)
+        }
+
+        textLayout.addView(title)
+        textLayout.addView(body)
+        scrollLayout.addView(textLayout)
+
+        bottomSheet.setContentView(scrollLayout)
+        bottomSheet.show()
     }
 
     private fun llamarApiRegistro() {

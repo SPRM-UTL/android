@@ -47,6 +47,7 @@ import kotlinx.coroutines.withContext
 
 class AddDeviceActivity : AppCompatActivity() {
 
+    private lateinit var headerSubtitle: TextView
     private lateinit var tvDispositivoGuardado: TextView
     private lateinit var tvEstadoConexion: TextView
     private lateinit var viewStatusDot: View
@@ -55,6 +56,7 @@ class AddDeviceActivity : AppCompatActivity() {
 
     private lateinit var progressCargando: LinearProgressIndicator
     private lateinit var rvDispositivos: RecyclerView
+    private lateinit var shimmerViewContainer: com.facebook.shimmer.ShimmerFrameLayout
 
     private lateinit var gestorBluetooth: BluetoothScanManager
     private lateinit var listAdapter: BluetoothDeviceAdapter
@@ -67,6 +69,11 @@ class AddDeviceActivity : AppCompatActivity() {
     private var editDeviceId: Int = -1
     private var existingDevice: Dispositivo? = null
     private var filtroTipo: String? = null
+    private var filtroIcono: String? = null
+    private var filtroPalabras: String? = null
+    private var tiposDisponibles: List<com.example.android.db.AparatoTipo> = emptyList()
+
+    private lateinit var switchAdvancedSearch: androidx.appcompat.widget.SwitchCompat
 
     private var dialogConectando: android.app.Dialog? = null
 
@@ -109,7 +116,7 @@ class AddDeviceActivity : AppCompatActivity() {
 
         val root = findViewById<View>(R.id.mainAddDevice)
         val header = findViewById<View>(R.id.header)
-        val rv = findViewById<RecyclerView>(R.id.rvDispositivosBt)
+        val listContainer = findViewById<View>(R.id.layoutListContainer)
         val fab = findViewById<View>(R.id.fabRefresh)
 
         ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
@@ -121,10 +128,10 @@ class AddDeviceActivity : AppCompatActivity() {
                 header.paddingRight,
                 (12 * resources.displayMetrics.density).toInt()
             )
-            rv.setPadding(
-                rv.paddingLeft,
-                rv.paddingTop,
-                rv.paddingRight,
+            listContainer.setPadding(
+                listContainer.paddingLeft,
+                listContainer.paddingTop,
+                listContainer.paddingRight,
                 systemBars.bottom + (80 * resources.displayMetrics.density).toInt()
             )
             val params = fab.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
@@ -135,6 +142,10 @@ class AddDeviceActivity : AppCompatActivity() {
 
         editDeviceId = intent.getIntExtra("EXTRA_DEVICE_ID", -1)
         filtroTipo = intent.getStringExtra("FILTRO_TIPO")
+        filtroIcono = intent.getStringExtra("FILTRO_ICONO")
+        filtroPalabras = intent.getStringExtra("FILTRO_PALABRAS")
+
+        cargarTiposDesdeServidor()
 
         inicializarVistas()
         configurarUI()
@@ -142,9 +153,8 @@ class AddDeviceActivity : AppCompatActivity() {
 
         if (editDeviceId != -1) {
             cargarDatosDispositivo()
-        } else {
-            pedirPermisos()
         }
+        pedirPermisos()
     }
 
     // ==========================================================
@@ -159,6 +169,9 @@ class AddDeviceActivity : AppCompatActivity() {
         ivTipoDispositivo = findViewById(R.id.ivTipoDispositivo)
         progressCargando = findViewById(R.id.progressCargando)
         rvDispositivos = findViewById(R.id.rvDispositivosBt)
+        shimmerViewContainer = findViewById(R.id.shimmerViewContainer)
+        switchAdvancedSearch = findViewById(R.id.switchAdvancedSearch)
+        headerSubtitle = findViewById(R.id.tvHeaderSubtitle)
     }
 
     private fun configurarUI() {
@@ -170,16 +183,16 @@ class AddDeviceActivity : AppCompatActivity() {
         rvDispositivos.layoutManager = LinearLayoutManager(this)
         rvDispositivos.adapter = listAdapter
 
-        when (filtroTipo) {
-            "Audífonos" -> {
-                ivTipoDispositivo.setImageResource(R.drawable.headphones)
+        if (filtroIcono != null) {
+            val resId = resources.getIdentifier(filtroIcono, "drawable", packageName)
+            if (resId != 0) {
+                ivTipoDispositivo.setImageResource(resId)
                 ivTipoDispositivo.visibility = View.VISIBLE
+            } else {
+                ivTipoDispositivo.visibility = View.GONE
             }
-            "Bocinas" -> {
-                ivTipoDispositivo.setImageResource(R.drawable.speaker)
-                ivTipoDispositivo.visibility = View.VISIBLE
-            }
-            else -> ivTipoDispositivo.visibility = View.GONE
+        } else {
+            ivTipoDispositivo.visibility = View.GONE
         }
 
         actualizarUIEstado()
@@ -189,12 +202,40 @@ class AddDeviceActivity : AppCompatActivity() {
         findViewById<ImageView>(R.id.btnBack).setOnClickListener {
             onBackPressedDispatcher.onBackPressed()
         }
-        findViewById<View>(R.id.fabRefresh).setOnClickListener { pedirPermisos() }
+        findViewById<View>(R.id.fabRefresh).setOnClickListener { 
+            pedirPermisos() 
+        }
+        switchAdvancedSearch.setOnCheckedChangeListener { _, _ -> pedirPermisos() }
     }
 
     // ==========================================================
     // DATOS
     // ==========================================================
+
+    private fun cargarTiposDesdeServidor() {
+        val sharedPreferences = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+        val token = sharedPreferences.getString("apiToken", null)
+
+        if (!token.isNullOrEmpty()) {
+            lifecycleScope.launch {
+                ApiHandler.safeApiCall(
+                    activity = this@AddDeviceActivity,
+                    showLoading = false,
+                    loadingTitle = "",
+                    loadingMessage = "",
+                    apiCall = { RetrofitClient.deviceService.getTiposAparato("Bearer $token") },
+                    onSuccess = { apiResponse ->
+                        if (apiResponse.success && apiResponse.data != null) {
+                            tiposDisponibles = apiResponse.data
+                        }
+                    },
+                    onError = {
+                        // Opcional: manejar error en background
+                    }
+                )
+            }
+        }
+    }
 
     private fun cargarDatosDispositivo() {
         lifecycleScope.launch {
@@ -250,7 +291,11 @@ class AddDeviceActivity : AppCompatActivity() {
     @SuppressLint("MissingPermission")
     private fun iniciarEscaneo() {
         listAdapter.limpiar()
+        headerSubtitle.text = "Buscando dispositivos cercanos..."
         progressCargando.visibility = View.VISIBLE
+        rvDispositivos.visibility = View.GONE
+        shimmerViewContainer.visibility = View.VISIBLE
+        shimmerViewContainer.startShimmer()
 
         gestorBluetooth.iniciarEscaneo(
             alEncontrarDispositivo = { resultado ->
@@ -259,22 +304,56 @@ class AddDeviceActivity : AppCompatActivity() {
                     val clase = deviceLog.bluetoothClass?.deviceClass
                     android.util.Log.d("BT_FILTRO", "Nombre: ${resultado.nombre} | MAC: ${resultado.mac} | Clase: $clase")
 
-                    val pasaFiltro = when (filtroTipo) {
-                        "Audífonos" -> esDispositivoAudio(resultado.mac, resultado.nombre)
-                        "Bocinas"   -> esDispositivoBocina(resultado.mac, resultado.nombre)
-                        else        -> true
+                    val pasaFiltro = if (switchAdvancedSearch.isChecked) {
+                        true
+                    } else {
+                        val pasaHardware = when (filtroTipo) {
+                            "Audífonos" -> esDispositivoAudio(resultado.mac, resultado.nombre)
+                            "Bocinas"   -> esDispositivoBocina(resultado.mac, resultado.nombre)
+                            else        -> false
+                        }
+
+                        val pasaPalabras = esDispositivoPorPalabras(resultado.nombre, filtroPalabras)
+                        val sinFiltrosBackend = filtroPalabras.isNullOrEmpty()
+
+                        pasaHardware || pasaPalabras || sinFiltrosBackend
                     }
 
-                    if (pasaFiltro) listAdapter.agregarDispositivo(resultado)
+                    if (pasaFiltro) {
+                        if (shimmerViewContainer.visibility == View.VISIBLE) {
+                            shimmerViewContainer.stopShimmer()
+                            shimmerViewContainer.visibility = View.GONE
+                            rvDispositivos.visibility = View.VISIBLE
+                        }
+                        listAdapter.agregarDispositivo(resultado)
+                        headerSubtitle.text = "Activado • ${listAdapter.itemCount} dispositivos"
+                    }
                 }
             },
             alFinalizarEscaneo = {
                 runOnUiThread {
                     if (isDestroyed || isFinishing) return@runOnUiThread
                     progressCargando.visibility = View.INVISIBLE
+                    if (shimmerViewContainer.visibility == View.VISIBLE) {
+                        shimmerViewContainer.stopShimmer()
+                        shimmerViewContainer.visibility = View.GONE
+                        rvDispositivos.visibility = View.VISIBLE
+                    }
                 }
             }
         )
+    }
+
+    private fun esDispositivoPorPalabras(nombre: String?, palabrasStr: String?): Boolean {
+        if (palabrasStr.isNullOrEmpty()) return false
+        val nombreUpper = nombre?.uppercase() ?: return false
+        val palabras = palabrasStr.split(",").map { it.trim().uppercase() }
+        for (palabra in palabras) {
+            if (palabra.isNotEmpty() && nombreUpper.contains(palabra)) {
+                return true
+            }
+        }
+        return false
     }
 
     @SuppressLint("MissingPermission")
@@ -362,7 +441,7 @@ class AddDeviceActivity : AppCompatActivity() {
                 it.show()
             }
 
-        lifecycleScope.launch(Dispatchers.IO) {
+        val job = lifecycleScope.launch(Dispatchers.IO) {
             var exito = false
             repeat(2) {
                 if (!exito) {
@@ -383,14 +462,23 @@ class AddDeviceActivity : AppCompatActivity() {
                         Toast.LENGTH_SHORT
                     ).show()
                 } else {
-                    Snackbars.error(
-                        findViewById(android.R.id.content),
-                        "No se pudo conectar",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    MaterialAlertDialogBuilder(this@AddDeviceActivity, com.google.android.material.R.style.Theme_Material3_Light_Dialog)
+                        .setTitle("Error de conexión")
+                        .setMessage("No se pudo conectar con el dispositivo. Asegúrate de que esté encendido, cerca de tu teléfono y en modo emparejamiento.")
+                        .setPositiveButton("Aceptar", null)
+                        .show()
                 }
                 actualizarUIEstado()
             }
+        }
+
+        dialogView.findViewById<View>(R.id.btnCancelConnecting)?.setOnClickListener {
+            job.cancel()
+            dialogConectando?.dismiss()
+            dialogConectando = null
+            Snackbars.warning(findViewById(android.R.id.content), "Conexión cancelada", Toast.LENGTH_SHORT).show()
+            // Retomar el escaneo si se canceló
+            iniciarEscaneo()
         }
     }
 
@@ -399,19 +487,30 @@ class AddDeviceActivity : AppCompatActivity() {
     // ==========================================================
 
     private fun actualizarIconoTipo(tipo: String, ivTipoIcono: ImageView) {
-        val iconRes = when (tipo) {
-            "Audífonos"  -> R.drawable.headphones
-            "Bocinas"    -> R.drawable.speaker
-            "Luces"      -> R.drawable.lamp_floor
-            "Ventilador" -> R.drawable.wind
-            "Televisión" -> R.drawable.tv_minimal
-            else         -> null
-        }
-        if (iconRes != null) {
-            ivTipoIcono.setImageResource(iconRes)
+        val tipoObj = tiposDisponibles.find { it.nombreTipo == tipo }
+        val iconName = tipoObj?.icono ?: "ic_default"
+        
+        val resId = resources.getIdentifier(iconName, "drawable", packageName)
+        if (resId != 0 && iconName != "ic_default") {
+            ivTipoIcono.setImageResource(resId)
             ivTipoIcono.visibility = View.VISIBLE
         } else {
-            ivTipoIcono.visibility = View.GONE
+            // Fallback hardcoded just in case API hasn't loaded yet
+            val iconRes = when (tipo) {
+                "Audífonos"  -> R.drawable.headphones
+                "Bocinas"    -> R.drawable.speaker
+                "Focos"      -> R.drawable.lightbulb
+                "Luces"      -> R.drawable.lightbulb
+                "Ventilador" -> R.drawable.wind
+                "Televisión" -> R.drawable.tv_minimal
+                else         -> null
+            }
+            if (iconRes != null) {
+                ivTipoIcono.setImageResource(iconRes)
+                ivTipoIcono.visibility = View.VISIBLE
+            } else {
+                ivTipoIcono.visibility = View.GONE
+            }
         }
     }
 
@@ -444,8 +543,10 @@ class AddDeviceActivity : AppCompatActivity() {
 
         val tipos = if (filtroTipo != null) {
             listOf(filtroTipo!!)
+        } else if (tiposDisponibles.isNotEmpty()) {
+            tiposDisponibles.map { it.nombreTipo }
         } else {
-            listOf("Luces", "Bocinas", "Ventilador", "Televisión", "Audífonos")
+            listOf("Focos", "Bocinas", "Ventilador", "Televisión", "Audífonos")
         }
 
         val adapter = ArrayAdapter(themedContext, android.R.layout.simple_spinner_dropdown_item, tipos)
