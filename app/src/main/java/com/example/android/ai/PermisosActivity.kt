@@ -59,7 +59,6 @@ class PermisosActivity : AppCompatActivity() {
         btnContinue = findViewById(R.id.btnContinue)
 
         btnCamera.setOnClickListener {
-            Toast.makeText(this,"Hola",Toast.LENGTH_SHORT).show()
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), 100)
         }
 
