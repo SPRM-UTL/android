@@ -31,11 +31,12 @@ RUN rm -rf ./*
 # Crear carpeta para las descargas de APKs
 RUN mkdir -p downloads
 
-# Copiar el APK recién compilado con un nombre único basado en la fecha del despliegue
-# Nota: Si usas almacenamiento persistente en Render, se irán acumulando aquí.
+# 1. TRAER el APK desde la fase de build usando '--from=build'
+COPY --from=build /app/app/build/outputs/apk/release/app-release.apk ./downloads/app-latest.apk
+
+# 2. Ahora que el archivo ya está en esta fase, podemos usar RUN para duplicarlo con la fecha
 RUN TIMESTAMP=$(date +%Y%m%d_%H%M%S) && \
-    cp /app/app/build/outputs/apk/release/app-release.apk ./downloads/app-release_${TIMESTAMP}.apk && \
-    cp /app/app/build/outputs/apk/release/app-release.apk ./downloads/app-latest.apk
+    cp ./downloads/app-latest.apk ./downloads/app-release_${TIMESTAMP}.apk
 
 # Copiar el HTML de la interfaz y el script que genera la lista de archivos
 COPY index.html .
