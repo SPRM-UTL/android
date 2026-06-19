@@ -284,7 +284,7 @@ class MainActivity : AppCompatActivity() {
     private val biometricCallback = object : BiometricPrompt.AuthenticationCallback() {
 
         override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-            // No entra directo — verifica el token contra el servidor primero
+            // No entra directo — primero verifica el token contra el servidor
             verificarTokenYEntrar()
         }
 
