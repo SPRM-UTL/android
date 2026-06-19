@@ -5,6 +5,9 @@ import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
+import android.bluetooth.le.BluetoothLeScanner
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanResult
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -29,6 +32,11 @@ class BluetoothScanManager(private val contexto: Context) {
     private var alEncontrarDispositivo: ((ResultadoDispositivoBt) -> Unit)? = null
     private var alFinalizarEscaneo: (() -> Unit)? = null
     private var receptorEventos: BroadcastReceiver? = null
+    private var leScanner: BluetoothLeScanner? = null
+    private var leScanCallback: ScanCallback? = null
+    
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var timeoutRunnable: Runnable? = null
 
     val bluetoothDisponible: Boolean get() = adaptadorBluetooth != null
     val bluetoothActivado: Boolean get() = adaptadorBluetooth?.isEnabled == true
@@ -73,6 +81,13 @@ class BluetoothScanManager(private val contexto: Context) {
         this.alEncontrarDispositivo = alEncontrarDispositivo
         this.alFinalizarEscaneo    = alFinalizarEscaneo
 
+        timeoutRunnable?.let { handler.removeCallbacks(it) }
+        timeoutRunnable = Runnable {
+            detenerEscaneo()
+            this.alFinalizarEscaneo?.invoke()
+        }
+        handler.postDelayed(timeoutRunnable!!, 15000) // 15 seconds timeout
+
         val filtro = IntentFilter().apply {
             addAction(BluetoothDevice.ACTION_FOUND)
             addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
@@ -104,6 +119,7 @@ class BluetoothScanManager(private val contexto: Context) {
                         }
                     }
                     BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
+                        timeoutRunnable?.let { handler.removeCallbacks(it) }
                         detenerEscaneo()
                         this@BluetoothScanManager.alFinalizarEscaneo?.invoke()
                     }
@@ -134,21 +150,52 @@ class BluetoothScanManager(private val contexto: Context) {
             val exito = adaptadorBluetooth?.startDiscovery() ?: false
             if (!exito) {
                 android.util.Log.e("BluetoothScanManager", "Fallo al iniciar discovery (startDiscovery devolvió false)")
-                this.alFinalizarEscaneo?.invoke()
             }
         } catch (e: SecurityException) {
             android.util.Log.e("BluetoothScanManager", "Error de seguridad al iniciar discovery", e)
-            this.alFinalizarEscaneo?.invoke()
         } catch (e: Exception) {
             android.util.Log.e("BluetoothScanManager", "Error inesperado al iniciar discovery", e)
-            this.alFinalizarEscaneo?.invoke()
+        }
+
+        // Iniciar también escaneo BLE
+        try {
+            leScanner = adaptadorBluetooth?.bluetoothLeScanner
+            if (leScanner != null) {
+                leScanCallback = object : ScanCallback() {
+                    @SuppressLint("MissingPermission")
+                    override fun onScanResult(callbackType: Int, result: ScanResult?) {
+                        val dispositivo = result?.device
+                        dispositivo?.let {
+                            val nombre = try {
+                                it.name ?: "Dispositivo Desconocido (BLE)"
+                            } catch (e: SecurityException) {
+                                "Dispositivo Protegido (BLE)"
+                            }
+                            val mac = it.address ?: return
+                            this@BluetoothScanManager.alEncontrarDispositivo?.invoke(
+                                ResultadoDispositivoBt(nombre, mac)
+                            )
+                        }
+                    }
+                }
+                leScanner?.startScan(leScanCallback)
+                android.util.Log.d("BluetoothScanManager", "Iniciado BLE Scan")
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("BluetoothScanManager", "Error al iniciar BLE scan", e)
         }
     }
 
     @SuppressLint("MissingPermission")
     fun detenerEscaneo() {
+        timeoutRunnable?.let { handler.removeCallbacks(it) }
         adaptadorBluetooth?.cancelDiscovery()
         try { receptorEventos?.let { contexto.unregisterReceiver(it) } } catch (_: Exception) {}
         receptorEventos = null
+        
+        try {
+            leScanCallback?.let { leScanner?.stopScan(it) }
+        } catch (e: Exception) {}
+        leScanCallback = null
     }
 }
