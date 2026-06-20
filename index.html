@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPRM Android - Descargas</title>
+    <meta name="description" content="Centro de descargas de la app Android Manordomo — compilaciones automáticas generadas por Render.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Poppins:wght@600;700&family=Sora:wght@600;700&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cafe: {
+                            primary: '#3aafa9',
+                            dark:    '#2b7a78',
+                            light:   '#f1f5f9',
+                        },
+                        muted:   '#8a8a8a',
+                        bglight: '#fafaf7'
+                    },
+                    fontFamily: {
+                        title:   ['Poppins', 'sans-serif'],
+                        heading: ['Sora', 'sans-serif'],
+                        body:    ['DM Sans', 'sans-serif'],
+                        data:    ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes bounce-y {
+            0%, 100% { transform: translateY(0); }
+            50%       { transform: translateY(-4px); }
+        }
+        .animate-bounce-y { animation: bounce-y 1.2s ease-in-out infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .animate-spin { animation: spin 1s linear infinite; }
+    </style>
+</head>
+<body class="bg-bglight text-cafe-dark min-h-screen flex flex-col justify-between font-body">
+
+    <!-- HEADER -->
+    <header class="border-b border-cafe-light bg-white sticky top-0 z-50 shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <!-- Logo Manordomo (mismo SVG que /icons/logo.svg del frontend) -->
+                <div class="w-9 h-9 bg-cafe-dark rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    <svg width="26" height="26" viewBox="0 0 190 190" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M144.191 1.22852C153.522 1.22852 160.376 1.65794 165.969 3.41016C171.59 5.17129 175.91 8.25873 180.201 13.5029C188.786 23.9924 188.796 32.763 188.796 36.2734V36.2744C188.797 39.7353 188.814 89.7041 188.796 96.7295C188.725 124.972 188.796 126.089 188.796 152.001C188.796 163.386 184.904 171.835 179.351 177.743C172.142 185.413 162.165 188.774 154.368 188.774H33.927C26.7816 188.774 18.5519 185.563 11.5149 178.257C6.51179 173.062 1.19689 165.86 1.19656 155.456C1.19634 133.002 1.19744 70.8194 1.19754 44.9102V44.9092C1.19759 31.6712 1.18387 22.2663 10.7356 12.4951C14.371 8.77629 17.6246 6.14956 21.2493 4.3584C24.8771 2.56578 28.8456 1.62552 33.8889 1.23047L33.9085 1.22852H144.191Z" fill="white"/>
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M109.782 100.397C117.549 98.2407 137.009 101.472 138.606 106.349C139.937 110.414 135.526 109.834 134.727 112.272C133.929 114.711 134.572 132.374 121 134C112.323 135.039 103.292 133.728 100.181 122.608C97.8472 114.265 95.4939 112.582 94.695 112.852C93.8966 112.581 91.8202 114.154 89.904 122.608C87.3837 133.728 78.6444 135.95 68.2653 134.541C56.2895 132.915 54.6927 117.469 53.8942 115.03C53.0955 112.591 49.4522 110.414 50.7829 106.349C52.3799 101.472 69.6212 99.6073 78.6442 100.397C84.9491 100.949 88.225 104.463 89.904 105.537C92.308 107.075 94.5847 106.903 94.612 106.901C94.612 106.901 96.9303 106.837 99.4851 105.537C102.679 103.911 101 102.836 109.782 100.397Z" fill="white"/>
+                        <path d="M76.0872 126.187C72.867 126.187 70.4519 122.067 70.4519 117.957C70.4519 114.665 73.0919 109.738 76.0872 109.732C79.0825 109.726 81.7226 113.336 81.7226 117.957C81.7226 122.89 79.3074 126.187 76.0872 126.187Z" fill="white"/>
+                        <path d="M112.315 127.005C115.535 127.005 117.95 122.885 117.95 118.775C117.95 115.483 115.31 110.557 112.315 110.551C109.319 110.545 106.679 114.154 106.679 118.775C106.679 123.708 109.094 127.005 112.315 127.005Z" fill="white"/>
+                        <path d="M88.0706 138.311C85.7226 135.957 83.437 138.496 84.1579 140.666C84.9406 143.02 89.6352 147.732 95.8971 147.732C102.159 147.732 106.854 143.02 107.636 140.666C108.357 138.496 106.072 135.957 103.724 138.311C101.536 140.505 101.048 141.226 99.0285 142.235C97.4635 143.017 96.663 142.894 95.8805 142.894C95.0979 142.894 94.3309 143.017 92.7658 142.235C90.7466 141.226 90.2583 140.505 88.0706 138.311Z" fill="white"/>
+                    </svg>
+                </div>
+                <div>
+                    <span class="block text-base font-bold text-cafe-dark font-title leading-tight">Manordomo</span>
+                    <span class="block text-xs text-muted font-body uppercase tracking-wider">Android Deploy Center</span>
+                </div>
+            </div>
+            <!-- GitHub icon (Lucide) inline -->
+            <a href="https://github.com/SPRM-UTL/android" target="_blank" id="github-link"
+               class="text-muted hover:text-cafe-primary transition-colors" aria-label="Ver repositorio en GitHub">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/>
+                    <path d="M9 18c-4.51 2-5-2-7-2"/>
+                </svg>
+            </a>
+        </div>
+    </header>
+
+    <!-- MAIN -->
+    <main class="max-w-4xl w-full mx-auto px-4 py-12 flex-grow">
+
+        <!-- Tarjeta download latest -->
+        <div class="bg-white border-[1.5px] border-cafe-light rounded-2xl p-8 mb-10 shadow-[0_4px_18px_rgba(43,191,170,0.12)] relative overflow-hidden">
+            <div class="absolute -right-10 -top-10 w-40 h-40 bg-cafe-primary/10 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="absolute -left-6 -bottom-6 w-28 h-28 bg-cafe-dark/5 rounded-full blur-2xl pointer-events-none"></div>
+
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+                <div>
+                    <span class="inline-flex items-center gap-1.5 bg-cafe-light text-cafe-dark font-data text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">
+                        <!-- Lucide check -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 6 9 17l-5-5"/>
+                        </svg>
+                        Última versión estable
+                    </span>
+                    <h2 class="text-3xl font-bold font-title mt-3 mb-2 text-cafe-dark">Build más reciente (Main)</h2>
+                    <p class="text-muted text-sm max-w-md font-body leading-relaxed">
+                        Descarga directa de la compilación automática más reciente generada por el pipeline de Render.
+                    </p>
+                </div>
+                <div class="flex-shrink-0">
+                    <a href="./downloads/app-latest.apk" id="download-latest-btn"
+                       class="inline-flex items-center gap-2 bg-cafe-primary hover:bg-cafe-dark text-white font-semibold px-6 py-4 rounded-xl shadow-lg shadow-cafe-primary/30 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 w-full md:w-auto justify-center font-body">
+                        <!-- Lucide download -->
+                        <svg class="w-5 h-5 animate-bounce-y" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        Descargar APK Actual
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Historial -->
+        <div>
+            <h3 class="text-xl font-bold font-heading mb-4 flex items-center gap-2 text-cafe-dark">
+                <!-- Lucide clock -->
+                <svg class="w-5 h-5 text-cafe-primary flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 6v6l4 2"/>
+                </svg>
+                Historial de Compilaciones en este contenedor
+            </h3>
+
+            <div id="versions-container" class="grid gap-3">
+                <div class="text-muted py-8 text-center bg-white border border-cafe-light rounded-xl font-body flex items-center justify-center gap-2">
+                    <!-- Lucide loader -->
+                    <svg class="w-4 h-4 text-cafe-primary animate-spin" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                    </svg>
+                    Cargando historial de versiones...
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-cafe-light bg-white py-6 text-center text-sm text-muted font-body">
+        <p>&copy; 2026 SPRM-UTL &mdash; Compilado automáticamente con Docker &amp; Render.</p>
+    </footer>
+
+    <script>
+        async function loadVersions() {
+            const container = document.getElementById('versions-container');
+            try {
+                const response = await fetch('./downloads.json');
+                const files = await response.json();
+
+                if (files.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-muted py-10 text-center bg-white border border-cafe-light rounded-xl font-body">
+                            No hay compilaciones anteriores registradas en este despliegue.
+                        </div>`;
+                    return;
+                }
+
+                container.innerHTML = '';
+                files.slice().reverse().forEach(function(filename) {
+                    var label = filename;
+                    // Nuevo formato: app-v1.0_20260620_123456.apk
+                    var match = filename.match(/app-v([^_]+)_(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})\.apk/);
+                    if (match) {
+                        label = 'v' + match[1] + ' \u2014 ' + match[4] + '/' + match[3] + '/' + match[2] + ' ' + match[5] + ':' + match[6] + ':' + match[7];
+                    } else {
+                        // Formato legacy: app-release_YYYYMMDD_HHMMSS.apk
+                        var m2 = filename.match(/_(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})/);
+                        if (m2) {
+                            label = 'Compilaci\u00f3n ' + m2[3] + '/' + m2[2] + '/' + m2[1] + ' \u2014 ' + m2[4] + ':' + m2[5] + ':' + m2[6];
+                        }
+                    }
+
+                    var card = document.createElement('div');
+                    card.className = 'flex items-center justify-between p-4 bg-white border-[1.5px] border-cafe-light rounded-xl hover:border-cafe-primary/60 hover:shadow-[0_4px_14px_rgba(43,191,170,0.12)] transition-all duration-200';
+                    card.innerHTML =
+                        '<div class="flex items-center gap-3">' +
+                            '<div class="w-9 h-9 flex items-center justify-center bg-cafe-light rounded-lg text-cafe-primary flex-shrink-0">' +
+                                '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                                    '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/>' +
+                                    '<path d="M14 2v4a2 2 0 0 0 2 2h4"/>' +
+                                    '<path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>' +
+                                '</svg>' +
+                            '</div>' +
+                            '<div>' +
+                                '<p class="font-semibold text-cafe-dark font-heading text-sm">' + label + '</p>' +
+                                '<p class="text-xs text-muted font-data mt-0.5">' + filename + '</p>' +
+                            '</div>' +
+                        '</div>' +
+                        '<a href="./downloads/' + filename + '" ' +
+                           'class="inline-flex items-center gap-1.5 bg-cafe-primary hover:bg-cafe-dark text-white font-body text-sm font-semibold px-4 py-2 rounded-lg transition-colors duration-200 flex-shrink-0">' +
+                            '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+                                '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>' +
+                                '<polyline points="7 10 12 15 17 10"/>' +
+                                '<line x1="12" y1="15" x2="12" y2="3"/>' +
+                            '</svg>' +
+                            'Descargar' +
+                        '</a>';
+                    container.appendChild(card);
+                });
+
+            } catch (error) {
+                console.error('Error cargando el historial:', error);
+                container.innerHTML =
+                    '<div class="text-red-600 py-8 text-center bg-red-50 border border-red-100 rounded-xl font-body flex items-center justify-center gap-2">' +
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                            '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>' +
+                            '<line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>' +
+                        '</svg>' +
+                        'Error al cargar el historial de versiones.' +
+                    '</div>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadVersions);
+    </script>
+</body>
+</html>

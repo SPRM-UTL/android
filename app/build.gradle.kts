@@ -31,7 +31,10 @@ android {
             localProperties.load(FileInputStream(localPropertiesFile))
         }
 
-        val apiUrl = localProperties.getProperty("API_BASE_URL") ?: "http://0.0.0.0:5295/"
+        val apiUrl = project.findProperty("API_BASE_URL")?.toString()
+            ?: System.getenv("ORG_GRADLE_PROJECT_API_BASE_URL")
+            ?: localProperties.getProperty("API_BASE_URL") 
+            ?: "http://0.0.0.0:5295/"
         buildConfigField("String", "BASE_URL", "\"$apiUrl\"")
     }
 
