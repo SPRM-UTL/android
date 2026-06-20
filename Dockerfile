@@ -5,9 +5,13 @@ FROM eclipse-temurin:17-jdk-jammy AS build
 ENV ANDROID_HOME=/opt/android-sdk
 ENV PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
 
-# Pasar la variable de entorno de Render a Gradle
+# Variables de entorno de Render pasadas a Gradle en tiempo de build
 ARG ORG_GRADLE_PROJECT_API_BASE_URL
 ENV ORG_GRADLE_PROJECT_API_BASE_URL=$ORG_GRADLE_PROJECT_API_BASE_URL
+
+# Versión del build (usada para nombrar el APK en el historial)
+ARG BUILD_VERSION=dev
+ENV BUILD_VERSION=$BUILD_VERSION
 
 # Instalar dependencias necesarias
 RUN apt-get update && apt-get install -y wget unzip && rm -rf /var/lib/apt/lists/*
@@ -47,12 +51,16 @@ RUN mkdir -p downloads
 # 1. Copiar todo el contenido de la carpeta de outputs de DEBUG
 COPY --from=build /app/app/build/outputs/apk/debug/ .
 
-# 2. Detectar dinámicamente el APK, renombrarlo a 'app-latest.apk' 
-#    y clonarlo con la marca de tiempo para el historial
+# 2. Redeclarar ARG para que esté disponible en esta fase
+ARG BUILD_VERSION=dev
+
+# 3. Detectar dinámicamente el APK, renombrarlo a 'app-latest.apk'
+#    y clonarlo con versión + marca de tiempo para el historial
+#    Formato: app-v1.0_20260620_123456.apk
 RUN apk_file=$(ls *.apk | head -n 1) && \
     cp "$apk_file" ./downloads/app-latest.apk && \
     TIMESTAMP=$(date +%Y%m%d_%H%M%S) && \
-    cp ./downloads/app-latest.apk ./downloads/app-release_${TIMESTAMP}.apk && \
+    cp ./downloads/app-latest.apk "./downloads/app-v${BUILD_VERSION}_${TIMESTAMP}.apk" && \
     rm *.apk
 
 # Copiar el HTML de la interfaz y el script que genera la lista de archivos

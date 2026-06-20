@@ -1,0 +1,33 @@
+# ─── Carpetas de build y caches ───────────────────────────────────────────────
+.gradle/
+build/
+app/build/
+**/build/
+
+# ─── Android SDK local ────────────────────────────────────────────────────────
+local.properties
+
+# ─── Configuración de IDEs ────────────────────────────────────────────────────
+.idea/
+.vs/
+*.iml
+*.ipr
+*.iws
+
+# ─── Kotlin ───────────────────────────────────────────────────────────────────
+.kotlin/
+
+# ─── Git ──────────────────────────────────────────────────────────────────────
+.git/
+.gitignore
+
+# ─── Logs y archivos temporales ───────────────────────────────────────────────
+*.log
+hs_err_pid*.log
+replay_pid*.log
+
+# ─── Scripts que no necesita el build ─────────────────────────────────────────
+download_icons.ps1
+
+# ─── Documentación (no necesaria en la imagen) ────────────────────────────────
+README.md
