@@ -5,6 +5,10 @@ FROM eclipse-temurin:17-jdk-jammy AS build
 ENV ANDROID_HOME=/opt/android-sdk
 ENV PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
 
+# Pasar la variable de entorno de Render a Gradle
+ARG ORG_GRADLE_PROJECT_API_BASE_URL
+ENV ORG_GRADLE_PROJECT_API_BASE_URL=$ORG_GRADLE_PROJECT_API_BASE_URL
+
 # Instalar dependencias necesarias
 RUN apt-get update && apt-get install -y wget unzip && rm -rf /var/lib/apt/lists/*
 
