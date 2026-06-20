@@ -8,7 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.*
-import android.text.InputType
 import android.view.View
 import android.widget.*
 import androidx.activity.enableEdgeToEdge
@@ -26,13 +25,10 @@ import com.example.android.db.Dispositivo
 import com.example.android.network.ApiHandler
 import com.example.android.network.ConfiguracionRedRequest
 import com.example.android.network.RetrofitClient
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
-import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.material.snackbar.Snackbar
-import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -41,29 +37,61 @@ import java.util.*
 
 class EspConfigActivity : AppCompatActivity() {
 
-    // Vistas principales
+    // --- Header / step indicator ---
+    private lateinit var stepDot1: FrameLayout
+    private lateinit var stepDot2: FrameLayout
+    private lateinit var stepDot3: FrameLayout
+    private lateinit var stepLine1: View
+    private lateinit var stepLine2: View
+    private lateinit var stepLabel1: TextView
+    private lateinit var stepLabel2: TextView
+    private lateinit var stepLabel3: TextView
+
+    // --- Step content containers ---
+    private lateinit var stepContent1: LinearLayout
+    private lateinit var stepContent2: LinearLayout
+    private lateinit var stepContent3: LinearLayout
+
+    // --- Step 1: buscar dispositivo ---
     private lateinit var cardEstado: MaterialCardView
     private lateinit var iconEstadoBg: FrameLayout
     private lateinit var ivEstadoConexion: ImageView
     private lateinit var tvEstadoConexion: TextView
     private lateinit var tvSubEstadoConexion: TextView
+    private lateinit var btnBuscarDispositivos: MaterialButton
+    private lateinit var contenedorListaDispositivos: LinearLayout
+    private lateinit var lvDispositivos: ListView
+    private lateinit var progressScan: LinearProgressIndicator
+    private lateinit var tvSinDispositivos: TextView
 
+    // --- Step 2: wifi ---
+    private lateinit var cardOptionWifi: MaterialCardView
+    private lateinit var cardOptionManual: MaterialCardView
+    private lateinit var cardOptionQr: MaterialCardView
+    private lateinit var etSsid: TextInputEditText
+    private lateinit var etPassword: TextInputEditText
+
+    // --- Step 3: confirmar ---
+    private lateinit var tvResumenDispositivo: TextView
+    private lateinit var cardSeleccionWifi: MaterialCardView
     private lateinit var tvSelectedSsid: TextView
-    private lateinit var btnConfigurarWifi: MaterialButton
-    private lateinit var btnEnviarConfig: MaterialButton
-    private lateinit var cardBuscarDispositivos: MaterialCardView
+    private lateinit var btnEditarWifi: TextView
+
+    // --- Bottom action bar ---
+    private lateinit var btnAtras: MaterialButton
+    private lateinit var btnSiguiente: MaterialButton
+
+    private lateinit var btnBack: ImageView
+    private lateinit var ivHelp: ImageView
+
+    private var vistaRaiz: View? = null
+
+    // Paso actual del wizard: 1, 2 o 3
+    private var pasoActual: Int = 1
 
     // Datos Wi-Fi actuales en memoria
     private var currentSsidInput = ""
     private var currentPasswordInput = ""
-
-    // Bottom Sheets
-    private var bottomSheetDialog: BottomSheetDialog? = null
-    private var methodDialog: BottomSheetDialog? = null
-    private var inputDialog: BottomSheetDialog? = null
-    
-    private var lvDispositivosBottom: ListView? = null
-    private var progressScan: LinearProgressIndicator? = null
 
     // Bluetooth
     private lateinit var bluetoothAdapter: BluetoothAdapter
@@ -81,9 +109,16 @@ class EspConfigActivity : AppCompatActivity() {
     private var aparatosLocales: List<Dispositivo> = emptyList()
     private var connectedEspMac: String = ""
     private var connectedEspName: String = ""
+    private var connectedEspIp: String = ""
+    // Aparato local seleccionado para asociar (índice en aparatosLocales)
+    private var aparatoSeleccionadoIdx: Int = -1
+    // Flag para evitar que la pantalla de confirmación se dispare en bucle
+    // (BLE puede disparar onCharacteristicChanged varias veces con la misma IP)
+    private var ipRecibida = false
+
     // Flag para evitar que el diálogo de asociación se abra en bucle
     private var dialogEspMostrado = false
-    
+
     // Modo "Add Device" para aparatos genéricos (ej. Enchufe)
     private var isAddDeviceMode = false
     private var tipoDispositivo: String = ""
@@ -103,16 +138,15 @@ class EspConfigActivity : AppCompatActivity() {
     private val handler = Handler(Looper.getMainLooper())
     private var isScanning = false
     private var isConnected = false
-    private var vistaRaiz: View? = null
 
     private val scanCallback = object : ScanCallback() {
         @SuppressLint("MissingPermission")
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             val device = result.device
-
             if (!discoveredDevices.any { it.address == device.address }) {
                 discoveredDevices.add(device)
                 listAdapter.notifyDataSetChanged()
+                tvSinDispositivos.visibility = View.GONE
             }
         }
 
@@ -131,7 +165,7 @@ class EspConfigActivity : AppCompatActivity() {
         if (permissions.entries.all { it.value }) {
             verificarBluetoothEncendido()
         } else {
-            mostrarSnackbar("Permisos necesarios denegados", true)
+            mostrarSnackbar("Activa los permisos de Bluetooth y ubicación para buscar tu cámara", true)
         }
     }
 
@@ -141,7 +175,17 @@ class EspConfigActivity : AppCompatActivity() {
         if (result.resultCode == RESULT_OK) {
             iniciarEscaneoBle()
         } else {
-            mostrarSnackbar("Bluetooth necesario para conectar", false)
+            mostrarSnackbar("Necesitas Bluetooth activado para conectar tu cámara", false)
+        }
+    }
+
+    private val qrScanLauncher = registerForActivityResult(
+        com.journeyapps.barcodescanner.ScanContract()
+    ) { result ->
+        if (result.contents != null) {
+            procesarContenidoQr(result.contents)
+        } else {
+            mostrarSnackbar("Escaneo cancelado", true)
         }
     }
 
@@ -155,14 +199,6 @@ class EspConfigActivity : AppCompatActivity() {
         setContentView(R.layout.activity_esp_config)
         vistaRaiz = findViewById(android.R.id.content)
 
-        isAddDeviceMode = intent.getBooleanExtra("EXTRA_MODE_ADD_DEVICE", false)
-        tipoDispositivo = intent.getStringExtra("EXTRA_TIPO_DISPOSITIVO") ?: ""
-        iconoDispositivo = intent.getStringExtra("EXTRA_ICONO_DISPOSITIVO")
-
-        if (isAddDeviceMode) {
-            findViewById<TextView>(R.id.tvTituloConfig)?.text = "Añadir $tipoDispositivo"
-        }
-
         ViewCompat.setOnApplyWindowInsetsListener(vistaRaiz!!) { view, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
@@ -172,25 +208,67 @@ class EspConfigActivity : AppCompatActivity() {
         inicializarVistas()
         inicializarBluetooth()
         configurarListeners()
+        mostrarPaso(1)
 
-        // Inicializar BD y precargar aparatos para el diálogo de asociación
+        isAddDeviceMode = intent.getBooleanExtra("EXTRA_MODE_ADD_DEVICE", false)
+        tipoDispositivo = intent.getStringExtra("EXTRA_TIPO_DISPOSITIVO") ?: ""
+        iconoDispositivo = intent.getStringExtra("EXTRA_ICONO_DISPOSITIVO")
+
         db = AppDatabase.getDatabase(this)
         cargarAparatosLocales()
     }
 
     private fun inicializarVistas() {
+        // Header
+        btnBack = findViewById(R.id.btnBack)
+        ivHelp = findViewById(R.id.ivHelp)
+
+        // Step indicator
+        stepDot1 = findViewById(R.id.stepDot1)
+        stepDot2 = findViewById(R.id.stepDot2)
+        stepDot3 = findViewById(R.id.stepDot3)
+        stepLine1 = findViewById(R.id.stepLine1)
+        stepLine2 = findViewById(R.id.stepLine2)
+        stepLabel1 = findViewById(R.id.stepLabel1)
+        stepLabel2 = findViewById(R.id.stepLabel2)
+        stepLabel3 = findViewById(R.id.stepLabel3)
+
+        // Step content
+        stepContent1 = findViewById(R.id.stepContent1)
+        stepContent2 = findViewById(R.id.stepContent2)
+        stepContent3 = findViewById(R.id.stepContent3)
+
+        // Step 1
         cardEstado = findViewById(R.id.cardEstado)
         iconEstadoBg = findViewById(R.id.iconEstadoBg)
         ivEstadoConexion = findViewById(R.id.ivEstadoConexion)
         tvEstadoConexion = findViewById(R.id.tvEstadoConexion)
         tvSubEstadoConexion = findViewById(R.id.tvSubEstadoConexion)
-
-        tvSelectedSsid = findViewById(R.id.tvSelectedSsid)
-        btnConfigurarWifi = findViewById(R.id.btnConfigurarWifi)
-        btnEnviarConfig = findViewById(R.id.btnEnviarConfig)
-        cardBuscarDispositivos = findViewById(R.id.cardBuscarDispositivos)
+        btnBuscarDispositivos = findViewById(R.id.btnBuscarDispositivos)
+        contenedorListaDispositivos = findViewById(R.id.contenedorListaDispositivos)
+        lvDispositivos = findViewById(R.id.lvDispositivos)
+        progressScan = findViewById(R.id.progressScan)
+        tvSinDispositivos = findViewById(R.id.tvSinDispositivos)
 
         listAdapter = DeviceAdapter(this, discoveredDevices)
+        lvDispositivos.adapter = listAdapter
+
+        // Step 2
+        cardOptionWifi = findViewById(R.id.cardOptionWifi)
+        cardOptionManual = findViewById(R.id.cardOptionManual)
+        cardOptionQr = findViewById(R.id.cardOptionQr)
+        etSsid = findViewById(R.id.etSsid)
+        etPassword = findViewById(R.id.etPassword)
+
+        // Step 3
+        tvResumenDispositivo = findViewById(R.id.tvResumenDispositivo)
+        cardSeleccionWifi = findViewById(R.id.cardSeleccionWifi)
+        tvSelectedSsid = findViewById(R.id.tvSelectedSsid)
+        btnEditarWifi = findViewById(R.id.btnEditarWifi)
+
+        // Bottom bar
+        btnAtras = findViewById(R.id.btnAtras)
+        btnSiguiente = findViewById(R.id.btnSiguiente)
     }
 
     private inner class DeviceAdapter(context: Context, private val devices: List<BluetoothDevice>) :
@@ -203,20 +281,9 @@ class EspConfigActivity : AppCompatActivity() {
 
             val tvDeviceName = view.findViewById<TextView>(R.id.tvBtDeviceName)
             val tvDeviceMac = view.findViewById<TextView>(R.id.tvBtDeviceMac)
-            val btnConectar = view.findViewById<MaterialButton>(R.id.btnItemConectar)
 
-            tvDeviceName.text = device?.name ?: "Dispositivo Desconocido"
+            tvDeviceName.text = device?.name ?: "Dispositivo desconocido"
             tvDeviceMac.text = device?.address ?: "00:00:00:00:00:00"
-
-            val clickListener = View.OnClickListener {
-                if (device != null) {
-                    conectarADispositivo(device)
-                    bottomSheetDialog?.dismiss()
-                }
-            }
-
-            btnConectar.setOnClickListener(clickListener)
-            view.setOnClickListener(clickListener)
 
             return view
         }
@@ -229,62 +296,159 @@ class EspConfigActivity : AppCompatActivity() {
     }
 
     private fun configurarListeners() {
-        btnConfigurarWifi.setOnClickListener {
-            mostrarDialogoMetodo()
+        btnBack.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
+
+        ivHelp.setOnClickListener {
+            mostrarSnackbar("Acerca tu teléfono a la cámara y mantén el Bluetooth encendido durante todo el proceso.", false)
         }
 
-        btnEnviarConfig.setOnClickListener {
-            enviarConfiguracionWifi()
+        btnBuscarDispositivos.setOnClickListener {
+            contenedorListaDispositivos.visibility = View.VISIBLE
+            if (tienePermisosNecesarios()) {
+                verificarBluetoothEncendido()
+            } else {
+                pedirPermisos()
+            }
         }
 
-        cardBuscarDispositivos.setOnClickListener {
-            mostrarBottomSheetDispositivos()
+        lvDispositivos.setOnItemClickListener { _, _, position, _ ->
+            val device = discoveredDevices[position]
+            conectarADispositivo(device)
         }
 
-        findViewById<ImageView>(R.id.ivHelp).setOnClickListener {
-            mostrarSnackbar("Para configurar tu cámara, debes estar cerca de ella y tener el Bluetooth encendido.", false)
-        }
-    }
-
-    // --- Flujo de Dialogos ---
-
-    private fun mostrarDialogoMetodo() {
-        methodDialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_wifi_method, null)
-        methodDialog?.setContentView(view)
-
-        val cardOptionWifi = view.findViewById<MaterialCardView>(R.id.cardOptionWifi)
-        val cardOptionManual = view.findViewById<MaterialCardView>(R.id.cardOptionManual)
-        val cardOptionQr = view.findViewById<MaterialCardView>(R.id.cardOptionQr)
-
+        // Step 2: métodos de carga de Wi-Fi
         cardOptionWifi.setOnClickListener {
-            methodDialog?.dismiss()
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                mostrarDialogoInputAutocompletado()
+                autocompletarRedActual()
             } else {
                 pedirPermisosLocationParaWifi()
             }
         }
 
         cardOptionManual.setOnClickListener {
-            methodDialog?.dismiss()
-            mostrarDialogoInput("", "")
+            etSsid.setText("")
+            etPassword.setText("")
+            etSsid.requestFocus()
         }
 
         cardOptionQr.setOnClickListener {
-            methodDialog?.dismiss()
             iniciarEscaneoQr()
         }
 
-        methodDialog?.show()
+        // Step 3
+        btnEditarWifi.setOnClickListener {
+            mostrarPaso(2)
+        }
+
+        // Navegación del wizard
+        btnAtras.setOnClickListener {
+            if (pasoActual > 1) mostrarPaso(pasoActual - 1)
+        }
+
+        btnSiguiente.setOnClickListener {
+            manejarSiguiente()
+        }
+    }
+
+    // --- Navegación del wizard ---
+
+    private fun manejarSiguiente() {
+        when (pasoActual) {
+            1 -> {
+                // Solo se llega aquí si ya hay un ESP32 conectado (botón habilitado)
+                mostrarPaso(2)
+            }
+            2 -> {
+                val ssid = etSsid.text.toString().trim()
+                val password = etPassword.text.toString().trim()
+                if (ssid.isEmpty()) {
+                    etSsid.error = "Ingresa el nombre de la red"
+                    return
+                }
+                currentSsidInput = ssid
+                currentPasswordInput = password
+                tvSelectedSsid.text = currentSsidInput
+                tvResumenDispositivo.text =
+                    if (connectedEspName.isNotBlank()) connectedEspName else "Cámara ESP32"
+                mostrarPaso(3)
+            }
+            3 -> {
+                enviarConfiguracionWifi()
+            }
+        }
+    }
+
+    private fun mostrarPaso(paso: Int) {
+        pasoActual = paso
+
+        stepContent1.visibility = if (paso == 1) View.VISIBLE else View.GONE
+        stepContent2.visibility = if (paso == 2) View.VISIBLE else View.GONE
+        stepContent3.visibility = if (paso == 3) View.VISIBLE else View.GONE
+
+        actualizarStepIndicator(paso)
+
+        btnAtras.visibility = if (paso == 1) View.INVISIBLE else View.VISIBLE
+
+        when (paso) {
+            1 -> {
+                btnSiguiente.text = "Siguiente"
+                btnSiguiente.setIconResource(R.drawable.arrow_right)
+                btnSiguiente.icon?.let { btnSiguiente.iconGravity = MaterialButton.ICON_GRAVITY_TEXT_END }
+                btnSiguiente.isEnabled = isConnected
+            }
+            2 -> {
+                btnSiguiente.text = "Siguiente"
+                btnSiguiente.setIconResource(R.drawable.arrow_right)
+                btnSiguiente.isEnabled = true
+            }
+            3 -> {
+                btnSiguiente.text = "Enviar configuración"
+                btnSiguiente.icon = null
+                btnSiguiente.isEnabled = true
+            }
+        }
+    }
+
+    private fun actualizarStepIndicator(paso: Int) {
+        fun aplicarEstado(dot: FrameLayout, label: TextView, numView: Int, activo: Boolean, completado: Boolean) {
+            val numText = dot.findViewById<TextView>(numView)
+            when {
+                completado -> {
+                    dot.setBackgroundResource(R.drawable.bg_circle_step_done)
+                    numText.text = "✓"
+                    numText.setTextColor(android.graphics.Color.WHITE)
+                    label.setTextColor(ContextCompat.getColor(this, R.color.teal_primary))
+                }
+                activo -> {
+                    dot.setBackgroundResource(R.drawable.bg_circle_step_active)
+                    numText.setTextColor(android.graphics.Color.WHITE)
+                    label.setTextColor(ContextCompat.getColor(this, R.color.teal_primary))
+                }
+                else -> {
+                    dot.setBackgroundResource(R.drawable.bg_circle_step_inactive)
+                    numText.setTextColor(android.graphics.Color.parseColor("#9E9E9E"))
+                    label.setTextColor(android.graphics.Color.parseColor("#9E9E9E"))
+                }
+            }
+        }
+
+        aplicarEstado(stepDot1, stepLabel1, R.id.stepNum1, paso == 1, paso > 1)
+        aplicarEstado(stepDot2, stepLabel2, R.id.stepNum2, paso == 2, paso > 2)
+        aplicarEstado(stepDot3, stepLabel3, R.id.stepNum3, paso == 3, false)
+
+        stepLine1.setBackgroundColor(
+            ContextCompat.getColor(this, if (paso > 1) R.color.teal_primary else android.R.color.darker_gray)
+        )
+        stepLine2.setBackgroundColor(
+            ContextCompat.getColor(this, if (paso > 2) R.color.teal_primary else android.R.color.darker_gray)
+        )
     }
 
     private fun pedirPermisosLocationParaWifi() {
-        val permisos = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
-        requestPermissionLauncher.launch(permisos)
+        requestPermissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION))
     }
 
-    private fun mostrarDialogoInputAutocompletado() {
+    private fun autocompletarRedActual() {
         val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as android.net.wifi.WifiManager
         val info = wifiManager.connectionInfo
         var ssid = info.ssid
@@ -293,208 +457,21 @@ class EspConfigActivity : AppCompatActivity() {
             if (ssid.startsWith("\"") && ssid.endsWith("\"")) {
                 ssid = ssid.substring(1, ssid.length - 1)
             }
-            mostrarDialogoInput(ssid, "")
-        } else {
-            mostrarSnackbar("No se obtuvo el Wi-Fi actual. Ingresa manualmente.", true)
-            mostrarDialogoInput("", "")
-        }
-    }
-
-    private fun mostrarDialogoInput(ssid: String, password: String) {
-        inputDialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_wifi_input, null)
-        inputDialog?.setContentView(view)
-
-        val etSsid = view.findViewById<TextInputEditText>(R.id.etDialogSsid)
-        val etPassword = view.findViewById<TextInputEditText>(R.id.etDialogPassword)
-        val cbMostrarContrasena = view.findViewById<MaterialCheckBox>(R.id.cbDialogMostrarContrasena)
-        val btnDialogGuardar = view.findViewById<MaterialButton>(R.id.btnDialogGuardar)
-
-        etSsid.setText(ssid)
-        etPassword.setText(password)
-
-        if (ssid.isNotEmpty()) {
+            etSsid.setText(ssid)
+            etPassword.setText("")
             etPassword.requestFocus()
         } else {
+            mostrarSnackbar("No se detectó tu Wi-Fi actual. Ingrésalo manualmente.", true)
             etSsid.requestFocus()
         }
-
-        cbMostrarContrasena.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                etPassword.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
-            } else {
-                etPassword.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-            }
-            etPassword.setSelection(etPassword.text?.length ?: 0)
-        }
-
-        btnDialogGuardar.setOnClickListener {
-            val nuevoSsid = etSsid.text.toString().trim()
-            val nuevaPassword = etPassword.text.toString().trim()
-
-            if (nuevoSsid.isEmpty()) {
-                etSsid.error = "Ingresa el nombre de la red"
-                return@setOnClickListener
-            }
-
-            currentSsidInput = nuevoSsid
-            currentPasswordInput = nuevaPassword
-            actualizarUiWifiSeleccionado()
-            inputDialog?.dismiss()
-        }
-
-        inputDialog?.show()
     }
 
-    private fun actualizarUiWifiSeleccionado() {
-        if (currentSsidInput.isNotEmpty()) {
-            tvSelectedSsid.text = currentSsidInput
-            btnEnviarConfig.isEnabled = true
-        } else {
-            tvSelectedSsid.text = "Ninguna red seleccionada"
-            btnEnviarConfig.isEnabled = false
-        }
-    }
-
-    private fun mostrarBottomSheetDispositivos() {
-        bottomSheetDialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_scan_devices, null)
-        bottomSheetDialog?.setContentView(view)
-
-        lvDispositivosBottom = view.findViewById(R.id.lvDispositivosBottom)
-        progressScan = view.findViewById(R.id.progressScan)
-
-        lvDispositivosBottom?.adapter = listAdapter
-
-        lvDispositivosBottom?.setOnItemClickListener { _, _, position, _ ->
-            val device = discoveredDevices[position]
-            conectarADispositivo(device)
-            bottomSheetDialog?.dismiss()
-        }
-
-        bottomSheetDialog?.setOnDismissListener {
-            if (isScanning) detenerEscaneo()
-        }
-
-        bottomSheetDialog?.show()
-        
-        if (tienePermisosNecesarios()) {
-            verificarBluetoothEncendido()
-        } else {
-            pedirPermisos()
-        }
-    }
-
-    private fun guardarDispositivo(name: String, mac: String) {
+    private fun guardarDispositivo(nombre: String, mac: String) {
         val prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-        prefs.edit().apply {
-            putString(KEY_NAME, name)
+        with(prefs.edit()) {
+            putString(KEY_NAME, nombre)
             putString(KEY_MAC, mac)
             apply()
-        }
-    }
-
-    // --- Flujo específico para isAddDeviceMode ---
-
-    private fun mostrarDialogoNombrarYGuardar(ip: String) {
-        val input = TextInputEditText(this)
-        input.hint = "Ej. $tipoDispositivo Sala"
-
-        val layout = android.widget.FrameLayout(this)
-        val padding = (20 * resources.displayMetrics.density).toInt()
-        layout.setPadding(padding, padding, padding, padding)
-        layout.addView(input)
-
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-            .setTitle("Nombrar dispositivo")
-            .setMessage("Tu $tipoDispositivo se conectó a WiFi (IP: $ip). ¿Qué nombre le vas a poner?")
-            .setView(layout)
-            .setCancelable(false)
-            .setPositiveButton("Guardar") { dialog, _ ->
-                val nombre = input.text.toString().trim()
-                if (nombre.isNotEmpty()) {
-                    guardarDispositivoNuevo(nombre, ip)
-                } else {
-                    mostrarSnackbar("El nombre no puede estar vacío", true)
-                }
-                dialog.dismiss()
-            }
-            .setNegativeButton("Cancelar") { dialog, _ -> 
-                dialog.dismiss()
-                finish() 
-            }
-            .show()
-    }
-
-    private fun guardarDispositivoNuevo(nombre: String, ip: String) {
-        val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
-        val token = sharedPref.getString("apiToken", "") ?: return
-
-        val dispositivo = Dispositivo(
-            id = 0,
-            nombre = nombre,
-            tipo = tipoDispositivo,
-            accion = null,
-            comandoBluetooth = null,
-            icono = iconoDispositivo,
-            macBluetooth = "VIRTUAL-${System.currentTimeMillis()}",
-            nombreBluetooth = null,
-            fechaSincronizacion = null
-        )
-
-        lifecycleScope.launch {
-            ApiHandler.safeApiCall(
-                activity = this@EspConfigActivity,
-                showLoading = true,
-                loadingTitle = "Guardando",
-                loadingMessage = "Registrando dispositivo en tu cuenta...",
-                apiCall = { RetrofitClient.deviceService.createDispositivo("Bearer $token", dispositivo) },
-                onSuccess = { response ->
-                    val nuevoDispositivo = response.data
-                    if (nuevoDispositivo != null) {
-                        guardarConfiguracionRedNuevoDispositivo(nuevoDispositivo.id, ip, token)
-                    } else {
-                        mostrarSnackbar("Error: El servidor no devolvió el dispositivo creado", true)
-                    }
-                },
-                onError = { error ->
-                    mostrarSnackbar("Error al crear dispositivo: $error", true)
-                }
-            )
-        }
-    }
-
-    private fun guardarConfiguracionRedNuevoDispositivo(aparatoId: Int, ip: String, token: String) {
-        lifecycleScope.launch {
-            ApiHandler.safeApiCall(
-                activity = this@EspConfigActivity,
-                showLoading = true,
-                loadingTitle = "Configurando",
-                loadingMessage = "Vinculando red local al dispositivo...",
-                apiCall = {
-                    val config = ConfiguracionRedRequest(
-                        ipAddress = ip,
-                        macAddress = connectedEspMac.ifBlank { null },
-                        hostName = connectedEspName.ifBlank { null },
-                        deviceKey = if (connectedEspMac.isNotBlank()) connectedEspMac else null,
-                        puertoSocket = 81,
-                        protocoloSocket = "ws",
-                        rutaSocket = "/ws",
-                        activo = true
-                    )
-                    RetrofitClient.deviceService.saveConfiguracionRed("Bearer $token", aparatoId, config)
-                },
-                onSuccess = {
-                    Toast.makeText(this@EspConfigActivity, "Dispositivo guardado y configurado con éxito", Toast.LENGTH_SHORT).show()
-                    val intent = Intent(this@EspConfigActivity, HomeActivity::class.java)
-                    intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
-                    startActivity(intent)
-                    finish()
-                },
-                onError = { error ->
-                    mostrarSnackbar("Error al vincular red: $error", true)
-                }
-            )
         }
     }
 
@@ -541,16 +518,16 @@ class EspConfigActivity : AppCompatActivity() {
             pedirPermisos()
             return
         }
-
         if (bluetoothLeScanner == null) {
-            mostrarSnackbar("Escáner BLE no disponible", true)
+            mostrarSnackbar("Escáner BLE no disponible en este dispositivo", true)
             return
         }
 
         discoveredDevices.clear()
         listAdapter.notifyDataSetChanged()
+        tvSinDispositivos.visibility = View.GONE
 
-        mostrarProgresoScan(true)
+        progressScan.visibility = View.VISIBLE
         isScanning = true
 
         bluetoothLeScanner?.startScan(scanCallback)
@@ -567,22 +544,18 @@ class EspConfigActivity : AppCompatActivity() {
     private fun detenerEscaneo() {
         bluetoothLeScanner?.stopScan(scanCallback)
         isScanning = false
-        mostrarProgresoScan(false)
+        progressScan.visibility = View.INVISIBLE
 
         if (discoveredDevices.isEmpty()) {
-            mostrarSnackbar("No se encontraron dispositivos", false)
+            tvSinDispositivos.visibility = View.VISIBLE
         }
-    }
-
-    private fun mostrarProgresoScan(mostrar: Boolean) {
-        progressScan?.visibility = if (mostrar) View.VISIBLE else View.INVISIBLE
     }
 
     // --- Conexión GATT ---
     @SuppressLint("MissingPermission")
     private fun conectarADispositivo(device: BluetoothDevice) {
         detenerEscaneo()
-        mostrarSnackbar("Conectando a ${device.name}...", false)
+        mostrarSnackbar("Conectando a ${device.name ?: "tu cámara"}...", false)
 
         bluetoothGatt?.close()
         bluetoothGatt = device.connectGatt(this, false, gattCallback)
@@ -596,51 +569,60 @@ class EspConfigActivity : AppCompatActivity() {
                     BluetoothProfile.STATE_CONNECTED -> {
                         isConnected = true
                         actualizarEstadoConexion(true)
-                        mostrarSnackbar("Conectado al ESP32", false)
+                        mostrarSnackbar("Cámara conectada", false)
                         gatt.discoverServices()
                     }
                     BluetoothProfile.STATE_DISCONNECTED -> {
                         isConnected = false
                         actualizarEstadoConexion(false)
-                        mostrarSnackbar("Dispositivo desconectado", false)
+                        if (pasoActual == 1) btnSiguiente.isEnabled = false
+                        mostrarSnackbar("Cámara desconectada", false)
                     }
                 }
             }
         }
 
+        @SuppressLint("MissingPermission")
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 val service = gatt.getService(SERVICE_UUID)
                 if (service != null) {
                     wifiCharacteristic = service.getCharacteristic(WIFI_CHAR_UUID)
                     ipCharacteristic = service.getCharacteristic(IP_CHAR_UUID)
-                    
+
                     ipCharacteristic?.let { charac ->
                         gatt.setCharacteristicNotification(charac, true)
                         val descriptor = charac.getDescriptor(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"))
                         descriptor?.let { desc ->
-                            desc.value = android.bluetooth.BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-                            gatt.writeDescriptor(desc)
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                // API 33+: writeDescriptor(descriptor, value) es el reemplazo;
+                                // BluetoothGattDescriptor.value ya no tiene setter público.
+                                gatt.writeDescriptor(desc, android.bluetooth.BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
+                            } else {
+                                @Suppress("DEPRECATION")
+                                desc.value = android.bluetooth.BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                                @Suppress("DEPRECATION")
+                                gatt.writeDescriptor(desc)
+                            }
                         }
                     }
 
                     runOnUiThread {
                         @SuppressLint("MissingPermission")
-                        val deviceName = gatt.device.name ?: "ESP32"
+                        val deviceName = gatt.device.name ?: "Cámara ESP32"
                         connectedEspMac = gatt.device.address
                         connectedEspName = deviceName
-                        dialogEspMostrado = false  // reset al conectar un nuevo dispositivo
-                        if (!isAddDeviceMode) {
-                            guardarDispositivo(deviceName, gatt.device.address)
-                        }
+                        ipRecibida = false
+                        guardarDispositivo(deviceName, gatt.device.address)
 
                         tvSubEstadoConexion.text = "Conectado a $deviceName."
-                        mostrarSnackbar("Servicios descubiertos. Listo para configurar.", false)
+                        btnSiguiente.isEnabled = true
+                        mostrarSnackbar("Cámara lista. Continúa para configurar el Wi-Fi.", false)
                     }
                 }
             } else {
                 runOnUiThread {
-                    mostrarSnackbar("Error al descubrir servicios", true)
+                    mostrarSnackbar("Error al descubrir servicios de la cámara", true)
                 }
             }
         }
@@ -653,9 +635,8 @@ class EspConfigActivity : AppCompatActivity() {
             runOnUiThread {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
                     mostrarSnackbar("Configuración enviada, esperando red...", false)
-                    // Eliminado el finish() para esperar la IP
                 } else {
-                    mostrarSnackbar("Error al enviar configuración", true)
+                    mostrarSnackbar("Error al enviar la configuración", true)
                 }
             }
         }
@@ -668,22 +649,16 @@ class EspConfigActivity : AppCompatActivity() {
             if (characteristic.uuid == IP_CHAR_UUID) {
                 val ip = characteristic.getStringValue(0)
 
-                // Guardar la IP en las preferencias globales
-                if (!isAddDeviceMode) {
-                    val prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-                    prefs.edit().putString("saved_device_ip", ip).apply()
-                }
+                val prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                prefs.edit().putString("saved_device_ip", ip).apply()
 
                 runOnUiThread {
-                    // Evitar que el diálogo se repita si BLE notifica la IP más de una vez
-                    if (!dialogEspMostrado) {
-                        dialogEspMostrado = true
-                        mostrarSnackbar("¡IP recibida: $ip! Asociando al aparato...", false)
-                        if (isAddDeviceMode) {
-                            mostrarDialogoNombrarYGuardar(ip)
-                        } else {
-                            mostrarDialogoAsociarEsp(ip)
-                        }
+                    // Evitar repetir el flujo de asociación si BLE notifica la IP más de una vez
+                    if (!ipRecibida) {
+                        ipRecibida = true
+                        connectedEspIp = ip
+                        mostrarSnackbar("¡Red asignada correctamente!", false)
+                        mostrarSeleccionDeAparato(ip)
                     }
                 }
             }
@@ -700,21 +675,20 @@ class EspConfigActivity : AppCompatActivity() {
             mostrarSnackbar("Configura una red Wi-Fi primero", true)
             return
         }
-
         if (!isConnected || bluetoothGatt == null) {
-            mostrarSnackbar("Busca y conéctate a un ESP32 primero", true)
+            mostrarSnackbar("Busca y conéctate a tu cámara primero", true)
             return
         }
 
         wifiCharacteristic?.let { characteristic ->
-            val wsUrl = BuildConfig.BASE_URL.replace("http://", "ws://").replace("https://", "wss://") + "ws"
-            val configData = "$ssid|$password|$wsUrl"
+            val configData = "$ssid|$password"
             characteristic.value = configData.toByteArray()
             characteristic.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
 
             bluetoothGatt?.writeCharacteristic(characteristic)
+            btnSiguiente.isEnabled = false
             mostrarSnackbar("Enviando configuración...", false)
-        } ?: mostrarSnackbar("Característica WiFi no disponible", true)
+        } ?: mostrarSnackbar("La cámara no expone la característica Wi-Fi necesaria", true)
     }
 
     // --- UI Helpers ---
@@ -722,23 +696,21 @@ class EspConfigActivity : AppCompatActivity() {
         if (conectado) {
             cardEstado.setCardBackgroundColor(android.graphics.Color.parseColor("#E8F5E9"))
             iconEstadoBg.setBackgroundResource(R.drawable.bg_circle_green)
-            iconEstadoBg.backgroundTintList = null
             ivEstadoConexion.setImageResource(R.drawable.wifi)
             ivEstadoConexion.setColorFilter(ContextCompat.getColor(this, R.color.teal_primary))
-            
+
             tvEstadoConexion.text = "Conectado"
             tvEstadoConexion.setTextColor(ContextCompat.getColor(this, R.color.teal_primary))
-            tvSubEstadoConexion.text = "Tu dispositivo ESP32 está conectado."
+            tvSubEstadoConexion.text = "Tu cámara está conectada."
         } else {
             cardEstado.setCardBackgroundColor(android.graphics.Color.parseColor("#FFF0F0"))
             iconEstadoBg.setBackgroundResource(R.drawable.bg_circle_red)
-            iconEstadoBg.backgroundTintList = null
             ivEstadoConexion.setImageResource(R.drawable.wifi_off)
             ivEstadoConexion.setColorFilter(android.graphics.Color.parseColor("#F44336"))
-            
+
             tvEstadoConexion.text = "No conectado"
             tvEstadoConexion.setTextColor(android.graphics.Color.parseColor("#F44336"))
-            tvSubEstadoConexion.text = "Tu dispositivo ESP32 no está conectado."
+            tvSubEstadoConexion.text = "Aún no se ha encontrado tu cámara."
         }
     }
 
@@ -752,7 +724,7 @@ class EspConfigActivity : AppCompatActivity() {
         }
     }
 
-    // --- Configuración de Red ESP32 ---
+    // --- Asociación con aparato local + guardado de red ---
 
     private fun cargarAparatosLocales() {
         lifecycleScope.launch {
@@ -762,49 +734,91 @@ class EspConfigActivity : AppCompatActivity() {
         }
     }
 
-    private fun mostrarDialogoAsociarEsp(ip: String) {
-        val sheet = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_esp_vinculado, null)
-        sheet.setContentView(view)
-        sheet.setCancelable(false)
-
-        // Mostrar datos del ESP32
-        view.findViewById<TextView>(R.id.tvEspIp).text = ip
-        view.findViewById<TextView>(R.id.tvEspMac).text =
-            connectedEspMac.ifBlank { "N/D" }
-
-        // Poblar spinner con aparatos disponibles
-        val spinnerAparato = view.findViewById<MaterialAutoCompleteTextView>(R.id.spinnerAparato)
-        val nombresAparatos = aparatosLocales.map { it.nombre ?: "Aparato ${it.id}" }
-        val adapterSpinner = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, nombresAparatos)
-        spinnerAparato.setAdapter(adapterSpinner)
-        if (nombresAparatos.isNotEmpty()) {
-            spinnerAparato.setText(nombresAparatos[0], false)
+    /**
+     * Tras recibir la IP del ESP32, se asocia automáticamente al primer aparato local
+     * disponible (o navega directo si no hay aparatos registrados).
+     */
+    private fun mostrarSeleccionDeAparato(ip: String) {
+        if (isAddDeviceMode) {
+            mostrarDialogoNombrarYGuardar(ip)
+            return
         }
-
-        // Botón guardar
-        view.findViewById<MaterialButton>(R.id.btnGuardarConfig).setOnClickListener {
-            if (aparatosLocales.isEmpty()) {
-                mostrarSnackbar("No hay aparatos registrados. Agrega uno primero.", true)
-                return@setOnClickListener
-            }
-            val textoSeleccionado = spinnerAparato.text.toString().trim()
-            val idx = nombresAparatos.indexOf(textoSeleccionado)
-            if (idx >= 0) {
-                sheet.dismiss()
-                guardarConfiguracionRed(aparatosLocales[idx].id, ip)
-            } else {
-                mostrarSnackbar("Selecciona un aparato de la lista", true)
-            }
-        }
-
-        // Botón saltar
-        view.findViewById<MaterialButton>(R.id.btnSaltarConfig).setOnClickListener {
-            sheet.dismiss()
+        if (aparatosLocales.isEmpty()) {
             navegarACamara(ip)
+            return
         }
+        aparatoSeleccionadoIdx = 0
+        guardarConfiguracionRed(aparatosLocales[0].id, ip)
+    }
 
-        sheet.show()
+    private fun mostrarDialogoNombrarYGuardar(ip: String) {
+        val input = com.google.android.material.textfield.TextInputEditText(this)
+        input.hint = "Ej. $tipoDispositivo Sala"
+
+        val layout = android.widget.FrameLayout(this)
+        val padding = (20 * resources.displayMetrics.density).toInt()
+        layout.setPadding(padding, padding, padding, padding)
+        layout.addView(input)
+
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle("Nombrar dispositivo")
+            .setMessage("Tu $tipoDispositivo se conectó a WiFi (IP: $ip). ¿Qué nombre le vas a poner?")
+            .setView(layout)
+            .setCancelable(false)
+            .setPositiveButton("Guardar") { dialog, _ ->
+                val nombre = input.text.toString().trim()
+                if (nombre.isNotEmpty()) {
+                    guardarDispositivoNuevo(nombre, ip)
+                } else {
+                    mostrarSnackbar("El nombre no puede estar vacío", true)
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("Omitir") { dialog, _ -> 
+                dialog.dismiss()
+                navegarACamara(ip) 
+            }
+            .show()
+    }
+
+    private fun guardarDispositivoNuevo(nombre: String, ip: String) {
+        val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+        val token = sharedPref.getString("apiToken", "") ?: return
+
+        val dispositivo = com.example.android.db.Dispositivo(
+            id = 0,
+            nombre = nombre,
+            tipo = tipoDispositivo,
+            accion = null,
+            comandoBluetooth = null,
+            icono = iconoDispositivo,
+            macBluetooth = "VIRTUAL-${System.currentTimeMillis()}",
+            nombreBluetooth = null,
+            fechaSincronizacion = null
+        )
+
+        lifecycleScope.launch {
+            ApiHandler.safeApiCall(
+                activity = this@EspConfigActivity,
+                showLoading = true,
+                loadingTitle = "Guardando",
+                loadingMessage = "Registrando dispositivo en tu cuenta...",
+                apiCall = { RetrofitClient.deviceService.createDispositivo("Bearer $token", dispositivo) },
+                onSuccess = { response ->
+                    val nuevoDispositivo = response.data
+                    if (nuevoDispositivo != null) {
+                        guardarConfiguracionRed(nuevoDispositivo.id, ip)
+                    } else {
+                        mostrarSnackbar("Error: El servidor no devolvió el dispositivo creado", true)
+                        navegarACamara(ip)
+                    }
+                },
+                onError = { error ->
+                    mostrarSnackbar("Error al crear dispositivo: $error", true)
+                    navegarACamara(ip)
+                }
+            )
+        }
     }
 
     /** Llama al endpoint PUT /api/Dim_Aparatos/{id}/configuracion-red */
@@ -822,7 +836,7 @@ class EspConfigActivity : AppCompatActivity() {
                         ipAddress = ip,
                         macAddress = connectedEspMac.ifBlank { null },
                         hostName = connectedEspName.ifBlank { null },
-                        deviceKey = if (connectedEspMac.isNotBlank()) connectedEspMac else null,
+                        deviceKey = if (connectedEspMac.isNotBlank()) "${connectedEspMac}_${aparatoId}" else null,
                         puertoSocket = 81,
                         protocoloSocket = "ws",
                         rutaSocket = "/ws",
@@ -836,7 +850,6 @@ class EspConfigActivity : AppCompatActivity() {
                 },
                 onError = { errorMsg ->
                     mostrarSnackbar("Error al guardar: $errorMsg", true)
-                    // Navegar igualmente para no bloquear al usuario
                     navegarACamara(ip)
                 }
             )
@@ -850,7 +863,45 @@ class EspConfigActivity : AppCompatActivity() {
         finish()
     }
 
-    // --- Ciclo de Vida ---
+    // --- QR ---
+    private fun iniciarEscaneoQr() {
+        val options = com.journeyapps.barcodescanner.ScanOptions()
+        options.setDesiredBarcodeFormats(com.journeyapps.barcodescanner.ScanOptions.QR_CODE)
+        options.setPrompt("Escanea el código QR de tu red Wi-Fi")
+        options.setCameraId(0)
+        options.setBeepEnabled(true)
+        options.setBarcodeImageEnabled(false)
+        options.setCaptureActivity(PortraitCaptureActivity::class.java)
+        qrScanLauncher.launch(options)
+    }
+
+    private fun procesarContenidoQr(contenido: String) {
+        if (contenido.startsWith("WIFI:")) {
+            var ssid = ""
+            var password = ""
+
+            val partes = contenido.removePrefix("WIFI:").split(";")
+            for (parte in partes) {
+                if (parte.startsWith("S:")) {
+                    ssid = parte.substring(2)
+                } else if (parte.startsWith("P:")) {
+                    password = parte.substring(2)
+                }
+            }
+
+            if (ssid.isNotEmpty()) {
+                etSsid.setText(ssid)
+                etPassword.setText(password)
+                mostrarSnackbar("Datos escaneados, revísalos antes de continuar", false)
+            } else {
+                mostrarSnackbar("El código QR no contiene un nombre de red válido", true)
+            }
+        } else {
+            mostrarSnackbar("El código escaneado no es de una red Wi-Fi", true)
+        }
+    }
+
+    // --- Ciclo de vida ---
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     override fun onDestroy() {
         super.onDestroy()
@@ -875,59 +926,10 @@ class EspConfigActivity : AppCompatActivity() {
 
     private fun hasBluetoothPermissions(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) ==
-                    PackageManager.PERMISSION_GRANTED &&
-                    checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) ==
-                    PackageManager.PERMISSION_GRANTED
+            checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED &&
+                    checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
         } else {
-            checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) ==
-                    PackageManager.PERMISSION_GRANTED
-        }
-    }
-
-    private val qrScanLauncher = registerForActivityResult(
-        com.journeyapps.barcodescanner.ScanContract()
-    ) { result ->
-        if (result.contents != null) {
-            procesarContenidoQr(result.contents)
-        } else {
-            mostrarSnackbar("Escaneo cancelado", true)
-        }
-    }
-
-    private fun iniciarEscaneoQr() {
-        val options = com.journeyapps.barcodescanner.ScanOptions()
-        options.setDesiredBarcodeFormats(com.journeyapps.barcodescanner.ScanOptions.QR_CODE)
-        options.setPrompt("Escanea el código QR del Módem Wi-Fi")
-        options.setCameraId(0)
-        options.setBeepEnabled(true)
-        options.setBarcodeImageEnabled(false)
-        options.setCaptureActivity(PortraitCaptureActivity::class.java)
-        qrScanLauncher.launch(options)
-    }
-
-    private fun procesarContenidoQr(contenido: String) {
-        if (contenido.startsWith("WIFI:")) {
-            var ssid = ""
-            var password = ""
-
-            val partes = contenido.removePrefix("WIFI:").split(";")
-            for (parte in partes) {
-                if (parte.startsWith("S:")) {
-                    ssid = parte.substring(2)
-                } else if (parte.startsWith("P:")) {
-                    password = parte.substring(2)
-                }
-            }
-
-            if (ssid.isNotEmpty()) {
-                mostrarDialogoInput(ssid, password)
-                mostrarSnackbar("Datos escaneados, revísalos y guárdalos", false)
-            } else {
-                mostrarSnackbar("El código QR no contiene un nombre de red válido", true)
-            }
-        } else {
-            mostrarSnackbar("El código escaneado no es de una red Wi-Fi", true)
+            checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         }
     }
 }
