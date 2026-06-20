@@ -37,4 +37,17 @@ interface DeviceApiService {
         @Path("sk_aparato_id") aparatoId: Int,
         @Body config: ConfiguracionRedRequest
     ): Response<ApiResponse<ConfiguracionRedResponse>>
+
+    @GET("ws/status/{deviceKey}")
+    suspend fun getWsStatus(@Path("deviceKey") deviceKey: String): Response<WsStatusResponse>
+
+    @POST("ws/toggle/{sk_aparato_id}")
+    suspend fun toggleAparato(
+        @Path("sk_aparato_id") aparatoId: Int,
+        @retrofit2.http.Query("estado") estado: Boolean
+    ): Response<ResponseBody>
 }
+
+data class WsStatusResponse(
+    val connected: Boolean
+)

@@ -15,6 +15,10 @@ data class AparatoTipo(
     val soportaBluetooth: Boolean,
     @SerializedName("soporta_wifi")
     val soportaWifi: Boolean,
+    @SerializedName("orden")
+    val orden: Int,
     @SerializedName("palabras_clave_busqueda")
-    val palabrasClaveBusqueda: String?
+    val palabrasClaveBusqueda: String?,
+    @SerializedName("requiere_vinculacion_bluetooth")
+    val requiereVinculacionBluetooth: Boolean
 )

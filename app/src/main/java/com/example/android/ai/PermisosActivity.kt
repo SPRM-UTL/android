@@ -49,9 +49,11 @@ class PermisosActivity : AppCompatActivity() {
     // ==========================================================
 
     companion object {
-        private const val COLOR_ACCENTO = "#03DAC5"
-        private const val COLOR_ERROR   = "#F44336"
-        private const val COLOR_DOT_INACTIVO = "#000000"
+        // Colores tomados de res/values/colors.xml
+        private const val COLOR_ACCENTO        = "#3aafa9"  // teal_primary
+        private const val COLOR_DARK           = "#2b7a78"  // teal_medium
+        private const val COLOR_ERROR          = "#E53935"  // red
+        private const val COLOR_DOT_INACTIVO   = "#DEF2F1"  // teal_card (suave)
     }
 
     // ==========================================================
@@ -151,7 +153,9 @@ class PermisosActivity : AppCompatActivity() {
             // ── 1. Cámara ──────────────────────────────────────
             PermisoPaso(
                 nombre      = "Cámara",
-                descripcion = "Necesaria para capturar imágenes y reconocer gestos con la mano.",
+                descripcion = "Manordomo usa la cámara para detectar gestos de la mano en tiempo real " +
+                              "con MediaPipe. Esto permite controlar dispositivos del hogar (luces, " +
+                              "enchufes, audio) sin tocar la pantalla.",
                 iconRes     = R.drawable.camera,
                 estaOtorgado = {
                     ContextCompat.checkSelfPermission(
@@ -166,7 +170,9 @@ class PermisosActivity : AppCompatActivity() {
             // ── 2. Bluetooth ───────────────────────────────────
             PermisoPaso(
                 nombre      = "Bluetooth",
-                descripcion = "Permite descubrir y controlar dispositivos Bluetooth cercanos.",
+                descripcion = "Necesario para descubrir, vincular y enviar comandos a dispositivos " +
+                              "inteligentes del hogar (bocinas, sensores, cerraduras) a través de " +
+                              "conexión Bluetooth Low Energy (BLE).",
                 iconRes     = R.drawable.bluetooth,
                 estaOtorgado = {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -194,7 +200,9 @@ class PermisosActivity : AppCompatActivity() {
             // ── 3. Ubicación ───────────────────────────────────
             PermisoPaso(
                 nombre      = "Ubicación",
-                descripcion = "Necesaria para encontrar dispositivos Bluetooth cercanos.",
+                descripcion = "Android requiere acceso a la ubicación para escanear redes Wi-Fi y " +
+                              "dispositivos Bluetooth cercanos. Manordomo usa esto únicamente para " +
+                              "descubrir dispositivos en la red local, no para rastrear tu posición.",
                 iconRes     = R.drawable.map_pin,
                 estaOtorgado = {
                     ContextCompat.checkSelfPermission(
@@ -209,7 +217,9 @@ class PermisosActivity : AppCompatActivity() {
             // ── 4. Overlay ─────────────────────────────────────
             PermisoPaso(
                 nombre      = "Sobre otras apps",
-                descripcion = "Permite mostrar controles encima de otras aplicaciones.",
+                descripcion = "Permite mostrar el panel de control flotante de Manordomo encima de " +
+                              "cualquier aplicación que estés usando, para que puedas controlar " +
+                              "dispositivos sin salir de lo que estás haciendo.",
                 iconRes     = R.drawable.layers,
                 estaOtorgado = {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
@@ -217,15 +227,21 @@ class PermisosActivity : AppCompatActivity() {
                     else true
                 },
                 solicitar = {
-                    // Overlay va a Settings, el resultado llega en onResume
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        val intent = Intent(
+                        // Intenta abrir directamente la página de Manordomo en ajustes
+                        val intentDirecto = Intent(
                             Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                             Uri.parse("package:$packageName")
                         )
-                        startActivity(intent)
+                        try {
+                            startActivity(intentDirecto)
+                        } catch (e: Exception) {
+                            // Fallback: abre la lista general de "Mostrar sobre otras apps"
+                            // (ocurre en algunos fabricantes o versiones personalizadas de Android)
+                            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION))
+                        }
                     }
-                    // Se retorna el estado al volver (onResume lo re-evalúa)
+                    // El resultado real llega en onResume cuando el usuario vuelve
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
                         Settings.canDrawOverlays(this)
                     else true
@@ -235,7 +251,9 @@ class PermisosActivity : AppCompatActivity() {
             // ── 5. Batería ─────────────────────────────────────
             PermisoPaso(
                 nombre      = "Optimización de batería",
-                descripcion = "Permite que la app siga funcionando correctamente en segundo plano.",
+                descripcion = "Manordomo necesita ejecutarse en segundo plano para mantener activa " +
+                              "la escucha de gestos y la conexión con los dispositivos del hogar. " +
+                              "Sin esto, Android puede pausar la app y perder el control remoto.",
                 iconRes     = R.drawable.battery_charging,
                 estaOtorgado = {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -282,7 +300,7 @@ class PermisosActivity : AppCompatActivity() {
             PorterDuff.Mode.SRC_IN
         )
 
-        // ── Dots de progreso: completados + actual en acento, pendientes en negro ──
+        // ── Dots de progreso: completados + actual en acento, pendientes en teal suave ──
         dots.forEachIndexed { i, dot ->
             val color = if (i <= index) COLOR_ACCENTO else COLOR_DOT_INACTIVO
             dot.background.setTint(android.graphics.Color.parseColor(color))
