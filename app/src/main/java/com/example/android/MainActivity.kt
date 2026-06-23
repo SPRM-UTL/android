@@ -452,9 +452,13 @@ class MainActivity : AppCompatActivity() {
 
                 if (bioHabilitadaConfig && canAuthenticate) {
                     // Si tiene biometría habilitada, mostramos el prompt automáticamente
+                    manteniendoSplash = false
+                    // Dar tiempo a que el splash se quite antes de mostrar el diálogo del sistema
+                    delay(500)
                     biometricPrompt.authenticate(promptInfo)
                 } else {
                     // Si no, entramos directo
+                    manteniendoSplash = false
                     irAHome(false)
                 }
             } else {

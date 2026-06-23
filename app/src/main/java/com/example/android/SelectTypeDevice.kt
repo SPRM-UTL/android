@@ -18,11 +18,18 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.android.network.ApiHandler
 import com.example.android.network.RetrofitClient
 import kotlinx.coroutines.launch
+import android.text.Editable
+import android.text.TextWatcher
+import com.google.android.material.textfield.TextInputEditText
 
 class SelectTypeDevice : AppCompatActivity() {
 
     private lateinit var adapter: AparatoTipoAdapter
     private lateinit var recyclerView: RecyclerView
+
+    private var allTipos: List<com.example.android.db.AparatoTipo> = emptyList()
+    private var isExpanded = false
+    private var filterState = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,18 +76,65 @@ class SelectTypeDevice : AppCompatActivity() {
         recyclerView.layoutManager = LinearLayoutManager(this)
         adapter = AparatoTipoAdapter(emptyList()) { tipo ->
             if (tipo.soportaBluetooth && tipo.soportaWifi) {
-                mostrarBottomSheetEleccion(tipo)
+                if (tipo.requiereVinculacionBluetooth) {
+                    mostrarBottomSheetEleccion(tipo)
+                } else {
+                    iniciarProvisionamientoEsp(tipo)
+                }
             } else if (tipo.soportaBluetooth) {
-                lanzarActivityBluetooth(tipo)
+                if (tipo.requiereVinculacionBluetooth) {
+                    lanzarActivityBluetooth(tipo)
+                } else {
+                    iniciarProvisionamientoEsp(tipo)
+                }
             } else if (tipo.soportaWifi) {
-                lanzarActivityWifi(tipo)
+                if (tipo.requiereVinculacionBluetooth) {
+                    lanzarActivityWifi(tipo)
+                } else {
+                    iniciarProvisionamientoEsp(tipo)
+                }
             } else {
                 Toast.makeText(this, "El dispositivo no soporta conexión inalámbrica", Toast.LENGTH_SHORT).show()
             }
         }
         recyclerView.adapter = adapter
 
+        val btnVerMas = findViewById<View>(R.id.btnVerMas)
+        btnVerMas.setOnClickListener {
+            isExpanded = true
+            actualizarLista()
+        }
+
+        val etSearch = findViewById<TextInputEditText>(R.id.etSearch)
+        etSearch.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                actualizarLista(s?.toString() ?: "")
+            }
+        })
+
+        val searchLayout = findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.searchLayout)
+        searchLayout.setEndIconOnClickListener {
+            filterState = (filterState + 1) % 3
+            when (filterState) {
+                0 -> searchLayout.endIconDrawable = getDrawable(R.drawable.ic_filter_all)
+                1 -> searchLayout.endIconDrawable = getDrawable(R.drawable.wifi)
+                2 -> searchLayout.endIconDrawable = getDrawable(R.drawable.bluetooth)
+            }
+            actualizarLista(etSearch.text?.toString() ?: "")
+        }
+
         cargarTiposDispositivos()
+    }
+
+    private fun iniciarProvisionamientoEsp(tipo: com.example.android.db.AparatoTipo) {
+        val intent = Intent(this, EspConfigActivity::class.java).apply {
+            putExtra("EXTRA_MODE_ADD_DEVICE", true)
+            putExtra("EXTRA_TIPO_DISPOSITIVO", tipo.nombreTipo)
+            putExtra("EXTRA_ICONO_DISPOSITIVO", tipo.icono)
+        }
+        startActivity(intent)
     }
 
     private fun cargarTiposDispositivos() {
@@ -102,7 +156,8 @@ class SelectTypeDevice : AppCompatActivity() {
                 apiCall = { RetrofitClient.deviceService.getTiposAparato("Bearer $token") },
                 onSuccess = { apiResponse ->
                     if (apiResponse.success && apiResponse.data != null) {
-                        adapter.submitList(apiResponse.data)
+                        allTipos = apiResponse.data
+                        actualizarLista()
                     } else {
                         Toast.makeText(this@SelectTypeDevice, "Error al obtener tipos", Toast.LENGTH_SHORT).show()
                     }
@@ -111,6 +166,39 @@ class SelectTypeDevice : AppCompatActivity() {
                     Toast.makeText(this@SelectTypeDevice, error, Toast.LENGTH_SHORT).show()
                 }
             )
+        }
+    }
+
+    private fun actualizarLista(query: String = "") {
+        var filtrados = allTipos
+
+        // Aplicar filtro de estado primero (WiFi / Bluetooth / Ambos)
+        when (filterState) {
+            1 -> filtrados = filtrados.filter { it.soportaWifi }
+            2 -> filtrados = filtrados.filter { it.soportaBluetooth }
+        }
+
+        if (query.isNotEmpty()) {
+            val queryParts = query.lowercase().split("\\s+".toRegex())
+            filtrados = filtrados.filter { tipo ->
+                val searchTarget = "${tipo.nombreTipo} ${tipo.palabrasClaveBusqueda ?: ""}".lowercase()
+                queryParts.all { part -> searchTarget.contains(part) }
+            }
+        }
+
+        val isSearchingOrFiltering = query.isNotEmpty() || filterState != 0
+
+        if (isExpanded || isSearchingOrFiltering) {
+            findViewById<View>(R.id.btnVerMas).visibility = View.GONE
+            adapter.submitList(filtrados)
+        } else {
+            if (filtrados.size > 5) {
+                adapter.submitList(filtrados.take(5))
+                findViewById<View>(R.id.btnVerMas).visibility = View.VISIBLE
+            } else {
+                adapter.submitList(filtrados)
+                findViewById<View>(R.id.btnVerMas).visibility = View.GONE
+            }
         }
     }
 

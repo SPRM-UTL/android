@@ -26,6 +26,7 @@ import com.example.android.ui.AddDeviceAdapter
 import com.example.android.ui.DeviceAdapter
 import com.example.android.view.Snackbars
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -57,6 +58,7 @@ class HomeFragment : Fragment() {
     private lateinit var deviceAdapter: DeviceAdapter
 
     private var isLoggingOut = false
+    private var pollingJob: kotlinx.coroutines.Job? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -79,7 +81,22 @@ class HomeFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        verificarEstadoRedVisual()
+        iniciarPollingEstadoRed()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        pollingJob?.cancel()
+    }
+
+    private fun iniciarPollingEstadoRed() {
+        pollingJob?.cancel()
+        pollingJob = viewLifecycleOwner.lifecycleScope.launch {
+            while (true) {
+                verificarEstadoRedVisual()
+                delay(3000)
+            }
+        }
     }
 
     private fun inicializarVistas(view: View) {
@@ -99,20 +116,84 @@ class HomeFragment : Fragment() {
             onEditClick = { dispositivo ->
                 mostrarInformacionDispositivo(dispositivo)
             },
-            onDeleteClick = {},
+            onDeleteClick = { dispositivo ->
+                mostrarDialogoEliminar(dispositivo)
+            },
             onToggleClick = { dispositivo, isChecked ->
-                Snackbars.info(
-                    mainHome,
-                    "${dispositivo.nombre} ${if (isChecked) "Encendido" else "Apagado"}",
-                    Snackbar.LENGTH_SHORT
-                ).show()
+                viewLifecycleOwner.lifecycleScope.launch {
+                    try {
+                        val response = RetrofitClient.deviceService.toggleAparato(dispositivo.id, isChecked)
+                        if (response.isSuccessful) {
+                            Snackbars.success(
+                                mainHome,
+                                "${dispositivo.nombre} ${if (isChecked) "Encendido" else "Apagado"}",
+                                Snackbar.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            Snackbars.error(
+                                mainHome,
+                                "Error al conectar con ${dispositivo.nombre}. Verifica que esté encendido.",
+                                Snackbar.LENGTH_LONG
+                            ).show()
+                        }
+                    } catch (e: Exception) {
+                        Snackbars.error(
+                            mainHome,
+                            "Error de red al intentar controlar ${dispositivo.nombre}.",
+                            Snackbar.LENGTH_LONG
+                        ).show()
+                    }
+                }
             }
         )
+    }
+
+    private fun mostrarDialogoEliminar(dispositivo: com.example.android.db.Dispositivo) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Eliminar dispositivo")
+            .setMessage("¿Estás seguro de que deseas eliminar '${dispositivo.nombre}' de tu cuenta? Esta acción no se puede deshacer.")
+            .setPositiveButton("Eliminar") { dialog, _ ->
+                eliminarDispositivoDeApi(dispositivo)
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancelar") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
+    }
+
+    private fun eliminarDispositivoDeApi(dispositivo: com.example.android.db.Dispositivo) {
+        val sharedPreferences = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+        val token = sharedPreferences.getString("apiToken", null) ?: return
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            ApiHandler.safeApiCall(
+                activity = requireActivity(),
+                showLoading = true,
+                loadingTitle = "Eliminando",
+                loadingMessage = "Borrando dispositivo...",
+                apiCall = { RetrofitClient.deviceService.deleteDispositivo("Bearer $token", dispositivo.id) },
+                onSuccess = {
+                    Snackbars.success(mainHome, "Dispositivo eliminado con éxito", Snackbar.LENGTH_SHORT).show()
+                    cargarDatos()
+                },
+                onError = { error ->
+                    Snackbars.error(mainHome, "Error al eliminar: $error", Snackbar.LENGTH_LONG).show()
+                }
+            )
+        }
     }
 
     private fun configurarUI() {
         configurarInsets()
         cargarIconos()
+        
+        val sharedPreferences = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+        val nombreUsuario = sharedPreferences.getString("userName", "Mayordomo")
+        if (!nombreUsuario.isNullOrBlank()) {
+            tvUsuario.text = nombreUsuario
+        }
+        
         configurarAnimacionInicial()
         mostrarMensajeBienvenida()
         mostrarTutorial()
@@ -240,7 +321,7 @@ class HomeFragment : Fragment() {
                 scrollView.paddingLeft,
                 scrollView.paddingTop,
                 scrollView.paddingRight,
-                (6 * resources.displayMetrics.density).toInt()
+                bars.bottom + (90 * resources.displayMetrics.density).toInt()
             )
             insets
         }
@@ -296,11 +377,17 @@ class HomeFragment : Fragment() {
         btnConfigurarRed.setOnClickListener {
             abrirConfiguracionRed()
         }
+        
+        vistaRaiz.findViewById<View>(R.id.profileCircle)?.setOnClickListener {
+            val intent = Intent(requireContext(), ProfileActivity::class.java)
+            startActivity(intent)
+        }
     }
 
     private fun cargarDatos() {
         cargarRecycler()
         sincronizarDatosServidor()
+        cargarDatosUsuario()
     }
 
     private fun cargarRecycler() {
@@ -330,6 +417,29 @@ class HomeFragment : Fragment() {
     private fun actualizarNombreUsuario() {
         val sharedPref = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
         tvUsuario.text = sharedPref.getString("userName", "Mayordomo")
+    }
+
+    private fun cargarDatosUsuario() {
+        val sharedPref = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+        val token = sharedPref.getString("apiToken", "") ?: ""
+        val userId = sharedPref.getInt("userId", -1)
+
+        if (userId != -1 && token.isNotEmpty()) {
+            viewLifecycleOwner.lifecycleScope.launch {
+                try {
+                    val response = RetrofitClient.apiService.getUsuario("Bearer $token", userId)
+                    if (response.isSuccessful && response.body()?.data != null) {
+                        val nombre = response.body()?.data?.nombre ?: ""
+                        val primerNombre = nombre.split(" ").firstOrNull() ?: "Mayordomo"
+                        tvUsuario.text = "Hola, $primerNombre"
+                        // Guardar para que esté cacheado en próximos inicios
+                        sharedPref.edit().putString("userName", primerNombre).apply()
+                    }
+                } catch (e: Exception) {
+                    // Ignorar error de red silenciosamente en el Home
+                }
+            }
+        }
     }
 
     private fun actualizarContadorDispositivos(totalDispositivos: Int) {
@@ -389,14 +499,35 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private fun verificarEstadoRedVisual() {
-        if (BluetoothController.isConnected) {
-            tvRedEstado.text = "Hardware Conectado"
+    private suspend fun verificarEstadoRedVisual() {
+        val sharedPref = requireContext().getSharedPreferences("EspConfigPrefs", Context.MODE_PRIVATE)
+        val savedMac = sharedPref.getString("saved_mac_address", "") ?: ""
+
+        if (savedMac.isBlank()) {
+            actualizarUiEstadoRed(false)
+            return
+        }
+
+        try {
+            val response = RetrofitClient.deviceService.getWsStatus(savedMac)
+            if (response.isSuccessful) {
+                actualizarUiEstadoRed(response.body()?.connected == true)
+            } else {
+                actualizarUiEstadoRed(false)
+            }
+        } catch (e: Exception) {
+            actualizarUiEstadoRed(false)
+        }
+    }
+
+    private fun actualizarUiEstadoRed(isConnected: Boolean) {
+        if (isConnected) {
+            tvRedEstado.text = "Cámara en línea"
             tvRedEstado.setTextColor(requireContext().getColor(R.color.teal_primary))
             iconWifiContainer.setCardBackgroundColor(requireContext().getColor(R.color.teal_primary))
             iconWifi.imageTintList = ColorStateList.valueOf(requireContext().getColor(R.color.white))
         } else {
-            tvRedEstado.text = "Desconectado"
+            tvRedEstado.text = "Cámara desconectada"
             tvRedEstado.setTextColor(requireContext().getColor(R.color.text_grey))
             iconWifi.imageTintList = ColorStateList.valueOf(requireContext().getColor(R.color.white))
             iconWifiContainer.setCardBackgroundColor(requireContext().getColor(R.color.text_grey))
