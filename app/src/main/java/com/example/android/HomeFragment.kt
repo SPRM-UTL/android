@@ -8,8 +8,12 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -28,6 +32,7 @@ import com.example.android.view.Snackbars
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.tabs.TabLayout
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -59,6 +64,9 @@ class HomeFragment : Fragment() {
 
     private var isLoggingOut = false
     private var pollingJob: kotlinx.coroutines.Job? = null
+    
+    private var dispositivosJob: kotlinx.coroutines.Job? = null
+    private var currentCasaId: Int? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -382,6 +390,107 @@ class HomeFragment : Fragment() {
             val intent = Intent(requireContext(), ProfileActivity::class.java)
             startActivity(intent)
         }
+
+        vistaRaiz.findViewById<ImageButton>(R.id.btnAddCasa)?.setOnClickListener {
+            mostrarDialogoAgregarCasa()
+        }
+
+        vistaRaiz.findViewById<ImageButton>(R.id.btnAddHabitacion)?.setOnClickListener {
+            if (currentCasaId != null) {
+                mostrarDialogoAgregarHabitacion(currentCasaId!!)
+            } else {
+                Toast.makeText(requireContext(), "Selecciona una casa primero", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun mostrarDialogoAgregarCasa() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_add_casa, null)
+        val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.Theme_Material3_Light_Dialog)
+            .setView(dialogView)
+            .show()
+
+        val etNombreCasa = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etNombreCasa)
+        val btnCancel = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnCancel)
+        val btnConfirm = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnConfirm)
+
+        btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        btnConfirm.setOnClickListener {
+            val nombreCasa = etNombreCasa.text?.toString()?.trim() ?: ""
+            if (nombreCasa.isNotEmpty()) {
+                crearNuevaCasa(nombreCasa)
+                dialog.dismiss()
+            } else {
+                Toast.makeText(requireContext(), "Ingresa un nombre válido", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun crearNuevaCasa(nombre: String) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val sharedPref = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+            val token = sharedPref.getString("apiToken", "") ?: ""
+            val userId = sharedPref.getInt("userId", 0)
+            
+            val nuevaCasa = com.example.android.db.Casa(id = 0, nombre = nombre, skUsuarioId = userId)
+            
+            ApiHandler.safeApiCall(
+                activity = requireActivity(),
+                showLoading = true,
+                loadingTitle = "Creando...",
+                apiCall = { RetrofitClient.casaService.createCasa("Bearer $token", nuevaCasa) },
+                onSuccess = { response ->
+                    sincronizarDatosServidor()
+                }
+            )
+        }
+    }
+
+    private fun mostrarDialogoAgregarHabitacion(casaId: Int) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_add_habitacion, null)
+        val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.Theme_Material3_Light_Dialog)
+            .setView(dialogView)
+            .show()
+
+        val etNombreHabitacion = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etNombreHabitacion)
+        val btnCancel = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnCancel)
+        val btnConfirm = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnConfirm)
+
+        btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        btnConfirm.setOnClickListener {
+            val nombreHabitacion = etNombreHabitacion.text?.toString()?.trim() ?: ""
+            if (nombreHabitacion.isNotEmpty()) {
+                crearNuevaHabitacion(nombreHabitacion, casaId)
+                dialog.dismiss()
+            } else {
+                Toast.makeText(requireContext(), "Ingresa un nombre válido", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun crearNuevaHabitacion(nombre: String, casaId: Int) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val sharedPref = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+            val token = sharedPref.getString("apiToken", "") ?: ""
+            
+            val nuevaHab = com.example.android.db.Habitacion(id = 0, nombre = nombre, skCasaId = casaId)
+            
+            ApiHandler.safeApiCall(
+                activity = requireActivity(),
+                showLoading = true,
+                loadingTitle = "Creando...",
+                apiCall = { RetrofitClient.habitacionService.createHabitacion("Bearer $token", nuevaHab) },
+                onSuccess = { response ->
+                    sincronizarDatosServidor()
+                }
+            )
+        }
     }
 
     private fun cargarDatos() {
@@ -399,12 +508,61 @@ class HomeFragment : Fragment() {
         rvDispositivos.layoutManager = GridLayoutManager(requireContext(), 2)
         rvDispositivos.adapter = ConcatAdapter(deviceAdapter, addDeviceAdapter)
 
-        observarDispositivos()
+        cargarTabsCasas()
+    }
+
+    private fun cargarTabsCasas() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            db.casaDao().getAllCasas().collectLatest { casas ->
+                val tabLayout = vistaRaiz.findViewById<TabLayout>(R.id.tabLayoutCasas)
+                tabLayout.removeAllTabs()
+                
+                if (casas.isEmpty()) {
+                    tabLayout.visibility = View.GONE
+                    currentCasaId = null
+                    observarDispositivos()
+                    return@collectLatest
+                }
+                
+                tabLayout.visibility = View.VISIBLE
+                
+                casas.forEach { casa ->
+                    val tab = tabLayout.newTab().setText(casa.nombre)
+                    tab.tag = casa.id
+                    tabLayout.addTab(tab)
+                    if (currentCasaId == casa.id) {
+                        tabLayout.selectTab(tab)
+                    }
+                }
+                
+                tabLayout.clearOnTabSelectedListeners()
+                tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+                    override fun onTabSelected(tab: TabLayout.Tab?) {
+                        currentCasaId = tab?.tag as? Int
+                        observarDispositivos()
+                    }
+                    override fun onTabUnselected(tab: TabLayout.Tab?) {}
+                    override fun onTabReselected(tab: TabLayout.Tab?) {}
+                })
+                
+                if (currentCasaId == null && casas.isNotEmpty()) {
+                    currentCasaId = casas[0].id
+                    tabLayout.getTabAt(0)?.select()
+                    observarDispositivos()
+                }
+            }
+        }
     }
 
     private fun observarDispositivos() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            db.dispositivoDao().getAllDispositivos().collectLatest { dispositivos ->
+        dispositivosJob?.cancel()
+        dispositivosJob = viewLifecycleOwner.lifecycleScope.launch {
+            val flow = if (currentCasaId != null) {
+                db.dispositivoDao().getDispositivosByCasaId(currentCasaId!!)
+            } else {
+                db.dispositivoDao().getAllDispositivos()
+            }
+            flow.collectLatest { dispositivos ->
                 if (!isLoggingOut) {
                     deviceAdapter.submitList(dispositivos)
                     actualizarContadorDispositivos(dispositivos.size)
@@ -465,7 +623,58 @@ class HomeFragment : Fragment() {
                         db.dispositivoDao().insertAll(dispositivos)
                     }
 
-                    // Después de obtener dispositivos exitosamente, obtenemos los gestos
+                    // Sincronizar Casas
+                    ApiHandler.safeApiCall(
+                        activity = requireActivity(),
+                        showLoading = false,
+                        apiCall = {
+                            val sharedPref = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+                            val token = sharedPref.getString("apiToken", "") ?: ""
+                            RetrofitClient.casaService.getCasas("Bearer $token")
+                        },
+                        onSuccess = { casas ->
+                            withContext(Dispatchers.IO) {
+                                db.casaDao().deleteAllCasas()
+                                db.casaDao().insertAll(casas)
+                            }
+                            
+                            if (casas.isEmpty()) {
+                                if (isAdded) {
+                                    mostrarDialogoAgregarCasa()
+                                }
+                            } else {
+                                // Sincronizar Habitaciones para cada casa
+                                val sharedPref = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+                                val token = sharedPref.getString("apiToken", "") ?: ""
+                                
+                                viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                                    db.habitacionDao().deleteAllHabitaciones()
+                                    var hasHabitaciones = false
+                                    casas.forEach { casa ->
+                                        try {
+                                            val habResponse = RetrofitClient.habitacionService.getHabitacionesByCasa("Bearer $token", casa.id)
+                                            if (habResponse.isSuccessful) {
+                                                habResponse.body()?.let { habitaciones ->
+                                                    db.habitacionDao().insertAll(habitaciones)
+                                                    if (habitaciones.isNotEmpty()) {
+                                                        hasHabitaciones = true
+                                                    }
+                                                }
+                                            }
+                                        } catch (e: Exception) {}
+                                    }
+                                    
+                                    if (!hasHabitaciones && isAdded) {
+                                        withContext(Dispatchers.Main) {
+                                            mostrarDialogoAgregarHabitacion(casas[0].id)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    )
+
+                    // Sincronizar Gestos
                     ApiHandler.safeApiCall(
                         activity = requireActivity(),
                         showLoading = false,
@@ -550,10 +759,11 @@ class HomeFragment : Fragment() {
 
         dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnDialogEditar).setOnClickListener {
             dialog.dismiss()
-            val intent = Intent(requireContext(), AddDeviceActivity::class.java).apply {
-                putExtra("EXTRA_DEVICE_ID", dispositivo.id)
-            }
-            startActivity(intent)
+            requireActivity().supportFragmentManager.beginTransaction()
+                .setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right, android.R.anim.slide_in_left, android.R.anim.slide_out_right)
+                .add(R.id.fragment_container_overlay, EditDeviceFragment.newInstance(dispositivo.id))
+                .addToBackStack("EditDevice")
+                .commit()
         }
 
         dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnDialogControles).setOnClickListener {

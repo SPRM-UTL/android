@@ -12,6 +12,9 @@ interface DispositivoDao {
     @Query("SELECT * FROM dispositivos")
     fun getAllDispositivos(): Flow<List<Dispositivo>>
 
+    @Query("SELECT d.* FROM dispositivos d INNER JOIN habitaciones h ON d.sk_habitacion_id = h.id WHERE h.skCasaId = :casaId")
+    fun getDispositivosByCasaId(casaId: Int): Flow<List<Dispositivo>>
+
     @Query("SELECT * FROM dispositivos")
     suspend fun getAllDispositivosOnce(): List<Dispositivo>
 

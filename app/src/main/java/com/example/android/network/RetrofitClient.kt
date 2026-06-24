@@ -142,4 +142,12 @@ object RetrofitClient {
     val gestureService: GestureApiService by lazy {
         retrofit.create(GestureApiService::class.java)
     }
+
+    val casaService: CasaApiService by lazy {
+        retrofit.create(CasaApiService::class.java)
+    }
+
+    val habitacionService: HabitacionApiService by lazy {
+        retrofit.create(HabitacionApiService::class.java)
+    }
 }

@@ -45,10 +45,7 @@ class DeviceAdapter(
             }
 
             cardView.setOnLongClickListener {
-                // Trigger edit/delete menu
-                // Normally a PopupMenu is shown here.
-                // For simplicity, let's call edit on click and delete on long click?
-                // Or let the Activity handle the PopupMenu by passing the view.
+                onDeleteClick(dispositivo)
                 true
             }
             

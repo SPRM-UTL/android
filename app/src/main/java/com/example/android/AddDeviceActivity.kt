@@ -35,6 +35,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.android.db.AppDatabase
 import com.example.android.db.Dispositivo
+import com.example.android.db.Habitacion
 import com.example.android.network.ApiHandler
 import com.example.android.network.BluetoothController
 import com.example.android.network.BluetoothScanManager
@@ -47,7 +48,9 @@ import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
@@ -541,10 +544,14 @@ class AddDeviceActivity : AppCompatActivity() {
         val tvTarget = dialogView.findViewById<TextView>(R.id.tvDeviceTarget)
         val etName = dialogView.findViewById<TextInputEditText>(R.id.etDeviceName)
         val etType = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.etDeviceType)
+        val etCasa = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.etCasa)
+        val etHabitacion = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.etHabitacion)
         val btnCancel = dialogView.findViewById<MaterialButton>(R.id.btnCancel)
         val btnConfirm = dialogView.findViewById<MaterialButton>(R.id.btnConfirm)
         val btnDelete = dialogView.findViewById<MaterialButton>(R.id.btnDeleteDialog)
         val ivTipoIcono = dialogView.findViewById<ImageView>(R.id.ivTipoIcono)
+
+        var selectedHabitacionId: Int? = null
 
         @SuppressLint("MissingPermission")
         val hardwareName = if (device != null) {
@@ -583,8 +590,65 @@ class AddDeviceActivity : AppCompatActivity() {
             actualizarIconoTipo(tipoEdit, ivTipoIcono)
             btnConfirm.text = "Actualizar"
             btnDelete.visibility = View.VISIBLE
+            selectedHabitacionId = editDevParam.skHabitacionId
         } else {
             etName.setText(hardwareName)
+        }
+
+        // Variables para guardar selección
+        var localSelectedCasaId: Int? = null
+        var localSelectedHabitacionId: Int? = selectedHabitacionId
+
+        // Cargar Casas y Habitaciones
+        lifecycleScope.launch(Dispatchers.Main) {
+            val casas = withContext(Dispatchers.IO) { db.casaDao().getAllCasas().firstOrNull() ?: emptyList() }
+            if (casas.isEmpty()) return@launch
+
+            val nombresCasas = casas.map { it.nombre }
+            val adapterCasas = ArrayAdapter(themedContext, android.R.layout.simple_spinner_dropdown_item, nombresCasas)
+            etCasa.setAdapter(adapterCasas)
+
+            var habitacionInicial: Habitacion? = null
+            if (localSelectedHabitacionId != null) {
+                habitacionInicial = withContext(Dispatchers.IO) { db.habitacionDao().getHabitacionById(localSelectedHabitacionId!!) }
+            }
+
+            var casaInicial = casas.firstOrNull { it.id == habitacionInicial?.skCasaId } ?: casas.first()
+            localSelectedCasaId = casaInicial.id
+            etCasa.setText(casaInicial.nombre, false)
+
+            fun cargarHabitaciones(casaId: Int) {
+                lifecycleScope.launch(Dispatchers.Main) {
+                    val habitaciones = withContext(Dispatchers.IO) { db.habitacionDao().getHabitacionesByCasa(casaId).firstOrNull() ?: emptyList() }
+                    val nombresHabitaciones = habitaciones.map { it.nombre }
+                    val adapterHabitaciones = ArrayAdapter(themedContext, android.R.layout.simple_spinner_dropdown_item, nombresHabitaciones)
+                    etHabitacion.setAdapter(adapterHabitaciones)
+                    
+                    if (habitaciones.isNotEmpty()) {
+                        val habInicial = habitaciones.find { it.id == localSelectedHabitacionId } ?: habitaciones.first()
+                        localSelectedHabitacionId = habInicial.id
+                        etHabitacion.setText(habInicial.nombre, false)
+                    } else {
+                        localSelectedHabitacionId = null
+                        etHabitacion.setText("", false)
+                    }
+
+                    etHabitacion.setOnItemClickListener { _, _, position, _ ->
+                        localSelectedHabitacionId = habitaciones[position].id
+                    }
+                }
+            }
+
+            cargarHabitaciones(localSelectedCasaId!!)
+
+            etCasa.setOnItemClickListener { _, _, position, _ ->
+                val selectedCasa = casas[position]
+                if (localSelectedCasaId != selectedCasa.id) {
+                    localSelectedCasaId = selectedCasa.id
+                    localSelectedHabitacionId = null
+                    cargarHabitaciones(selectedCasa.id)
+                }
+            }
         }
 
         btnCancel.setOnClickListener { dialog.dismiss() }
@@ -600,6 +664,11 @@ class AddDeviceActivity : AppCompatActivity() {
 
             if (finalName.isEmpty()) {
                 etName.error = "Ingresa un nombre"
+                return@setOnClickListener
+            }
+
+            if (localSelectedHabitacionId == null) {
+                etHabitacion.error = "Selecciona una habitación"
                 return@setOnClickListener
             }
 
@@ -620,7 +689,9 @@ class AddDeviceActivity : AppCompatActivity() {
                 icono = editDevParam?.icono ?: "ic_default",
                 macBluetooth = mac,
                 nombreBluetooth = nombreBt,
-                fechaSincronizacion = java.time.LocalDateTime.now().toString()
+                fechaSincronizacion = java.time.LocalDateTime.now().toString(),
+                skHabitacionId = localSelectedHabitacionId,
+                nombreHabitacion = etHabitacion.text.toString()
             )
 
             tvDispositivoGuardado.text = finalName
