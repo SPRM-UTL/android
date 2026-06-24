@@ -759,10 +759,11 @@ class HomeFragment : Fragment() {
 
         dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnDialogEditar).setOnClickListener {
             dialog.dismiss()
-            val intent = Intent(requireContext(), AddDeviceActivity::class.java).apply {
-                putExtra("EXTRA_DEVICE_ID", dispositivo.id)
-            }
-            startActivity(intent)
+            requireActivity().supportFragmentManager.beginTransaction()
+                .setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right, android.R.anim.slide_in_left, android.R.anim.slide_out_right)
+                .add(R.id.fragment_container_overlay, EditDeviceFragment.newInstance(dispositivo.id))
+                .addToBackStack("EditDevice")
+                .commit()
         }
 
         dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnDialogControles).setOnClickListener {

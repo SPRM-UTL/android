@@ -20,4 +20,10 @@
         android:layout_gravity="bottom"
         android:elevation="16dp" />
 
+    <FrameLayout
+        android:id="@+id/fragment_container_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:elevation="20dp" />
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
