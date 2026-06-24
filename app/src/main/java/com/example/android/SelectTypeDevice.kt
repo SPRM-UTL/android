@@ -79,19 +79,19 @@ class SelectTypeDevice : AppCompatActivity() {
                 if (tipo.requiereVinculacionBluetooth) {
                     mostrarBottomSheetEleccion(tipo)
                 } else {
-                    iniciarProvisionamientoEsp(tipo)
+                    crearDispositivoGenerico(tipo)
                 }
             } else if (tipo.soportaBluetooth) {
                 if (tipo.requiereVinculacionBluetooth) {
                     lanzarActivityBluetooth(tipo)
                 } else {
-                    iniciarProvisionamientoEsp(tipo)
+                    crearDispositivoGenerico(tipo)
                 }
             } else if (tipo.soportaWifi) {
                 if (tipo.requiereVinculacionBluetooth) {
                     lanzarActivityWifi(tipo)
                 } else {
-                    iniciarProvisionamientoEsp(tipo)
+                    crearDispositivoGenerico(tipo)
                 }
             } else {
                 Toast.makeText(this, "El dispositivo no soporta conexión inalámbrica", Toast.LENGTH_SHORT).show()
@@ -128,13 +128,111 @@ class SelectTypeDevice : AppCompatActivity() {
         cargarTiposDispositivos()
     }
 
-    private fun iniciarProvisionamientoEsp(tipo: com.example.android.db.AparatoTipo) {
-        val intent = Intent(this, EspConfigActivity::class.java).apply {
-            putExtra("EXTRA_MODE_ADD_DEVICE", true)
-            putExtra("EXTRA_TIPO_DISPOSITIVO", tipo.nombreTipo)
-            putExtra("EXTRA_ICONO_DISPOSITIVO", tipo.icono)
+    private fun crearDispositivoGenerico(tipo: com.example.android.db.AparatoTipo) {
+        val sharedPref = getSharedPreferences("EspConfigPrefs", Context.MODE_PRIVATE)
+        val espMac = sharedPref.getString("saved_mac_address", "") ?: ""
+
+        if (espMac.isBlank()) {
+            Toast.makeText(this, "Primero configura tu Controlador desde 'Estado de la red'", Toast.LENGTH_LONG).show()
+            return
         }
-        startActivity(intent)
+
+        val input = com.google.android.material.textfield.TextInputEditText(this)
+        input.hint = "Ej. ${tipo.nombreTipo} Sala"
+
+        val layout = android.widget.FrameLayout(this)
+        val padding = (20 * resources.displayMetrics.density).toInt()
+        layout.setPadding(padding, padding, padding, padding)
+        layout.addView(input)
+
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle("Nombrar ${tipo.nombreTipo}")
+            .setMessage("¿Qué nombre le vas a poner a tu ${tipo.nombreTipo}?")
+            .setView(layout)
+            .setCancelable(true)
+            .setPositiveButton("Guardar") { dialog, _ ->
+                val nombre = input.text.toString().trim()
+                if (nombre.isNotEmpty()) {
+                    guardarDispositivoNuevo(nombre, tipo, espMac)
+                } else {
+                    Toast.makeText(this, "El nombre no puede estar vacío", Toast.LENGTH_SHORT).show()
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancelar") { dialog, _ -> dialog.dismiss() }
+            .show()
+    }
+
+    private fun guardarDispositivoNuevo(nombre: String, tipo: com.example.android.db.AparatoTipo, espMac: String) {
+        val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+        val token = sharedPref.getString("apiToken", "") ?: return
+
+        val dispositivo = com.example.android.db.Dispositivo(
+            id = 0,
+            nombre = nombre,
+            tipo = tipo.nombreTipo,
+            accion = null,
+            comandoBluetooth = null,
+            icono = tipo.icono,
+            macBluetooth = espMac,
+            nombreBluetooth = null,
+            fechaSincronizacion = null
+        )
+
+        lifecycleScope.launch {
+            ApiHandler.safeApiCall(
+                activity = this@SelectTypeDevice,
+                showLoading = true,
+                loadingTitle = "Guardando",
+                loadingMessage = "Registrando dispositivo en tu cuenta...",
+                apiCall = { RetrofitClient.deviceService.createDispositivo("Bearer $token", dispositivo) },
+                onSuccess = { response ->
+                    val nuevoDispositivo = response.data
+                    if (nuevoDispositivo != null) {
+                        guardarConfiguracionRed(nuevoDispositivo.id, espMac)
+                    } else {
+                        Toast.makeText(this@SelectTypeDevice, "Error: El servidor no devolvió el dispositivo creado", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onError = { error ->
+                    Toast.makeText(this@SelectTypeDevice, "Error al crear dispositivo: $error", Toast.LENGTH_SHORT).show()
+                }
+            )
+        }
+    }
+
+    private fun guardarConfiguracionRed(aparatoId: Int, espMac: String) {
+        lifecycleScope.launch {
+            ApiHandler.safeApiCall(
+                activity = this@SelectTypeDevice,
+                showLoading = true,
+                loadingTitle = "Guardando",
+                loadingMessage = "Guardando configuración de red...",
+                apiCall = {
+                    val token = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+                        .getString("apiToken", "") ?: ""
+                    val config = com.example.android.network.ConfiguracionRedRequest(
+                        ipAddress = "0.0.0.0", // La IP real se maneja dinámicamente por el Backend WebSocket
+                        macAddress = espMac,
+                        hostName = null,
+                        deviceKey = espMac,
+                        puertoSocket = 81,
+                        protocoloSocket = "ws",
+                        rutaSocket = "/ws",
+                        activo = true
+                    )
+                    RetrofitClient.deviceService.saveConfiguracionRed("Bearer $token", aparatoId, config)
+                },
+                onSuccess = {
+                    Toast.makeText(this@SelectTypeDevice, "Dispositivo guardado correctamente", Toast.LENGTH_SHORT).show()
+                    finish()
+                },
+                onError = { errorMsg ->
+                    Toast.makeText(this@SelectTypeDevice, "Error al guardar red: $errorMsg", Toast.LENGTH_SHORT).show()
+                    finish()
+                }
+            )
+        }
     }
 
     private fun cargarTiposDispositivos() {

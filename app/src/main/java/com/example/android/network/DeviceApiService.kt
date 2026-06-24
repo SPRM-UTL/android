@@ -38,6 +38,12 @@ interface DeviceApiService {
         @Body config: ConfiguracionRedRequest
     ): Response<ApiResponse<ConfiguracionRedResponse>>
 
+    @GET("ws/accion")
+    suspend fun enviarComandoWebSocket(
+        @retrofit2.http.Query("comando") comando: String,
+        @retrofit2.http.Query("deviceKey") deviceKey: String
+    ): Response<ResponseBody>
+
     @GET("ws/status/{deviceKey}")
     suspend fun getWsStatus(@Path("deviceKey") deviceKey: String): Response<WsStatusResponse>
 

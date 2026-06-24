@@ -27,26 +27,27 @@ object BluetoothController {
             isConnected = true
             return true
 
-        } catch (e: IOException) {
-            // El dispositivo rechazó el Socket Crudo (Es una TV, audífonos o foco BLE)
+        } catch (e: Exception) {
+            // El dispositivo rechazó el Socket Crudo (Es una TV, audífonos o foco BLE) o no tiene servicio Serial
             try {
-                // Cerramos el socket que falló
                 bluetoothSocket?.close()
                 bluetoothSocket = null
-            } catch (closeException: IOException) {
-                // Ignorar
-            }
+            } catch (closeException: Exception) {}
 
-            // INTENTO 2: Fallback Visual
-            // Si el dispositivo ya está "Vinculado" (Emparejado) en los ajustes del teléfono de Android,
-            // lo tomaremos como conectado para que la interfaz (UI) fluya correctamente.
-            if (device.bondState == BluetoothDevice.BOND_BONDED) {
-                // Simulamos la conexión para mantener la tarjeta en verde
+            // Si el dispositivo no está emparejado, forzamos la petición de emparejamiento nativa de Android
+            if (device.bondState != BluetoothDevice.BOND_BONDED) {
+                try {
+                    device.createBond()
+                    isConnected = true
+                    return true
+                } catch (bondException: Exception) {
+                    bondException.printStackTrace()
+                }
+            } else {
                 isConnected = true
                 return true
             }
 
-            // Si llegamos aquí, ni siquiera está emparejado
             isConnected = false
             return false
         }
@@ -60,5 +61,17 @@ object BluetoothController {
         }
         bluetoothSocket = null
         isConnected = false
+    }
+
+    fun enviarComando(comando: String) {
+        if (isConnected && bluetoothSocket != null) {
+            try {
+                bluetoothSocket?.outputStream?.write(comando.toByteArray())
+            } catch (e: IOException) {
+                e.printStackTrace()
+                // Si falla al enviar, probablemente se desconectó
+                isConnected = false
+            }
+        }
     }
 }
