@@ -405,20 +405,28 @@ class HomeFragment : Fragment() {
     }
 
     private fun mostrarDialogoAgregarCasa() {
-        val input = EditText(requireContext())
-        input.hint = "Nombre de la nueva casa"
-        
-        MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.Theme_Material3_Light_Dialog)
-            .setTitle("Añadir Casa")
-            .setView(input)
-            .setPositiveButton("Crear") { _, _ ->
-                val nombreCasa = input.text.toString().trim()
-                if (nombreCasa.isNotEmpty()) {
-                    crearNuevaCasa(nombreCasa)
-                }
-            }
-            .setNegativeButton("Cancelar", null)
+        val dialogView = layoutInflater.inflate(R.layout.dialog_add_casa, null)
+        val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.Theme_Material3_Light_Dialog)
+            .setView(dialogView)
             .show()
+
+        val etNombreCasa = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etNombreCasa)
+        val btnCancel = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnCancel)
+        val btnConfirm = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnConfirm)
+
+        btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        btnConfirm.setOnClickListener {
+            val nombreCasa = etNombreCasa.text?.toString()?.trim() ?: ""
+            if (nombreCasa.isNotEmpty()) {
+                crearNuevaCasa(nombreCasa)
+                dialog.dismiss()
+            } else {
+                Toast.makeText(requireContext(), "Ingresa un nombre válido", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun crearNuevaCasa(nombre: String) {
@@ -442,20 +450,28 @@ class HomeFragment : Fragment() {
     }
 
     private fun mostrarDialogoAgregarHabitacion(casaId: Int) {
-        val input = EditText(requireContext())
-        input.hint = "Nombre de la nueva habitación"
-        
-        MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.Theme_Material3_Light_Dialog)
-            .setTitle("Añadir Habitación")
-            .setView(input)
-            .setPositiveButton("Crear") { _, _ ->
-                val nombre = input.text.toString().trim()
-                if (nombre.isNotEmpty()) {
-                    crearNuevaHabitacion(nombre, casaId)
-                }
-            }
-            .setNegativeButton("Cancelar", null)
+        val dialogView = layoutInflater.inflate(R.layout.dialog_add_habitacion, null)
+        val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.Theme_Material3_Light_Dialog)
+            .setView(dialogView)
             .show()
+
+        val etNombreHabitacion = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etNombreHabitacion)
+        val btnCancel = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnCancel)
+        val btnConfirm = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnConfirm)
+
+        btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        btnConfirm.setOnClickListener {
+            val nombreHabitacion = etNombreHabitacion.text?.toString()?.trim() ?: ""
+            if (nombreHabitacion.isNotEmpty()) {
+                crearNuevaHabitacion(nombreHabitacion, casaId)
+                dialog.dismiss()
+            } else {
+                Toast.makeText(requireContext(), "Ingresa un nombre válido", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun crearNuevaHabitacion(nombre: String, casaId: Int) {
