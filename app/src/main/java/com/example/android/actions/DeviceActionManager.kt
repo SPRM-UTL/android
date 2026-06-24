@@ -53,8 +53,8 @@ object DeviceActionManager {
                     Log.d("DeviceActionManager", "Ejecutando acción por WiFi HTTP para $tipo")
                     CoroutineScope(Dispatchers.IO).launch {
                         try {
-                            // Por defecto usamos "esp32-b" (el quemado en el firmware)
-                            val deviceKey = "esp32-b"
+                            // Usar la dirección MAC del dispositivo como deviceKey
+                            val deviceKey = dispositivo.macBluetooth ?: ""
                             val response = RetrofitClient.deviceService.enviarComandoWebSocket(comandoBase, deviceKey)
                             if (response.isSuccessful) {
                                 Log.d("DeviceActionManager", "Comando WiFi enviado con éxito: $comandoBase")

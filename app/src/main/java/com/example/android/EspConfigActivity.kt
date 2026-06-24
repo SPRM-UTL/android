@@ -119,8 +119,6 @@ class EspConfigActivity : AppCompatActivity() {
     // Flag para evitar que el diálogo de asociación se abra en bucle
     private var dialogEspMostrado = false
 
-    // Modo "Add Device" para aparatos genéricos (ej. Enchufe)
-    private var isAddDeviceMode = false
     private var tipoDispositivo: String = ""
     private var iconoDispositivo: String? = null
 
@@ -210,12 +208,34 @@ class EspConfigActivity : AppCompatActivity() {
         configurarListeners()
         mostrarPaso(1)
 
-        isAddDeviceMode = intent.getBooleanExtra("EXTRA_MODE_ADD_DEVICE", false)
         tipoDispositivo = intent.getStringExtra("EXTRA_TIPO_DISPOSITIVO") ?: ""
         iconoDispositivo = intent.getStringExtra("EXTRA_ICONO_DISPOSITIVO")
 
         db = AppDatabase.getDatabase(this)
         cargarAparatosLocales()
+
+        verificarEstadoConexionPrevia()
+    }
+
+    private fun verificarEstadoConexionPrevia() {
+        val sharedPref = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        val savedMac = sharedPref.getString(KEY_MAC, "") ?: ""
+        if (savedMac.isNotBlank()) {
+            lifecycleScope.launch {
+                try {
+                    val response = RetrofitClient.deviceService.getWsStatus(savedMac)
+                    if (response.isSuccessful && response.body()?.connected == true) {
+                        actualizarEstadoConexion(true)
+                        tvSubEstadoConexion.text = "Tu cámara ya está conectada a tu red Wi-Fi."
+                        btnBuscarDispositivos.text = "Configurar otra red"
+                        // Nota: isConnected sigue en false (BLE) para no habilitar el botón "Siguiente" por accidente, 
+                        // ya que "Siguiente" sirve para enviar config por Bluetooth.
+                    }
+                } catch (e: Exception) {
+                    // Ignorar
+                }
+            }
+        }
     }
 
     private fun inicializarVistas() {
@@ -281,9 +301,14 @@ class EspConfigActivity : AppCompatActivity() {
 
             val tvDeviceName = view.findViewById<TextView>(R.id.tvBtDeviceName)
             val tvDeviceMac = view.findViewById<TextView>(R.id.tvBtDeviceMac)
+            val btnConectar = view.findViewById<MaterialButton>(R.id.btnItemConectar)
 
             tvDeviceName.text = device?.name ?: "Dispositivo desconocido"
             tvDeviceMac.text = device?.address ?: "00:00:00:00:00:00"
+
+            btnConectar.setOnClickListener {
+                device?.let { conectarADispositivo(it) }
+            }
 
             return view
         }
@@ -575,8 +600,19 @@ class EspConfigActivity : AppCompatActivity() {
                     BluetoothProfile.STATE_DISCONNECTED -> {
                         isConnected = false
                         actualizarEstadoConexion(false)
-                        if (pasoActual == 1) btnSiguiente.isEnabled = false
-                        mostrarSnackbar("Cámara desconectada", false)
+
+                        if (pasoActual == 3) {
+                            runOnUiThread {
+                                mostrarPaso(3)
+                                ipRecibida = true
+                                mostrarSnackbar("Cámara configurada y reiniciando...", false)
+                                // Proceder sin IP local, ya que se conectará por WebSocket
+                                finalizarConfiguracion("")
+                            }
+                        } else {
+                            if (pasoActual == 1) btnSiguiente.isEnabled = false
+                            mostrarSnackbar("Cámara desconectada", false)
+                        }
                     }
                 }
             }
@@ -658,7 +694,7 @@ class EspConfigActivity : AppCompatActivity() {
                         ipRecibida = true
                         connectedEspIp = ip
                         mostrarSnackbar("¡Red asignada correctamente!", false)
-                        mostrarSeleccionDeAparato(ip)
+                        finalizarConfiguracion(ip)
                     }
                 }
             }
@@ -681,7 +717,9 @@ class EspConfigActivity : AppCompatActivity() {
         }
 
         wifiCharacteristic?.let { characteristic ->
-            val configData = "$ssid|$password"
+            val baseUrl = com.example.android.BuildConfig.BASE_URL
+            val wsUrl = baseUrl.replace("http://", "ws://").replace("https://", "wss://")
+            val configData = "$ssid|$password|$wsUrl"
             characteristic.value = configData.toByteArray()
             characteristic.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
 
@@ -735,131 +773,16 @@ class EspConfigActivity : AppCompatActivity() {
     }
 
     /**
-     * Tras recibir la IP del ESP32, se asocia automáticamente al primer aparato local
-     * disponible (o navega directo si no hay aparatos registrados).
+     * Tras finalizar la configuración de red del ESP32, guardamos su MAC de forma global
+     * para que pueda ser utilizada como "deviceKey" al momento de agregar nuevos dispositivos reales.
      */
-    private fun mostrarSeleccionDeAparato(ip: String) {
-        if (isAddDeviceMode) {
-            mostrarDialogoNombrarYGuardar(ip)
-            return
-        }
-        if (aparatosLocales.isEmpty()) {
-            navegarACamara(ip)
-            return
-        }
-        aparatoSeleccionadoIdx = 0
-        guardarConfiguracionRed(aparatosLocales[0].id, ip)
-    }
+    private fun finalizarConfiguracion(ip: String) {
+        val sharedPref = getSharedPreferences("EspConfigPrefs", Context.MODE_PRIVATE)
+        sharedPref.edit().putString("saved_mac_address", connectedEspMac).apply()
 
-    private fun mostrarDialogoNombrarYGuardar(ip: String) {
-        val input = com.google.android.material.textfield.TextInputEditText(this)
-        input.hint = "Ej. $tipoDispositivo Sala"
-
-        val layout = android.widget.FrameLayout(this)
-        val padding = (20 * resources.displayMetrics.density).toInt()
-        layout.setPadding(padding, padding, padding, padding)
-        layout.addView(input)
-
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-            .setTitle("Nombrar dispositivo")
-            .setMessage("Tu $tipoDispositivo se conectó a WiFi (IP: $ip). ¿Qué nombre le vas a poner?")
-            .setView(layout)
-            .setCancelable(false)
-            .setPositiveButton("Guardar") { dialog, _ ->
-                val nombre = input.text.toString().trim()
-                if (nombre.isNotEmpty()) {
-                    guardarDispositivoNuevo(nombre, ip)
-                } else {
-                    mostrarSnackbar("El nombre no puede estar vacío", true)
-                }
-                dialog.dismiss()
-            }
-            .setNegativeButton("Omitir") { dialog, _ -> 
-                dialog.dismiss()
-                navegarACamara(ip) 
-            }
-            .show()
-    }
-
-    private fun guardarDispositivoNuevo(nombre: String, ip: String) {
-        val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
-        val token = sharedPref.getString("apiToken", "") ?: return
-
-        val dispositivo = com.example.android.db.Dispositivo(
-            id = 0,
-            nombre = nombre,
-            tipo = tipoDispositivo,
-            accion = null,
-            comandoBluetooth = null,
-            icono = iconoDispositivo,
-            macBluetooth = "VIRTUAL-${System.currentTimeMillis()}",
-            nombreBluetooth = null,
-            fechaSincronizacion = null
-        )
-
-        lifecycleScope.launch {
-            ApiHandler.safeApiCall(
-                activity = this@EspConfigActivity,
-                showLoading = true,
-                loadingTitle = "Guardando",
-                loadingMessage = "Registrando dispositivo en tu cuenta...",
-                apiCall = { RetrofitClient.deviceService.createDispositivo("Bearer $token", dispositivo) },
-                onSuccess = { response ->
-                    val nuevoDispositivo = response.data
-                    if (nuevoDispositivo != null) {
-                        guardarConfiguracionRed(nuevoDispositivo.id, ip)
-                    } else {
-                        mostrarSnackbar("Error: El servidor no devolvió el dispositivo creado", true)
-                        navegarACamara(ip)
-                    }
-                },
-                onError = { error ->
-                    mostrarSnackbar("Error al crear dispositivo: $error", true)
-                    navegarACamara(ip)
-                }
-            )
-        }
-    }
-
-    /** Llama al endpoint PUT /api/Dim_Aparatos/{id}/configuracion-red */
-    private fun guardarConfiguracionRed(aparatoId: Int, ip: String) {
-        lifecycleScope.launch {
-            ApiHandler.safeApiCall(
-                activity = this@EspConfigActivity,
-                showLoading = true,
-                loadingTitle = "Guardando",
-                loadingMessage = "Guardando configuración de red...",
-                apiCall = {
-                    val token = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
-                        .getString("apiToken", "") ?: ""
-                    val config = ConfiguracionRedRequest(
-                        ipAddress = ip,
-                        macAddress = connectedEspMac.ifBlank { null },
-                        hostName = connectedEspName.ifBlank { null },
-                        deviceKey = if (connectedEspMac.isNotBlank()) "${connectedEspMac}_${aparatoId}" else null,
-                        puertoSocket = 81,
-                        protocoloSocket = "ws",
-                        rutaSocket = "/ws",
-                        activo = true
-                    )
-                    RetrofitClient.deviceService.saveConfiguracionRed("Bearer $token", aparatoId, config)
-                },
-                onSuccess = {
-                    mostrarSnackbar("Configuración guardada correctamente", false)
-                    navegarACamara(ip)
-                },
-                onError = { errorMsg ->
-                    mostrarSnackbar("Error al guardar: $errorMsg", true)
-                    navegarACamara(ip)
-                }
-            )
-        }
-    }
-
-    private fun navegarACamara(ip: String) {
-        val intent = Intent(this, DeviceCameraActivity::class.java)
-        intent.putExtra("EXTRA_IP", ip)
-        startActivity(intent)
+        mostrarSnackbar("Controlador configurado exitosamente (IP: $ip)", false)
+        
+        // Volvemos al inicio
         finish()
     }
 

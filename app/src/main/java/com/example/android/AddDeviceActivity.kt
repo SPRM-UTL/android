@@ -4,11 +4,17 @@ import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothClass
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCallback
+import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.View
@@ -44,6 +50,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.UUID
 
 class AddDeviceActivity : AppCompatActivity() {
 
@@ -424,6 +431,12 @@ class AddDeviceActivity : AppCompatActivity() {
     @SuppressLint("MissingPermission")
     private fun intentarConectarDispositivo(device: BluetoothDevice) {
         gestorBluetooth.detenerEscaneo()
+        
+        val nombreDispositivo = device.name ?: ""
+        if (nombreDispositivo.contains("ESP32", ignoreCase = true) || nombreDispositivo.contains("Socket", ignoreCase = true)) {
+            mostrarDialogoConfiguracionEsp32(device)
+            return
+        }
 
         // Mostrar diálogo de conexión
         val themedContext = ContextThemeWrapper(this, com.google.android.material.R.style.Theme_Material3_Light_Dialog)
@@ -696,6 +709,100 @@ class AddDeviceActivity : AppCompatActivity() {
             ivIconoEstado.setImageResource(android.R.drawable.presence_offline)
             ivIconoEstado.setColorFilter(ContextCompat.getColor(this, android.R.color.darker_gray))
         }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun mostrarDialogoConfiguracionEsp32(device: BluetoothDevice) {
+        val themedContext = ContextThemeWrapper(this, com.google.android.material.R.style.Theme_Material3_Light_Dialog)
+        val dialogView = LayoutInflater.from(themedContext).inflate(R.layout.dialog_config_esp32_wifi, null)
+
+        val dialog = MaterialAlertDialogBuilder(themedContext)
+            .setView(dialogView)
+            .setCancelable(false)
+            .create()
+
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
+        val etSsid = dialogView.findViewById<TextInputEditText>(R.id.etEspSsid)
+        val etPassword = dialogView.findViewById<TextInputEditText>(R.id.etEspPassword)
+        val btnCancel = dialogView.findViewById<MaterialButton>(R.id.btnCancelEsp)
+        val btnConfirm = dialogView.findViewById<MaterialButton>(R.id.btnConfirmEsp)
+
+        btnCancel.setOnClickListener { dialog.dismiss() }
+
+        btnConfirm.setOnClickListener {
+            val ssid = etSsid.text.toString().trim()
+            val pass = etPassword.text.toString().trim()
+
+            if (ssid.isEmpty()) {
+                etSsid.error = "Ingresa el nombre de la red"
+                return@setOnClickListener
+            }
+
+            dialog.dismiss()
+            conectarGattYEnviarCredenciales(device, ssid, pass)
+        }
+
+        dialog.show()
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun conectarGattYEnviarCredenciales(device: BluetoothDevice, ssid: String, pass: String) {
+        val dialogConectando = MaterialAlertDialogBuilder(this)
+            .setMessage("Enviando credenciales por Bluetooth...")
+            .setCancelable(false)
+            .show()
+
+        val gattCallback = object : BluetoothGattCallback() {
+            override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+                if (newState == BluetoothProfile.STATE_CONNECTED) {
+                    gatt.discoverServices()
+                } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                    gatt.close()
+                    runOnUiThread { 
+                        if (dialogConectando.isShowing) dialogConectando.dismiss()
+                    }
+                }
+            }
+
+            override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
+                if (status == BluetoothGatt.GATT_SUCCESS) {
+                    val serviceUuid = UUID.fromString("4fafc201-1fb5-459e-8fcc-c5c9c331914b")
+                    val charUuid = UUID.fromString("beb5483e-36e1-4688-b7f5-ea07361b26a9")
+                    
+                    val service = gatt.getService(serviceUuid)
+                    val characteristic = service?.getCharacteristic(charUuid)
+
+                    if (characteristic != null) {
+                        val baseUrl = com.example.android.BuildConfig.BASE_URL
+                        val wsUrl = baseUrl.replace("http://", "ws://").replace("https://", "wss://")
+                        val payload = "$ssid|$pass|$wsUrl"
+                        
+                        characteristic.value = payload.toByteArray(Charsets.UTF_8)
+                        gatt.writeCharacteristic(characteristic)
+                    } else {
+                        runOnUiThread {
+                            dialogConectando.dismiss()
+                            Toast.makeText(this@AddDeviceActivity, "ESP32 incompatible (No se encontró la característica WiFi)", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            }
+
+            override fun onCharacteristicWrite(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, status: Int) {
+                runOnUiThread {
+                    dialogConectando.dismiss()
+                    if (status == BluetoothGatt.GATT_SUCCESS) {
+                        Toast.makeText(this@AddDeviceActivity, "Credenciales enviadas correctamente", Toast.LENGTH_LONG).show()
+                        mostrarAlertaConfiguracion(device)
+                    } else {
+                        Toast.makeText(this@AddDeviceActivity, "Error al escribir credenciales", Toast.LENGTH_SHORT).show()
+                    }
+                    gatt.disconnect()
+                }
+            }
+        }
+        device.connectGatt(this, false, gattCallback)
     }
 
     override fun onDestroy() {
