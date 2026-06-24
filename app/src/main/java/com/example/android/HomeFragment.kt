@@ -638,21 +638,37 @@ class HomeFragment : Fragment() {
                                 db.casaDao().insertAll(casas)
                             }
                             
-                            // Sincronizar Habitaciones para cada casa
-                            val sharedPref = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
-                            val token = sharedPref.getString("apiToken", "") ?: ""
-                            
-                            viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-                                db.habitacionDao().deleteAllHabitaciones()
-                                casas.forEach { casa ->
-                                    try {
-                                        val habResponse = RetrofitClient.habitacionService.getHabitacionesByCasa("Bearer $token", casa.id)
-                                        if (habResponse.isSuccessful) {
-                                            habResponse.body()?.let { habitaciones ->
-                                                db.habitacionDao().insertAll(habitaciones)
+                            if (casas.isEmpty()) {
+                                if (isAdded) {
+                                    mostrarDialogoAgregarCasa()
+                                }
+                            } else {
+                                // Sincronizar Habitaciones para cada casa
+                                val sharedPref = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+                                val token = sharedPref.getString("apiToken", "") ?: ""
+                                
+                                viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                                    db.habitacionDao().deleteAllHabitaciones()
+                                    var hasHabitaciones = false
+                                    casas.forEach { casa ->
+                                        try {
+                                            val habResponse = RetrofitClient.habitacionService.getHabitacionesByCasa("Bearer $token", casa.id)
+                                            if (habResponse.isSuccessful) {
+                                                habResponse.body()?.let { habitaciones ->
+                                                    db.habitacionDao().insertAll(habitaciones)
+                                                    if (habitaciones.isNotEmpty()) {
+                                                        hasHabitaciones = true
+                                                    }
+                                                }
                                             }
+                                        } catch (e: Exception) {}
+                                    }
+                                    
+                                    if (!hasHabitaciones && isAdded) {
+                                        withContext(Dispatchers.Main) {
+                                            mostrarDialogoAgregarHabitacion(casas[0].id)
                                         }
-                                    } catch (e: Exception) {}
+                                    }
                                 }
                             }
                         }
