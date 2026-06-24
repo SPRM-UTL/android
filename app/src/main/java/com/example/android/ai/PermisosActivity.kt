@@ -48,13 +48,6 @@ class PermisosActivity : AppCompatActivity() {
     // COLORES
     // ==========================================================
 
-    companion object {
-        // Colores tomados de res/values/colors.xml
-        private const val COLOR_ACCENTO        = "#3aafa9"  // teal_primary
-        private const val COLOR_DARK           = "#2b7a78"  // teal_medium
-        private const val COLOR_ERROR          = "#E53935"  // red
-        private const val COLOR_DOT_INACTIVO   = "#DEF2F1"  // teal_card (suave)
-    }
 
     // ==========================================================
     // VISTAS
@@ -296,14 +289,14 @@ class PermisosActivity : AppCompatActivity() {
         tvPermisoDesc.text   = paso.descripcion
         ivPermisoIcon.setImageResource(paso.iconRes)
         ivPermisoIcon.setColorFilter(
-            android.graphics.Color.parseColor(COLOR_ACCENTO),
+            ContextCompat.getColor(this, R.color.teal_primary),
             PorterDuff.Mode.SRC_IN
         )
 
         // ── Dots de progreso: completados + actual en acento, pendientes en teal suave ──
         dots.forEachIndexed { i, dot ->
-            val color = if (i <= index) COLOR_ACCENTO else COLOR_DOT_INACTIVO
-            dot.background.setTint(android.graphics.Color.parseColor(color))
+            val colorRes = if (i <= index) R.color.teal_primary else R.color.teal_card
+            dot.background.setTint(ContextCompat.getColor(this, colorRes))
         }
 
         // ── Estado del permiso ─────────────────────────────────
@@ -344,7 +337,7 @@ class PermisosActivity : AppCompatActivity() {
             // Ícono de check — Lucide circle-check, en color de acento
             ivEstado.setImageResource(R.drawable.circle_check)
             ivEstado.setColorFilter(
-                android.graphics.Color.parseColor(COLOR_ACCENTO),
+                ContextCompat.getColor(this, R.color.teal_primary),
                 PorterDuff.Mode.SRC_IN
             )
             ivEstado.visibility     = View.VISIBLE
@@ -357,7 +350,7 @@ class PermisosActivity : AppCompatActivity() {
             // Ícono de x — Lucide circle-x, se mantiene en rojo (error)
             ivEstado.setImageResource(R.drawable.circle_x)
             ivEstado.setColorFilter(
-                android.graphics.Color.parseColor(COLOR_ERROR),
+                ContextCompat.getColor(this, R.color.red),
                 PorterDuff.Mode.SRC_IN
             )
             ivEstado.visibility     = View.VISIBLE

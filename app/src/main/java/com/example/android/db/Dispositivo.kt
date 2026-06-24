@@ -35,5 +35,13 @@ data class Dispositivo(
 
     @SerializedName("fecha_sincronizacion")
     @androidx.room.ColumnInfo(name = "fecha_sincronizacion")
-    val fechaSincronizacion: String?
+    val fechaSincronizacion: String?,
+
+    @SerializedName("sk_habitacion_id")
+    @androidx.room.ColumnInfo(name = "sk_habitacion_id")
+    val skHabitacionId: Int? = null,
+
+    @SerializedName("nombre_habitacion")
+    @androidx.room.ColumnInfo(name = "nombre_habitacion")
+    val nombreHabitacion: String? = null
 )
