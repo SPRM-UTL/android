@@ -640,7 +640,7 @@ class EspConfigActivity : AppCompatActivity() {
                         isConnected = true
                         actualizarEstadoConexion(true)
                         mostrarSnackbar("Cámara conectada", false)
-                        gatt.discoverServices()
+                        gatt.requestMtu(512)
                     }
                     BluetoothProfile.STATE_DISCONNECTED -> {
                         isConnected = false
@@ -661,6 +661,12 @@ class EspConfigActivity : AppCompatActivity() {
                     }
                 }
             }
+        }
+
+        @SuppressLint("MissingPermission")
+        override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int, status: Int) {
+            super.onMtuChanged(gatt, mtu, status)
+            gatt.discoverServices()
         }
 
         @SuppressLint("MissingPermission")
@@ -764,7 +770,8 @@ class EspConfigActivity : AppCompatActivity() {
         wifiCharacteristic?.let { characteristic ->
             val baseUrl = com.example.android.BuildConfig.BASE_URL
             val wsUrl = baseUrl.replace("http://", "ws://").replace("https://", "wss://")
-            val configData = "$ssid|$password|$wsUrl"
+            val token = getSharedPreferences("SesionApp", Context.MODE_PRIVATE).getString("apiToken", "") ?: ""
+            val configData = "$ssid|$password|$wsUrl|$token"
             characteristic.value = configData.toByteArray()
             characteristic.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
 
