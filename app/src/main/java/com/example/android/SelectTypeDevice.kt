@@ -75,26 +75,10 @@ class SelectTypeDevice : AppCompatActivity() {
 
         recyclerView.layoutManager = LinearLayoutManager(this)
         adapter = AparatoTipoAdapter(emptyList()) { tipo ->
-            if (tipo.soportaBluetooth && tipo.soportaWifi) {
-                if (tipo.requiereVinculacionBluetooth) {
-                    mostrarBottomSheetEleccion(tipo)
-                } else {
-                    crearDispositivoGenerico(tipo)
-                }
-            } else if (tipo.soportaBluetooth) {
-                if (tipo.requiereVinculacionBluetooth) {
-                    lanzarActivityBluetooth(tipo)
-                } else {
-                    crearDispositivoGenerico(tipo)
-                }
-            } else if (tipo.soportaWifi) {
-                if (tipo.requiereVinculacionBluetooth) {
-                    lanzarActivityWifi(tipo)
-                } else {
-                    crearDispositivoGenerico(tipo)
-                }
+            if (tipo.soportaBluetooth || tipo.soportaWifi) {
+                mostrarBottomSheetEleccion(tipo)
             } else {
-                Toast.makeText(this, "El dispositivo no soporta conexión inalámbrica", Toast.LENGTH_SHORT).show()
+                crearDispositivoGenerico(tipo)
             }
         }
         recyclerView.adapter = adapter
@@ -304,14 +288,26 @@ class SelectTypeDevice : AppCompatActivity() {
         val bottomSheet = com.google.android.material.bottomsheet.BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.bottom_sheet_connection_type, null)
         
-        view.findViewById<View>(R.id.btnConnectWifi).setOnClickListener {
+        val btnWifi = view.findViewById<View>(R.id.btnConnectWifi)
+        val btnBluetooth = view.findViewById<View>(R.id.btnConnectBluetooth)
+        val btnGeneric = view.findViewById<View>(R.id.btnConnectGeneric)
+        
+        if (!tipo.soportaWifi) btnWifi.visibility = View.GONE
+        if (!tipo.soportaBluetooth) btnBluetooth.visibility = View.GONE
+
+        btnWifi.setOnClickListener {
             bottomSheet.dismiss()
             lanzarActivityWifi(tipo)
         }
         
-        view.findViewById<View>(R.id.btnConnectBluetooth).setOnClickListener {
+        btnBluetooth.setOnClickListener {
             bottomSheet.dismiss()
             lanzarActivityBluetooth(tipo)
+        }
+        
+        btnGeneric.setOnClickListener {
+            bottomSheet.dismiss()
+            crearDispositivoGenerico(tipo)
         }
         
         bottomSheet.setContentView(view)
