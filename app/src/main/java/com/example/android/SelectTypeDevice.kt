@@ -289,6 +289,7 @@ class SelectTypeDevice : AppCompatActivity() {
         val view = layoutInflater.inflate(R.layout.bottom_sheet_connection_type, null)
         
         val btnWifi = view.findViewById<View>(R.id.btnConnectWifi)
+        val btnEsp32 = view.findViewById<View>(R.id.btnConnectEsp32)
         val btnBluetooth = view.findViewById<View>(R.id.btnConnectBluetooth)
         val btnGeneric = view.findViewById<View>(R.id.btnConnectGeneric)
         
@@ -298,6 +299,14 @@ class SelectTypeDevice : AppCompatActivity() {
         btnWifi.setOnClickListener {
             bottomSheet.dismiss()
             lanzarActivityWifi(tipo)
+        }
+        
+        btnEsp32.setOnClickListener {
+            bottomSheet.dismiss()
+            val intent = Intent(this, EspConfigActivity::class.java)
+            intent.putExtra("EXTRA_TIPO_DISPOSITIVO", tipo.nombreTipo)
+            intent.putExtra("EXTRA_ICONO_DISPOSITIVO", tipo.icono)
+            startActivity(intent)
         }
         
         btnBluetooth.setOnClickListener {

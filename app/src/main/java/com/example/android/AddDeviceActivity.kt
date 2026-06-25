@@ -222,11 +222,12 @@ class AddDeviceActivity : AppCompatActivity() {
 
     private fun requestScanDebounced() {
         val now = System.currentTimeMillis()
-        if (now - lastScanRequest > 3000) {
+        if (now - lastScanRequest > 6000) {
             lastScanRequest = now
             pedirPermisos()
         } else {
-            Toast.makeText(this, "Escaneo en progreso, por favor espera...", Toast.LENGTH_SHORT).show()
+            val tiempoFaltante = 6 - ((now - lastScanRequest) / 1000)
+            Toast.makeText(this, "Escaneando... espera $tiempoFaltante seg para refrescar", Toast.LENGTH_SHORT).show()
         }
     }
 
