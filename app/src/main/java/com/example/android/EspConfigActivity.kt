@@ -59,10 +59,18 @@ class EspConfigActivity : AppCompatActivity() {
     private lateinit var tvEstadoConexion: TextView
     private lateinit var tvSubEstadoConexion: TextView
     private lateinit var btnBuscarDispositivos: MaterialButton
-    private lateinit var contenedorListaDispositivos: LinearLayout
-    private lateinit var lvDispositivos: ListView
-    private lateinit var progressScan: LinearProgressIndicator
-    private lateinit var tvSinDispositivos: TextView
+    private lateinit var tvStep1Title: TextView
+    private lateinit var tvStep1Subtitle: TextView
+    private lateinit var tvStep2Title: TextView
+    private lateinit var tvStep2Subtitle: TextView
+    private lateinit var tvStep3Title: TextView
+    private lateinit var tvStep3Subtitle: TextView
+    private lateinit var tvTipoResumen: TextView
+
+    private var bottomSheetDialog: com.google.android.material.bottomsheet.BottomSheetDialog? = null
+    private var lvDispositivos: ListView? = null
+    private var progressScan: LinearProgressIndicator? = null
+    private var tvSinDispositivos: TextView? = null
 
     // --- Step 2: wifi ---
     private lateinit var cardOptionWifi: MaterialCardView
@@ -144,7 +152,7 @@ class EspConfigActivity : AppCompatActivity() {
             if (!discoveredDevices.any { it.address == device.address }) {
                 discoveredDevices.add(device)
                 listAdapter.notifyDataSetChanged()
-                tvSinDispositivos.visibility = View.GONE
+                tvSinDispositivos?.visibility = View.GONE
             }
         }
 
@@ -211,6 +219,20 @@ class EspConfigActivity : AppCompatActivity() {
         tipoDispositivo = intent.getStringExtra("EXTRA_TIPO_DISPOSITIVO") ?: ""
         iconoDispositivo = intent.getStringExtra("EXTRA_ICONO_DISPOSITIVO")
 
+        val nombreTipo = if (tipoDispositivo.equals("Cámara", ignoreCase = true)) "cámara" else "aparato"
+        val capitalizedTipo = nombreTipo.replaceFirstChar { it.uppercase() }
+        
+        findViewById<TextView>(R.id.tvTituloConfig).text = "Configurar $nombreTipo"
+        
+        tvStep1Title.text = "Busca tu $nombreTipo"
+        tvStep1Subtitle.text = "Acerca tu teléfono al $nombreTipo ESP32 y activa Bluetooth para detectarlo."
+        tvStep2Title.text = "Conecta tu $nombreTipo al Wi-Fi"
+        tvStep2Subtitle.text = "Ingresa los datos de tu red Wi-Fi para que el $nombreTipo se conecte a internet."
+        tvStep3Title.text = "Confirma y envía"
+        tvStep3Subtitle.text = "Revisa los datos antes de enviarlos a tu $nombreTipo."
+        tvTipoResumen.text = capitalizedTipo
+        tvSubEstadoConexion.text = "Aún no se ha encontrado tu $nombreTipo."
+
         db = AppDatabase.getDatabase(this)
         cargarAparatosLocales()
 
@@ -265,13 +287,16 @@ class EspConfigActivity : AppCompatActivity() {
         tvEstadoConexion = findViewById(R.id.tvEstadoConexion)
         tvSubEstadoConexion = findViewById(R.id.tvSubEstadoConexion)
         btnBuscarDispositivos = findViewById(R.id.btnBuscarDispositivos)
-        contenedorListaDispositivos = findViewById(R.id.contenedorListaDispositivos)
-        lvDispositivos = findViewById(R.id.lvDispositivos)
-        progressScan = findViewById(R.id.progressScan)
-        tvSinDispositivos = findViewById(R.id.tvSinDispositivos)
+        
+        tvStep1Title = findViewById(R.id.tvStep1Title)
+        tvStep1Subtitle = findViewById(R.id.tvStep1Subtitle)
+        tvStep2Title = findViewById(R.id.tvStep2Title)
+        tvStep2Subtitle = findViewById(R.id.tvStep2Subtitle)
+        tvStep3Title = findViewById(R.id.tvStep3Title)
+        tvStep3Subtitle = findViewById(R.id.tvStep3Subtitle)
+        tvTipoResumen = findViewById(R.id.tvTipoResumen)
 
         listAdapter = DeviceAdapter(this, discoveredDevices)
-        lvDispositivos.adapter = listAdapter
 
         // Step 2
         cardOptionWifi = findViewById(R.id.cardOptionWifi)
@@ -324,11 +349,12 @@ class EspConfigActivity : AppCompatActivity() {
         btnBack.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
 
         ivHelp.setOnClickListener {
-            mostrarSnackbar("Acerca tu teléfono a la cámara y mantén el Bluetooth encendido durante todo el proceso.", false)
+            val nombreTipo = if (tipoDispositivo.equals("Cámara", ignoreCase = true)) "cámara" else "aparato"
+            mostrarSnackbar("Acerca tu teléfono a tu $nombreTipo y mantén el Bluetooth encendido durante todo el proceso.", false)
         }
 
         btnBuscarDispositivos.setOnClickListener {
-            contenedorListaDispositivos.visibility = View.VISIBLE
+            mostrarBottomSheetDispositivos()
             if (tienePermisosNecesarios()) {
                 verificarBluetoothEncendido()
             } else {
@@ -336,10 +362,7 @@ class EspConfigActivity : AppCompatActivity() {
             }
         }
 
-        lvDispositivos.setOnItemClickListener { _, _, position, _ ->
-            val device = discoveredDevices[position]
-            conectarADispositivo(device)
-        }
+
 
         // Step 2: métodos de carga de Wi-Fi
         cardOptionWifi.setOnClickListener {
@@ -550,9 +573,9 @@ class EspConfigActivity : AppCompatActivity() {
 
         discoveredDevices.clear()
         listAdapter.notifyDataSetChanged()
-        tvSinDispositivos.visibility = View.GONE
+        tvSinDispositivos?.visibility = View.GONE
 
-        progressScan.visibility = View.VISIBLE
+        progressScan?.visibility = View.VISIBLE
         isScanning = true
 
         bluetoothLeScanner?.startScan(scanCallback)
@@ -569,11 +592,33 @@ class EspConfigActivity : AppCompatActivity() {
     private fun detenerEscaneo() {
         bluetoothLeScanner?.stopScan(scanCallback)
         isScanning = false
-        progressScan.visibility = View.INVISIBLE
+        progressScan?.visibility = View.INVISIBLE
 
         if (discoveredDevices.isEmpty()) {
-            tvSinDispositivos.visibility = View.VISIBLE
+            tvSinDispositivos?.visibility = View.VISIBLE
         }
+    }
+
+    private fun mostrarBottomSheetDispositivos() {
+        if (bottomSheetDialog == null) {
+            bottomSheetDialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+            val view = layoutInflater.inflate(R.layout.bottom_sheet_devices, null)
+            
+            lvDispositivos = view.findViewById(R.id.lvDispositivos)
+            progressScan = view.findViewById(R.id.progressScan)
+            tvSinDispositivos = view.findViewById(R.id.tvSinDispositivos)
+            
+            lvDispositivos?.adapter = listAdapter
+            
+            lvDispositivos?.setOnItemClickListener { _, _, position, _ ->
+                val device = discoveredDevices[position]
+                bottomSheetDialog?.dismiss()
+                conectarADispositivo(device)
+            }
+            
+            bottomSheetDialog?.setContentView(view)
+        }
+        bottomSheetDialog?.show()
     }
 
     // --- Conexión GATT ---
@@ -595,7 +640,7 @@ class EspConfigActivity : AppCompatActivity() {
                         isConnected = true
                         actualizarEstadoConexion(true)
                         mostrarSnackbar("Cámara conectada", false)
-                        gatt.discoverServices()
+                        gatt.requestMtu(512)
                     }
                     BluetoothProfile.STATE_DISCONNECTED -> {
                         isConnected = false
@@ -616,6 +661,12 @@ class EspConfigActivity : AppCompatActivity() {
                     }
                 }
             }
+        }
+
+        @SuppressLint("MissingPermission")
+        override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int, status: Int) {
+            super.onMtuChanged(gatt, mtu, status)
+            gatt.discoverServices()
         }
 
         @SuppressLint("MissingPermission")
@@ -719,7 +770,8 @@ class EspConfigActivity : AppCompatActivity() {
         wifiCharacteristic?.let { characteristic ->
             val baseUrl = com.example.android.BuildConfig.BASE_URL
             val wsUrl = baseUrl.replace("http://", "ws://").replace("https://", "wss://")
-            val configData = "$ssid|$password|$wsUrl"
+            val token = getSharedPreferences("SesionApp", Context.MODE_PRIVATE).getString("apiToken", "") ?: ""
+            val configData = "$ssid|$password|$wsUrl|$token"
             characteristic.value = configData.toByteArray()
             characteristic.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
 
