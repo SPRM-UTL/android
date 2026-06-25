@@ -219,6 +219,7 @@
                 android:visibility="visible">
 
                 <TextView
+                    android:id="@+id/tvStep1Title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Busca tu cámara"
@@ -227,6 +228,7 @@
                     android:textStyle="bold" />
 
                 <TextView
+                    android:id="@+id/tvStep1Subtitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
@@ -295,54 +297,7 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Lista de dispositivos encontrados (reemplaza el bottom sheet) -->
-                <LinearLayout
-                    android:id="@+id/contenedorListaDispositivos"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:orientation="vertical"
-                    android:visibility="gone">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp"
-                        android:text="Dispositivos cercanos"
-                        android:textColor="#212121"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
-
-                    <com.google.android.material.progressindicator.LinearProgressIndicator
-                        android:id="@+id/progressScan"
-                        style="@style/Widget.MaterialComponents.LinearProgressIndicator"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="12dp"
-                        android:indeterminate="true"
-                        app:indicatorColor="@color/teal_primary"
-                        app:trackColor="#E0F2F1" />
-
-                    <ListView
-                        android:id="@+id/lvDispositivos"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:divider="@null"
-                        android:dividerHeight="8dp"
-                        android:nestedScrollingEnabled="false" />
-
-                    <TextView
-                        android:id="@+id/tvSinDispositivos"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:gravity="center"
-                        android:padding="24dp"
-                        android:text="No se encontraron dispositivos.\nVerifica que la cámara esté en modo configuración."
-                        android:textColor="#9E9E9E"
-                        android:textSize="13sp"
-                        android:visibility="gone" />
-                </LinearLayout>
+                <!-- La lista de dispositivos se mostrará en un BottomSheet -->
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnBuscarDispositivos"
@@ -367,6 +322,7 @@
                 android:visibility="gone">
 
                 <TextView
+                    android:id="@+id/tvStep2Title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Conecta tu cámara al Wi-Fi"
@@ -375,6 +331,7 @@
                     android:textStyle="bold" />
 
                 <TextView
+                    android:id="@+id/tvStep2Subtitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
@@ -607,6 +564,7 @@
                 android:visibility="gone">
 
                 <TextView
+                    android:id="@+id/tvStep3Title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Confirma y envía"
@@ -615,6 +573,7 @@
                     android:textStyle="bold" />
 
                 <TextView
+                    android:id="@+id/tvStep3Subtitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
@@ -655,6 +614,7 @@
                             android:orientation="vertical">
 
                             <TextView
+                                android:id="@+id/tvTipoResumen"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Cámara"
