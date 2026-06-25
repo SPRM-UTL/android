@@ -208,14 +208,26 @@ class AddDeviceActivity : AppCompatActivity() {
         actualizarUIEstado()
     }
 
+    private var lastScanRequest = 0L
+
     private fun configurarEventos() {
         findViewById<ImageView>(R.id.btnBack).setOnClickListener {
             onBackPressedDispatcher.onBackPressed()
         }
         findViewById<View>(R.id.fabRefresh).setOnClickListener { 
-            pedirPermisos() 
+            requestScanDebounced()
         }
-        switchAdvancedSearch.setOnCheckedChangeListener { _, _ -> pedirPermisos() }
+        switchAdvancedSearch.setOnCheckedChangeListener { _, _ -> requestScanDebounced() }
+    }
+
+    private fun requestScanDebounced() {
+        val now = System.currentTimeMillis()
+        if (now - lastScanRequest > 3000) {
+            lastScanRequest = now
+            pedirPermisos()
+        } else {
+            Toast.makeText(this, "Escaneo en progreso, por favor espera...", Toast.LENGTH_SHORT).show()
+        }
     }
 
     // ==========================================================
@@ -355,8 +367,13 @@ class AddDeviceActivity : AppCompatActivity() {
     }
 
     private fun esDispositivoPorPalabras(nombre: String?, palabrasStr: String?): Boolean {
+        if (nombre.isNullOrEmpty()) return false
+        val nombreUpper = nombre.uppercase()
+        if (nombreUpper.contains("ESP32") || nombreUpper.contains("HC-05") || nombreUpper.contains("HC-06")) {
+            return true
+        }
+        
         if (palabrasStr.isNullOrEmpty()) return false
-        val nombreUpper = nombre?.uppercase() ?: return false
         val palabras = palabrasStr.split(",").map { it.trim().uppercase() }
         for (palabra in palabras) {
             if (palabra.isNotEmpty() && nombreUpper.contains(palabra)) {

@@ -24,6 +24,10 @@ data class ResultadoDispositivoBt(
 
 class BluetoothScanManager(private val contexto: Context) {
 
+    companion object {
+        private var lastBleScanTime = 0L
+    }
+
     private val adaptadorBluetooth: BluetoothAdapter? by lazy {
         val gestorBt = contexto.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
         gestorBt?.adapter
@@ -178,8 +182,15 @@ class BluetoothScanManager(private val contexto: Context) {
                         }
                     }
                 }
-                leScanner?.startScan(leScanCallback)
-                android.util.Log.d("BluetoothScanManager", "Iniciado BLE Scan")
+                
+                val now = System.currentTimeMillis()
+                if (now - lastBleScanTime > 6000) {
+                    lastBleScanTime = now
+                    leScanner?.startScan(leScanCallback)
+                    android.util.Log.d("BluetoothScanManager", "Iniciado BLE Scan")
+                } else {
+                    android.util.Log.w("BluetoothScanManager", "Escaneo BLE omitido por límite de frecuencia de Android (6s)")
+                }
             }
         } catch (e: Exception) {
             android.util.Log.e("BluetoothScanManager", "Error al iniciar BLE scan", e)
