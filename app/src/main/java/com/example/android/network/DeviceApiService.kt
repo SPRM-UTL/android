@@ -52,8 +52,15 @@ interface DeviceApiService {
         @Path("sk_aparato_id") aparatoId: Int,
         @retrofit2.http.Query("estado") estado: Boolean
     ): Response<ResponseBody>
+
+    @GET("ws/status/all")
+    suspend fun getWsStatusAll(): Response<WsStatusAllResponse>
 }
 
 data class WsStatusResponse(
     val connected: Boolean
+)
+
+data class WsStatusAllResponse(
+    val connectedDevices: List<String>
 )

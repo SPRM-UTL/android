@@ -68,6 +68,12 @@ class HomeFragment : Fragment() {
     private var dispositivosJob: kotlinx.coroutines.Job? = null
     private var currentCasaId: Int? = null
 
+    // Referencias para actualizar el diálogo abierto
+    private var currentDeviceInfoDialog: com.google.android.material.bottomsheet.BottomSheetDialog? = null
+    private var currentDeviceDialogMac: String? = null
+    private var tvDialogStatusRedGlobal: TextView? = null
+    private var statusDotInfoGlobal: com.google.android.material.card.MaterialCardView? = null
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -101,8 +107,56 @@ class HomeFragment : Fragment() {
         pollingJob?.cancel()
         pollingJob = viewLifecycleOwner.lifecycleScope.launch {
             while (true) {
-                verificarEstadoRedVisual()
+                verificarEstadoDispositivos()
                 delay(3000)
+            }
+        }
+    }
+
+    private suspend fun verificarEstadoDispositivos() {
+        try {
+            val response = RetrofitClient.deviceService.getWsStatusAll()
+            if (response.isSuccessful) {
+                val macs = response.body()?.connectedDevices ?: emptyList()
+                val macsSet = macs.toSet()
+                deviceAdapter.actualizarEstados(macsSet)
+                actualizarDialogoInformacion(macsSet)
+                
+                // Actualizar UI del Estado Red (Cámara)
+                val sharedPref = requireContext().getSharedPreferences("EspConfigPrefs", Context.MODE_PRIVATE)
+                val savedMac = sharedPref.getString("saved_mac_address", "") ?: ""
+                if (savedMac.isNotBlank()) {
+                    actualizarUiEstadoRed(macsSet.contains(savedMac))
+                } else {
+                    actualizarUiEstadoRed(false)
+                }
+            } else {
+                deviceAdapter.actualizarEstados(emptySet())
+                actualizarDialogoInformacion(emptySet())
+                actualizarUiEstadoRed(false)
+            }
+        } catch (e: Exception) {
+            deviceAdapter.actualizarEstados(emptySet())
+            actualizarDialogoInformacion(emptySet())
+            actualizarUiEstadoRed(false)
+        }
+    }
+
+    private fun actualizarDialogoInformacion(connectedMacs: Set<String>) {
+        val mac = currentDeviceDialogMac ?: return
+        val isConnected = connectedMacs.contains(mac)
+        
+        tvDialogStatusRedGlobal?.let { tv ->
+            statusDotInfoGlobal?.let { dot ->
+                if (isConnected) {
+                    tv.text = "En línea"
+                    tv.setTextColor(android.graphics.Color.parseColor("#009688"))
+                    dot.setCardBackgroundColor(android.graphics.Color.parseColor("#009688"))
+                } else {
+                    tv.text = "Desconectado"
+                    tv.setTextColor(android.graphics.Color.parseColor("#6F7EA8"))
+                    dot.setCardBackgroundColor(android.graphics.Color.parseColor("#6F7EA8"))
+                }
             }
         }
     }
@@ -708,27 +762,6 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private suspend fun verificarEstadoRedVisual() {
-        val sharedPref = requireContext().getSharedPreferences("EspConfigPrefs", Context.MODE_PRIVATE)
-        val savedMac = sharedPref.getString("saved_mac_address", "") ?: ""
-
-        if (savedMac.isBlank()) {
-            actualizarUiEstadoRed(false)
-            return
-        }
-
-        try {
-            val response = RetrofitClient.deviceService.getWsStatus(savedMac)
-            if (response.isSuccessful) {
-                actualizarUiEstadoRed(response.body()?.connected == true)
-            } else {
-                actualizarUiEstadoRed(false)
-            }
-        } catch (e: Exception) {
-            actualizarUiEstadoRed(false)
-        }
-    }
-
     private fun actualizarUiEstadoRed(isConnected: Boolean) {
         if (isConnected) {
             tvRedEstado.text = "Cámara en línea"
@@ -753,8 +786,34 @@ class HomeFragment : Fragment() {
         dialogView.findViewById<TextView>(R.id.tvDialogAccion).text = dispositivo.accion ?: "N/A"
         dialogView.findViewById<TextView>(R.id.tvDialogMac).text = dispositivo.macBluetooth ?: "N/A"
 
+        val isConnected = deviceAdapter.isDeviceConnected(dispositivo.macBluetooth)
+        val tvDialogStatusRed = dialogView.findViewById<TextView>(R.id.tvDialogStatusRed)
+        val statusDotInfo = dialogView.findViewById<com.google.android.material.card.MaterialCardView>(R.id.statusDotInfo)
+
+        if (isConnected) {
+            tvDialogStatusRed.text = "En línea"
+            tvDialogStatusRed.setTextColor(android.graphics.Color.parseColor("#009688"))
+            statusDotInfo.setCardBackgroundColor(android.graphics.Color.parseColor("#009688"))
+        } else {
+            tvDialogStatusRed.text = "Desconectado"
+            tvDialogStatusRed.setTextColor(android.graphics.Color.parseColor("#6F7EA8"))
+            statusDotInfo.setCardBackgroundColor(android.graphics.Color.parseColor("#6F7EA8"))
+        }
+
         dialogView.findViewById<ImageView>(R.id.btnDialogClose).setOnClickListener {
             dialog.dismiss()
+        }
+
+        currentDeviceInfoDialog = dialog
+        currentDeviceDialogMac = dispositivo.macBluetooth
+        tvDialogStatusRedGlobal = tvDialogStatusRed
+        statusDotInfoGlobal = statusDotInfo
+
+        dialog.setOnDismissListener {
+            currentDeviceInfoDialog = null
+            currentDeviceDialogMac = null
+            tvDialogStatusRedGlobal = null
+            statusDotInfoGlobal = null
         }
 
         dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnDialogEditar).setOnClickListener {
