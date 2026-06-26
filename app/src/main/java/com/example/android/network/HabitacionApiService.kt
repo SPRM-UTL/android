@@ -13,14 +13,14 @@ import retrofit2.http.Path
 
 interface HabitacionApiService {
     @GET("api/Habitaciones/Casa/{casaId}")
-    suspend fun getHabitacionesByCasa(@Header("Authorization") token: String, @Path("casaId") casaId: Int): Response<List<Habitacion>>
+    suspend fun getHabitacionesByCasa(@Header("Authorization") token: String, @Path("casaId") casaId: Int): Response<ApiResponse<List<Habitacion>>>
 
     @POST("api/Habitaciones")
-    suspend fun createHabitacion(@Header("Authorization") token: String, @Body habitacion: Habitacion): Response<Habitacion>
+    suspend fun createHabitacion(@Header("Authorization") token: String, @Body habitacion: Habitacion): Response<ApiResponse<Habitacion>>
 
     @PUT("api/Habitaciones/{id}")
-    suspend fun updateHabitacion(@Header("Authorization") token: String, @Path("id") id: Int, @Body habitacion: Habitacion): Response<ResponseBody>
+    suspend fun updateHabitacion(@Header("Authorization") token: String, @Path("id") id: Int, @Body habitacion: Habitacion): Response<ApiResponse<Any>>
 
     @DELETE("api/Habitaciones/{id}")
-    suspend fun deleteHabitacion(@Header("Authorization") token: String, @Path("id") id: Int): Response<ResponseBody>
+    suspend fun deleteHabitacion(@Header("Authorization") token: String, @Path("id") id: Int): Response<ApiResponse<Any>>
 }

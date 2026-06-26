@@ -190,45 +190,19 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/cardInferior" />
 
-    <LinearLayout
-        android:id="@+id/layoutTabs"
-        android:layout_width="match_parent"
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnAdministrarLugares"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:layout_marginHorizontal="24dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        app:layout_constraintTop_toBottomOf="@id/tvTituloDispositivos"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <com.google.android.material.tabs.TabLayout
-            android:id="@+id/tabLayoutCasas"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            app:tabMode="scrollable"
-            app:tabIndicatorColor="@color/teal_primary"
-            app:tabSelectedTextColor="@color/teal_primary" />
-
-        <ImageButton
-            android:id="@+id/btnAddCasa"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_marginStart="8dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_add"
-            app:tint="@color/teal_primary" />
-
-        <ImageButton
-            android:id="@+id/btnAddHabitacion"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_marginStart="4dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/house"
-            app:tint="@color/teal_primary" />
-    </LinearLayout>
+        android:layout_marginEnd="16dp"
+        android:text="Administrar"
+        android:textColor="@color/teal_primary"
+        app:icon="@drawable/pencil"
+        app:iconTint="@color/teal_primary"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="@id/tvTituloDispositivos"
+        app:layout_constraintTop_toTopOf="@id/tvTituloDispositivos" />
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollContainer"
@@ -241,7 +215,7 @@
         android:paddingBottom="100dp"
         android:scrollbarStyle="outsideOverlay"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/layoutTabs">
+        app:layout_constraintTop_toBottomOf="@id/tvTituloDispositivos">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvDispositivosHome"
