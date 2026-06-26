@@ -16,4 +16,13 @@ interface CasaDao {
 
     @Query("DELETE FROM casas")
     suspend fun deleteAllCasas(): Int
+
+    @Query("SELECT * FROM casas WHERE id = :id LIMIT 1")
+    suspend fun getCasaById(id: Int): Casa?
+
+    @androidx.room.Update
+    suspend fun updateCasa(casa: Casa): Int
+
+    @androidx.room.Delete
+    suspend fun delete(casa: Casa): Int
 }

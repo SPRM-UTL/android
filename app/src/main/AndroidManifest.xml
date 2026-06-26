@@ -115,6 +115,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".ui.LugaresActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

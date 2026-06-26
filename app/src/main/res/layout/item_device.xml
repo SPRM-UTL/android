@@ -59,17 +59,35 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/iconBg" />
 
-        <TextView
-            android:id="@+id/tvDeviceStatus"
+        <LinearLayout
+            android:id="@+id/llStatusContainer"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Encendidas 2"
-            android:textColor="#6F7EA8"
-            android:textSize="12sp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvDeviceName" />
+            app:layout_constraintTop_toBottomOf="@id/tvDeviceName">
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/statusDot"
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:layout_marginEnd="6dp"
+                app:cardBackgroundColor="#6F7EA8"
+                app:cardCornerRadius="4dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp" />
+
+            <TextView
+                android:id="@+id/tvDeviceStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Desconectado"
+                android:textColor="#6F7EA8"
+                android:textSize="12sp" />
+        </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

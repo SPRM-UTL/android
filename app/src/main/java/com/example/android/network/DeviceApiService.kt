@@ -26,10 +26,10 @@ interface DeviceApiService {
     suspend fun createDispositivo(@Header("Authorization") token: String, @Body dispositivo: Dispositivo): Response<ApiResponse<Dispositivo>>
 
     @PUT("api/Dim_Aparatos/{id}")
-    suspend fun updateDispositivo(@Header("Authorization") token: String, @Path("id") id: Int, @Body dispositivo: Dispositivo): Response<ResponseBody>
+    suspend fun updateDispositivo(@Header("Authorization") token: String, @Path("id") id: Int, @Body dispositivo: Dispositivo): Response<ApiResponse<Any>>
 
     @DELETE("api/Dim_Aparatos/{id}")
-    suspend fun deleteDispositivo(@Header("Authorization") token: String, @Path("id") id: Int): Response<ResponseBody>
+    suspend fun deleteDispositivo(@Header("Authorization") token: String, @Path("id") id: Int): Response<ApiResponse<Any>>
 
     @PUT("api/Dim_Aparatos/{sk_aparato_id}/configuracion-red")
     suspend fun saveConfiguracionRed(
@@ -52,8 +52,15 @@ interface DeviceApiService {
         @Path("sk_aparato_id") aparatoId: Int,
         @retrofit2.http.Query("estado") estado: Boolean
     ): Response<ResponseBody>
+
+    @GET("ws/status/all")
+    suspend fun getWsStatusAll(): Response<WsStatusAllResponse>
 }
 
 data class WsStatusResponse(
     val connected: Boolean
+)
+
+data class WsStatusAllResponse(
+    val connectedDevices: List<String>
 )

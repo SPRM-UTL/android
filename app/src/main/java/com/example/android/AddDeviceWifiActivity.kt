@@ -41,6 +41,7 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.material.textfield.TextInputEditText
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -524,10 +525,61 @@ class AddDeviceWifiActivity : AppCompatActivity() {
         val etName = dialogView.findViewById<TextInputEditText>(R.id.etDeviceName)
         val layoutTipo = dialogView.findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.layoutTipo)
         val etType = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.etDeviceType)
-        val btnCancel = dialogView.findViewById<MaterialButton>(R.id.btnCancel)
-        val btnConfirm = dialogView.findViewById<MaterialButton>(R.id.btnConfirm)
-        val btnDelete = dialogView.findViewById<MaterialButton>(R.id.btnDeleteDialog)
-        val ivTipoIcono = dialogView.findViewById<ImageView>(R.id.ivTipoIcono)
+        val etCasa = dialogView.findViewById<com.google.android.material.textfield.MaterialAutoCompleteTextView>(R.id.etCasa)
+        val etHabitacion = dialogView.findViewById<com.google.android.material.textfield.MaterialAutoCompleteTextView>(R.id.etHabitacion)
+        val btnCancel = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnCancel)
+        val btnConfirm = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnConfirm)
+        val btnDelete = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnDeleteDialog)
+        val ivTipoIcono = dialogView.findViewById<android.widget.ImageView>(R.id.ivTipoIcono)
+
+        var localSelectedCasaId: Int? = null
+        var localSelectedHabitacionId: Int? = null
+
+        lifecycleScope.launch {
+            val casas = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { db.casaDao().getAllCasas().firstOrNull() ?: emptyList() }
+            if (casas.isEmpty()) return@launch
+
+            val nombresCasas = casas.map { it.nombre }
+            val adapterCasas = android.widget.ArrayAdapter(themedContext, android.R.layout.simple_spinner_dropdown_item, nombresCasas)
+            etCasa.setAdapter(adapterCasas)
+
+            val casaInicial = casas.first()
+            localSelectedCasaId = casaInicial.id
+            etCasa.setText(casaInicial.nombre, false)
+
+            fun cargarHabitaciones(casaId: Int) {
+                lifecycleScope.launch {
+                    val habitaciones = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { db.habitacionDao().getHabitacionesByCasa(casaId).firstOrNull() ?: emptyList() }
+                    val nombresHabitaciones = habitaciones.map { it.nombre }
+                    val adapterHabitaciones = android.widget.ArrayAdapter(themedContext, android.R.layout.simple_spinner_dropdown_item, nombresHabitaciones)
+                    etHabitacion.setAdapter(adapterHabitaciones)
+
+                    if (habitaciones.isNotEmpty()) {
+                        val habInicial = habitaciones.first()
+                        localSelectedHabitacionId = habInicial.id
+                        etHabitacion.setText(habInicial.nombre, false)
+                    } else {
+                        localSelectedHabitacionId = null
+                        etHabitacion.setText("", false)
+                    }
+
+                    etHabitacion.setOnItemClickListener { _, _, position, _ ->
+                        localSelectedHabitacionId = habitaciones[position].id
+                    }
+                }
+            }
+
+            cargarHabitaciones(localSelectedCasaId!!)
+
+            etCasa.setOnItemClickListener { _, _, position, _ ->
+                val selectedCasa = casas[position]
+                if (localSelectedCasaId != selectedCasa.id) {
+                    localSelectedCasaId = selectedCasa.id
+                    localSelectedHabitacionId = null
+                    cargarHabitaciones(selectedCasa.id)
+                }
+            }
+        }
 
         val ssidStr = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             scanResult?.wifiSsid?.toString() ?: scanResult?.SSID
@@ -560,11 +612,20 @@ class AddDeviceWifiActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
+            if (localSelectedHabitacionId == null) {
+                etHabitacion.error = "Selecciona una habitación"
+                return@setOnClickListener
+            }
+
             dialog.dismiss()
+
+            val userId = getSharedPreferences("SesionApp", Context.MODE_PRIVATE).getInt("userId", 0)
 
             val nuevo = Dispositivo(
                 id = 0,
                 nombre = finalName,
+                skHabitacionId = localSelectedHabitacionId,
+                nombreHabitacion = etHabitacion.text.toString(),
                 tipo = finalType.ifBlank { "General" },
                 accion = "Encendido",
                 comandoBluetooth = "BT_ON",

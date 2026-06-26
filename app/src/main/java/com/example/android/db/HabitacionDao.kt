@@ -19,4 +19,10 @@ interface HabitacionDao {
 
     @Query("DELETE FROM habitaciones")
     suspend fun deleteAllHabitaciones(): Int
+
+    @androidx.room.Update
+    suspend fun updateHabitacion(habitacion: Habitacion): Int
+
+    @androidx.room.Delete
+    suspend fun delete(habitacion: Habitacion): Int
 }

@@ -66,7 +66,12 @@ class HomeFragment : Fragment() {
     private var pollingJob: kotlinx.coroutines.Job? = null
     
     private var dispositivosJob: kotlinx.coroutines.Job? = null
-    private var currentCasaId: Int? = null
+
+    // Referencias para actualizar el diálogo abierto
+    private var currentDeviceInfoDialog: com.google.android.material.bottomsheet.BottomSheetDialog? = null
+    private var currentDeviceDialogMac: String? = null
+    private var tvDialogStatusRedGlobal: TextView? = null
+    private var statusDotInfoGlobal: com.google.android.material.card.MaterialCardView? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -101,8 +106,56 @@ class HomeFragment : Fragment() {
         pollingJob?.cancel()
         pollingJob = viewLifecycleOwner.lifecycleScope.launch {
             while (true) {
-                verificarEstadoRedVisual()
+                verificarEstadoDispositivos()
                 delay(3000)
+            }
+        }
+    }
+
+    private suspend fun verificarEstadoDispositivos() {
+        try {
+            val response = RetrofitClient.deviceService.getWsStatusAll()
+            if (response.isSuccessful) {
+                val macs = response.body()?.connectedDevices ?: emptyList()
+                val macsSet = macs.toSet()
+                deviceAdapter.actualizarEstados(macsSet)
+                actualizarDialogoInformacion(macsSet)
+                
+                // Actualizar UI del Estado Red (Cámara)
+                val sharedPref = requireContext().getSharedPreferences("EspConfigPrefs", Context.MODE_PRIVATE)
+                val savedMac = sharedPref.getString("saved_mac_address", "") ?: ""
+                if (savedMac.isNotBlank()) {
+                    actualizarUiEstadoRed(macsSet.contains(savedMac))
+                } else {
+                    actualizarUiEstadoRed(false)
+                }
+            } else {
+                deviceAdapter.actualizarEstados(emptySet())
+                actualizarDialogoInformacion(emptySet())
+                actualizarUiEstadoRed(false)
+            }
+        } catch (e: Exception) {
+            deviceAdapter.actualizarEstados(emptySet())
+            actualizarDialogoInformacion(emptySet())
+            actualizarUiEstadoRed(false)
+        }
+    }
+
+    private fun actualizarDialogoInformacion(connectedMacs: Set<String>) {
+        val mac = currentDeviceDialogMac ?: return
+        val isConnected = connectedMacs.contains(mac)
+        
+        tvDialogStatusRedGlobal?.let { tv ->
+            statusDotInfoGlobal?.let { dot ->
+                if (isConnected) {
+                    tv.text = "En línea"
+                    tv.setTextColor(android.graphics.Color.parseColor("#009688"))
+                    dot.setCardBackgroundColor(android.graphics.Color.parseColor("#009688"))
+                } else {
+                    tv.text = "Desconectado"
+                    tv.setTextColor(android.graphics.Color.parseColor("#6F7EA8"))
+                    dot.setCardBackgroundColor(android.graphics.Color.parseColor("#6F7EA8"))
+                }
             }
         }
     }
@@ -391,16 +444,9 @@ class HomeFragment : Fragment() {
             startActivity(intent)
         }
 
-        vistaRaiz.findViewById<ImageButton>(R.id.btnAddCasa)?.setOnClickListener {
-            mostrarDialogoAgregarCasa()
-        }
-
-        vistaRaiz.findViewById<ImageButton>(R.id.btnAddHabitacion)?.setOnClickListener {
-            if (currentCasaId != null) {
-                mostrarDialogoAgregarHabitacion(currentCasaId!!)
-            } else {
-                Toast.makeText(requireContext(), "Selecciona una casa primero", Toast.LENGTH_SHORT).show()
-            }
+        vistaRaiz.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnAdministrarLugares)?.setOnClickListener {
+            val intent = Intent(requireContext(), com.example.android.ui.LugaresActivity::class.java)
+            startActivity(intent)
         }
     }
 
@@ -508,60 +554,13 @@ class HomeFragment : Fragment() {
         rvDispositivos.layoutManager = GridLayoutManager(requireContext(), 2)
         rvDispositivos.adapter = ConcatAdapter(deviceAdapter, addDeviceAdapter)
 
-        cargarTabsCasas()
-    }
-
-    private fun cargarTabsCasas() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            db.casaDao().getAllCasas().collectLatest { casas ->
-                val tabLayout = vistaRaiz.findViewById<TabLayout>(R.id.tabLayoutCasas)
-                tabLayout.removeAllTabs()
-                
-                if (casas.isEmpty()) {
-                    tabLayout.visibility = View.GONE
-                    currentCasaId = null
-                    observarDispositivos()
-                    return@collectLatest
-                }
-                
-                tabLayout.visibility = View.VISIBLE
-                
-                casas.forEach { casa ->
-                    val tab = tabLayout.newTab().setText(casa.nombre)
-                    tab.tag = casa.id
-                    tabLayout.addTab(tab)
-                    if (currentCasaId == casa.id) {
-                        tabLayout.selectTab(tab)
-                    }
-                }
-                
-                tabLayout.clearOnTabSelectedListeners()
-                tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-                    override fun onTabSelected(tab: TabLayout.Tab?) {
-                        currentCasaId = tab?.tag as? Int
-                        observarDispositivos()
-                    }
-                    override fun onTabUnselected(tab: TabLayout.Tab?) {}
-                    override fun onTabReselected(tab: TabLayout.Tab?) {}
-                })
-                
-                if (currentCasaId == null && casas.isNotEmpty()) {
-                    currentCasaId = casas[0].id
-                    tabLayout.getTabAt(0)?.select()
-                    observarDispositivos()
-                }
-            }
-        }
+        observarDispositivos()
     }
 
     private fun observarDispositivos() {
         dispositivosJob?.cancel()
         dispositivosJob = viewLifecycleOwner.lifecycleScope.launch {
-            val flow = if (currentCasaId != null) {
-                db.dispositivoDao().getDispositivosByCasaId(currentCasaId!!)
-            } else {
-                db.dispositivoDao().getAllDispositivos()
-            }
+            val flow = db.dispositivoDao().getAllDispositivos()
             flow.collectLatest { dispositivos ->
                 if (!isLoggingOut) {
                     deviceAdapter.submitList(dispositivos)
@@ -632,13 +631,17 @@ class HomeFragment : Fragment() {
                             val token = sharedPref.getString("apiToken", "") ?: ""
                             RetrofitClient.casaService.getCasas("Bearer $token")
                         },
-                        onSuccess = { casas ->
+                        onSuccess = { response ->
+                            val casas = response.data
                             withContext(Dispatchers.IO) {
                                 db.casaDao().deleteAllCasas()
-                                db.casaDao().insertAll(casas)
+                                if (casas != null) {
+                                    db.casaDao().insertAll(casas)
+                                    db.habitacionDao().deleteAllHabitaciones()
+                                }
                             }
                             
-                            if (casas.isEmpty()) {
+                            if (casas.isNullOrEmpty()) {
                                 if (isAdded) {
                                     mostrarDialogoAgregarCasa()
                                 }
@@ -648,15 +651,14 @@ class HomeFragment : Fragment() {
                                 val token = sharedPref.getString("apiToken", "") ?: ""
                                 
                                 viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-                                    db.habitacionDao().deleteAllHabitaciones()
                                     var hasHabitaciones = false
                                     casas.forEach { casa ->
                                         try {
                                             val habResponse = RetrofitClient.habitacionService.getHabitacionesByCasa("Bearer $token", casa.id)
                                             if (habResponse.isSuccessful) {
-                                                habResponse.body()?.let { habitaciones ->
-                                                    db.habitacionDao().insertAll(habitaciones)
-                                                    if (habitaciones.isNotEmpty()) {
+                                                habResponse.body()?.data?.let {
+                                                    db.habitacionDao().insertAll(it)
+                                                    if (it.isNotEmpty()) {
                                                         hasHabitaciones = true
                                                     }
                                                 }
@@ -708,27 +710,6 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private suspend fun verificarEstadoRedVisual() {
-        val sharedPref = requireContext().getSharedPreferences("EspConfigPrefs", Context.MODE_PRIVATE)
-        val savedMac = sharedPref.getString("saved_mac_address", "") ?: ""
-
-        if (savedMac.isBlank()) {
-            actualizarUiEstadoRed(false)
-            return
-        }
-
-        try {
-            val response = RetrofitClient.deviceService.getWsStatus(savedMac)
-            if (response.isSuccessful) {
-                actualizarUiEstadoRed(response.body()?.connected == true)
-            } else {
-                actualizarUiEstadoRed(false)
-            }
-        } catch (e: Exception) {
-            actualizarUiEstadoRed(false)
-        }
-    }
-
     private fun actualizarUiEstadoRed(isConnected: Boolean) {
         if (isConnected) {
             tvRedEstado.text = "Cámara en línea"
@@ -753,8 +734,34 @@ class HomeFragment : Fragment() {
         dialogView.findViewById<TextView>(R.id.tvDialogAccion).text = dispositivo.accion ?: "N/A"
         dialogView.findViewById<TextView>(R.id.tvDialogMac).text = dispositivo.macBluetooth ?: "N/A"
 
+        val isConnected = deviceAdapter.isDeviceConnected(dispositivo.macBluetooth)
+        val tvDialogStatusRed = dialogView.findViewById<TextView>(R.id.tvDialogStatusRed)
+        val statusDotInfo = dialogView.findViewById<com.google.android.material.card.MaterialCardView>(R.id.statusDotInfo)
+
+        if (isConnected) {
+            tvDialogStatusRed.text = "En línea"
+            tvDialogStatusRed.setTextColor(android.graphics.Color.parseColor("#009688"))
+            statusDotInfo.setCardBackgroundColor(android.graphics.Color.parseColor("#009688"))
+        } else {
+            tvDialogStatusRed.text = "Desconectado"
+            tvDialogStatusRed.setTextColor(android.graphics.Color.parseColor("#6F7EA8"))
+            statusDotInfo.setCardBackgroundColor(android.graphics.Color.parseColor("#6F7EA8"))
+        }
+
         dialogView.findViewById<ImageView>(R.id.btnDialogClose).setOnClickListener {
             dialog.dismiss()
+        }
+
+        currentDeviceInfoDialog = dialog
+        currentDeviceDialogMac = dispositivo.macBluetooth
+        tvDialogStatusRedGlobal = tvDialogStatusRed
+        statusDotInfoGlobal = statusDotInfo
+
+        dialog.setOnDismissListener {
+            currentDeviceInfoDialog = null
+            currentDeviceDialogMac = null
+            tvDialogStatusRedGlobal = null
+            statusDotInfoGlobal = null
         }
 
         dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnDialogEditar).setOnClickListener {

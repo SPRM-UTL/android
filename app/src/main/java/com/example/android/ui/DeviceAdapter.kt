@@ -18,6 +18,17 @@ class DeviceAdapter(
     private val onToggleClick: (Dispositivo, Boolean) -> Unit
 ) : ListAdapter<Dispositivo, DeviceAdapter.DeviceViewHolder>(DiffCallback) {
 
+    private var connectedMacs: Set<String> = emptySet()
+
+    fun actualizarEstados(macs: Set<String>) {
+        connectedMacs = macs
+        notifyDataSetChanged()
+    }
+
+    fun isDeviceConnected(mac: String?): Boolean {
+        return connectedMacs.contains(mac)
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DeviceViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_device, parent, false)
         return DeviceViewHolder(view)
@@ -30,13 +41,24 @@ class DeviceAdapter(
     inner class DeviceViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val tvName: TextView = itemView.findViewById(R.id.tvDeviceName)
         private val tvStatus: TextView = itemView.findViewById(R.id.tvDeviceStatus)
+        private val statusDot: com.google.android.material.card.MaterialCardView = itemView.findViewById(R.id.statusDot)
         private val ivIcon: ImageView = itemView.findViewById(R.id.ivDeviceIcon)
         private val switchDevice: SwitchMaterial = itemView.findViewById(R.id.switchDevice)
         private val cardView: View = itemView.findViewById(R.id.deviceCard)
 
         fun bind(dispositivo: Dispositivo) {
             tvName.text = dispositivo.nombre
-            tvStatus.text = dispositivo.tipo ?: "Dispositivo"
+            
+            val isConnected = connectedMacs.contains(dispositivo.macBluetooth)
+            if (isConnected) {
+                tvStatus.text = "En línea"
+                tvStatus.setTextColor(android.graphics.Color.parseColor("#009688")) // teal_primary
+                statusDot.setCardBackgroundColor(android.graphics.Color.parseColor("#009688"))
+            } else {
+                tvStatus.text = "Desconectado"
+                tvStatus.setTextColor(android.graphics.Color.parseColor("#6F7EA8")) // text_grey
+                statusDot.setCardBackgroundColor(android.graphics.Color.parseColor("#6F7EA8"))
+            }
             
             ivIcon.setImageResource(R.drawable.ic_power)
 

@@ -136,6 +136,49 @@
             android:textSize="16sp" />
     </LinearLayout>
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Estado red:"
+            android:textColor="#757575"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/statusDotInfo"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:layout_marginEnd="6dp"
+                app:cardBackgroundColor="#6F7EA8"
+                app:cardCornerRadius="5dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp" />
+
+            <TextView
+                android:id="@+id/tvDialogStatusRed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Desconectado"
+                android:textColor="#6F7EA8"
+                android:textSize="16sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+
     <!-- Nuevos Botones -->
     <LinearLayout
         android:layout_width="match_parent"

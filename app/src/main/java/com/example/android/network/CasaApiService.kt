@@ -13,14 +13,14 @@ import retrofit2.http.Path
 
 interface CasaApiService {
     @GET("api/Casas")
-    suspend fun getCasas(@Header("Authorization") token: String): Response<List<Casa>>
+    suspend fun getCasas(@Header("Authorization") token: String): Response<ApiResponse<List<Casa>>>
 
     @POST("api/Casas")
-    suspend fun createCasa(@Header("Authorization") token: String, @Body casa: Casa): Response<Casa>
+    suspend fun createCasa(@Header("Authorization") token: String, @Body casa: Casa): Response<ApiResponse<Casa>>
 
     @PUT("api/Casas/{id}")
-    suspend fun updateCasa(@Header("Authorization") token: String, @Path("id") id: Int, @Body casa: Casa): Response<ResponseBody>
+    suspend fun updateCasa(@Header("Authorization") token: String, @Path("id") id: Int, @Body casa: Casa): Response<ApiResponse<Any>>
 
     @DELETE("api/Casas/{id}")
-    suspend fun deleteCasa(@Header("Authorization") token: String, @Path("id") id: Int): Response<ResponseBody>
+    suspend fun deleteCasa(@Header("Authorization") token: String, @Path("id") id: Int): Response<ApiResponse<Any>>
 }
