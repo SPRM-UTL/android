@@ -138,7 +138,7 @@ class DeviceActivity : AppCompatActivity() {
             onEditClick   = { mostrarDialogoDispositivo(it) },
             onDeleteClick = { eliminarDispositivo(it) },
             onToggleClick = { dispositivo, encendido ->
-                Toast.makeText(this, "${dispositivo.nombre}: ${if (encendido) "Encendido" else "Apagado"}", Toast.LENGTH_SHORT).show()
+                toggleDispositivo(dispositivo, encendido)
             }
         )
         rvDispositivos.adapter = adaptadorDispositivos
@@ -160,11 +160,52 @@ class DeviceActivity : AppCompatActivity() {
                         baseDatos.dispositivoDao().deleteAllDispositivos()
                         baseDatos.dispositivoDao().insertAll(dispositivosApi)
                     }
+                    // Cargar estado de conexión de los dispositivos
+                    actualizarEstadosConexion()
                 },
                 onError = { errorMsg ->
                     Log.e("DeviceActivity", "Error al sincronizar dispositivos: $errorMsg")
                 }
             )
+        }
+    }
+
+    private fun actualizarEstadosConexion() {
+        lifecycleScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    RetrofitClient.deviceService.getWsStatusAll()
+                }
+                if (response.isSuccessful) {
+                    val connectedMacs = response.body()?.connectedDevices?.toSet() ?: emptySet()
+                    adaptadorDispositivos.actualizarEstados(connectedMacs)
+                }
+            } catch (e: Exception) {
+                Log.e("DeviceActivity", "Error al cargar estados WS: ${e.message}")
+            }
+        }
+    }
+
+    private fun toggleDispositivo(dispositivo: Dispositivo, encendido: Boolean) {
+        lifecycleScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    RetrofitClient.deviceService.toggleAparato(dispositivo.id, encendido)
+                }
+                if (!response.isSuccessful) {
+                    withContext(Dispatchers.Main) {
+                        adaptadorDispositivos.actualizarEstadoDispositivo(dispositivo.id, !encendido)
+                        val nombre = dispositivo.nombre ?: "Dispositivo"
+                        Toast.makeText(this@DeviceActivity,
+                            "No se pudo ${if (encendido) "encender" else "apagar"} $nombre. ¿Está conectado al servidor?",
+                            Toast.LENGTH_LONG).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("DeviceActivity", "Error toggle: ${e.message}")
+                adaptadorDispositivos.actualizarEstadoDispositivo(dispositivo.id, !encendido)
+                Toast.makeText(this@DeviceActivity, "Error de conexión", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
