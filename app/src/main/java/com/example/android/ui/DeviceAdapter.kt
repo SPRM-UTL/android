@@ -19,10 +19,17 @@ class DeviceAdapter(
 ) : ListAdapter<Dispositivo, DeviceAdapter.DeviceViewHolder>(DiffCallback) {
 
     private var connectedMacs: Set<String> = emptySet()
+    private val deviceStates: MutableMap<Int, Boolean> = mutableMapOf()
 
     fun actualizarEstados(macs: Set<String>) {
         connectedMacs = macs
         notifyDataSetChanged()
+    }
+
+    fun actualizarEstadoDispositivo(id: Int, encendido: Boolean) {
+        deviceStates[id] = encendido
+        val index = currentList.indexOfFirst { it.id == id }
+        if (index >= 0) notifyItemChanged(index)
     }
 
     fun isDeviceConnected(mac: String?): Boolean {
@@ -52,18 +59,35 @@ class DeviceAdapter(
             val isConnected = connectedMacs.contains(dispositivo.macBluetooth)
             if (isConnected) {
                 tvStatus.text = "En línea"
-                tvStatus.setTextColor(android.graphics.Color.parseColor("#009688")) // teal_primary
+                tvStatus.setTextColor(android.graphics.Color.parseColor("#009688"))
                 statusDot.setCardBackgroundColor(android.graphics.Color.parseColor("#009688"))
             } else {
                 tvStatus.text = "Desconectado"
-                tvStatus.setTextColor(android.graphics.Color.parseColor("#6F7EA8")) // text_grey
+                tvStatus.setTextColor(android.graphics.Color.parseColor("#6F7EA8"))
                 statusDot.setCardBackgroundColor(android.graphics.Color.parseColor("#6F7EA8"))
             }
             
             ivIcon.setImageResource(R.drawable.ic_power)
 
+            val isOn = deviceStates[dispositivo.id] ?: false
+            switchDevice.setOnCheckedChangeListener(null)
+            switchDevice.isChecked = isOn
+
+            val iconBg = itemView.findViewById<com.google.android.material.card.MaterialCardView>(R.id.iconBg)
+            if (isOn) {
+                iconBg.setCardBackgroundColor(android.graphics.Color.parseColor("#009688"))
+            } else {
+                iconBg.setCardBackgroundColor(android.graphics.Color.parseColor("#B0BEC5"))
+            }
+
             switchDevice.setOnCheckedChangeListener { _, isChecked ->
+                deviceStates[dispositivo.id] = isChecked
                 onToggleClick(dispositivo, isChecked)
+                if (isChecked) {
+                    iconBg.setCardBackgroundColor(android.graphics.Color.parseColor("#009688"))
+                } else {
+                    iconBg.setCardBackgroundColor(android.graphics.Color.parseColor("#B0BEC5"))
+                }
             }
 
             cardView.setOnLongClickListener {

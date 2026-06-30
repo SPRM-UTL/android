@@ -185,19 +185,22 @@ class HomeFragment : Fragment() {
                     try {
                         val response = RetrofitClient.deviceService.toggleAparato(dispositivo.id, isChecked)
                         if (response.isSuccessful) {
+                            deviceAdapter.actualizarEstadoDispositivo(dispositivo.id, isChecked)
                             Snackbars.success(
                                 mainHome,
-                                "${dispositivo.nombre} ${if (isChecked) "Encendido" else "Apagado"}",
+                                "${dispositivo.nombre} ${if (isChecked) "encendido" else "apagado"}",
                                 Snackbar.LENGTH_SHORT
                             ).show()
                         } else {
+                            deviceAdapter.actualizarEstadoDispositivo(dispositivo.id, !isChecked)
                             Snackbars.error(
                                 mainHome,
-                                "Error al conectar con ${dispositivo.nombre}. Verifica que esté encendido.",
+                                "${dispositivo.nombre}: sin conexión al servidor. ¿Está el ESP32 conectado?",
                                 Snackbar.LENGTH_LONG
                             ).show()
                         }
                     } catch (e: Exception) {
+                        deviceAdapter.actualizarEstadoDispositivo(dispositivo.id, !isChecked)
                         Snackbars.error(
                             mainHome,
                             "Error de red al intentar controlar ${dispositivo.nombre}.",
