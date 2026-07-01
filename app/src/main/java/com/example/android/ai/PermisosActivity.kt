@@ -429,7 +429,30 @@ class PermisosActivity : AppCompatActivity() {
     // ==========================================================
 
     private fun irAHome() {
-        startActivity(Intent(this, HomeActivity::class.java))
-        finish()
+        lifecycleScope.launch {
+            try {
+                com.example.android.view.CustomDialog.loadingDialog(this@PermisosActivity)
+                com.example.android.view.CustomDialog.showDialog("Verificando", "Espere...", com.example.android.view.CustomDialog.DialogType.LOADING)
+                
+                val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+                val token = sharedPref.getString("apiToken", "") ?: ""
+                
+                val response = com.example.android.network.RetrofitClient.casaService.getCasas("Bearer $token")
+                val tieneCasas = response.isSuccessful && !response.body()?.data.isNullOrEmpty()
+                
+                com.example.android.view.CustomDialog.dismissDialog()
+                
+                if (!tieneCasas) {
+                    startActivity(Intent(this@PermisosActivity, com.example.android.InitialSetupActivity::class.java))
+                } else {
+                    startActivity(Intent(this@PermisosActivity, HomeActivity::class.java))
+                }
+                finish()
+            } catch (e: Exception) {
+                com.example.android.view.CustomDialog.dismissDialog()
+                startActivity(Intent(this@PermisosActivity, HomeActivity::class.java))
+                finish()
+            }
+        }
     }
 }

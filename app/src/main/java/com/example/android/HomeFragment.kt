@@ -453,95 +453,6 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private fun mostrarDialogoAgregarCasa() {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_add_casa, null)
-        val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.Theme_Material3_Light_Dialog)
-            .setView(dialogView)
-            .show()
-
-        val etNombreCasa = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etNombreCasa)
-        val btnCancel = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnCancel)
-        val btnConfirm = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnConfirm)
-
-        btnCancel.setOnClickListener {
-            dialog.dismiss()
-        }
-
-        btnConfirm.setOnClickListener {
-            val nombreCasa = etNombreCasa.text?.toString()?.trim() ?: ""
-            if (nombreCasa.isNotEmpty()) {
-                crearNuevaCasa(nombreCasa)
-                dialog.dismiss()
-            } else {
-                Toast.makeText(requireContext(), "Ingresa un nombre válido", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    private fun crearNuevaCasa(nombre: String) {
-        viewLifecycleOwner.lifecycleScope.launch {
-            val sharedPref = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
-            val token = sharedPref.getString("apiToken", "") ?: ""
-            val userId = sharedPref.getInt("userId", 0)
-            
-            val nuevaCasa = com.example.android.db.Casa(id = 0, nombre = nombre, skUsuarioId = userId)
-            
-            ApiHandler.safeApiCall(
-                activity = requireActivity(),
-                showLoading = true,
-                loadingTitle = "Creando...",
-                apiCall = { RetrofitClient.casaService.createCasa("Bearer $token", nuevaCasa) },
-                onSuccess = { response ->
-                    sincronizarDatosServidor()
-                }
-            )
-        }
-    }
-
-    private fun mostrarDialogoAgregarHabitacion(casaId: Int) {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_add_habitacion, null)
-        val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.Theme_Material3_Light_Dialog)
-            .setView(dialogView)
-            .show()
-
-        val etNombreHabitacion = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etNombreHabitacion)
-        val btnCancel = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnCancel)
-        val btnConfirm = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnConfirm)
-
-        btnCancel.setOnClickListener {
-            dialog.dismiss()
-        }
-
-        btnConfirm.setOnClickListener {
-            val nombreHabitacion = etNombreHabitacion.text?.toString()?.trim() ?: ""
-            if (nombreHabitacion.isNotEmpty()) {
-                crearNuevaHabitacion(nombreHabitacion, casaId)
-                dialog.dismiss()
-            } else {
-                Toast.makeText(requireContext(), "Ingresa un nombre válido", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    private fun crearNuevaHabitacion(nombre: String, casaId: Int) {
-        viewLifecycleOwner.lifecycleScope.launch {
-            val sharedPref = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
-            val token = sharedPref.getString("apiToken", "") ?: ""
-            
-            val nuevaHab = com.example.android.db.Habitacion(id = 0, nombre = nombre, skCasaId = casaId)
-            
-            ApiHandler.safeApiCall(
-                activity = requireActivity(),
-                showLoading = true,
-                loadingTitle = "Creando...",
-                apiCall = { RetrofitClient.habitacionService.createHabitacion("Bearer $token", nuevaHab) },
-                onSuccess = { response ->
-                    sincronizarDatosServidor()
-                }
-            )
-        }
-    }
-
     private fun cargarDatos() {
         cargarRecycler()
         sincronizarDatosServidor()
@@ -644,35 +555,21 @@ class HomeFragment : Fragment() {
                                 }
                             }
                             
-                            if (casas.isNullOrEmpty()) {
-                                if (isAdded) {
-                                    mostrarDialogoAgregarCasa()
-                                }
-                            } else {
+                            if (!casas.isNullOrEmpty()) {
                                 // Sincronizar Habitaciones para cada casa
                                 val sharedPref = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
                                 val token = sharedPref.getString("apiToken", "") ?: ""
                                 
                                 viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-                                    var hasHabitaciones = false
                                     casas.forEach { casa ->
                                         try {
                                             val habResponse = RetrofitClient.habitacionService.getHabitacionesByCasa("Bearer $token", casa.id)
                                             if (habResponse.isSuccessful) {
                                                 habResponse.body()?.data?.let {
                                                     db.habitacionDao().insertAll(it)
-                                                    if (it.isNotEmpty()) {
-                                                        hasHabitaciones = true
-                                                    }
                                                 }
                                             }
                                         } catch (e: Exception) {}
-                                    }
-                                    
-                                    if (!hasHabitaciones && isAdded) {
-                                        withContext(Dispatchers.Main) {
-                                            mostrarDialogoAgregarHabitacion(casas[0].id)
-                                        }
                                     }
                                 }
                             }

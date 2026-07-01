@@ -497,18 +497,41 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun irAHome(mostrarBienvenida: Boolean = false) {
-
-        if(!verificarPermisos()){
-            pedirPermisos()
-        }else{
-            val intent = Intent(this, HomeActivity::class.java)
-
-            if (mostrarBienvenida) {
-                intent.putExtra("SHOW_WELCOME", true)
+        if (!verificarPermisos()) {
+            pedirPermisos(mostrarBienvenida)
+        } else {
+            lifecycleScope.launch {
+                try {
+                    mostrarCarga()
+                    val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+                    val token = sharedPref.getString("apiToken", "") ?: ""
+                    
+                    val response = RetrofitClient.casaService.getCasas("Bearer $token")
+                    val tieneCasas = response.isSuccessful && !response.body()?.data.isNullOrEmpty()
+                    
+                    CustomDialog.dismissDialog()
+                    
+                    if (!tieneCasas) {
+                        val intent = Intent(this@MainActivity, InitialSetupActivity::class.java)
+                        startActivity(intent)
+                    } else {
+                        val intent = Intent(this@MainActivity, HomeActivity::class.java)
+                        if (mostrarBienvenida) {
+                            intent.putExtra("SHOW_WELCOME", true)
+                        }
+                        startActivity(intent)
+                    }
+                    finish()
+                } catch (e: Exception) {
+                    CustomDialog.dismissDialog()
+                    val intent = Intent(this@MainActivity, HomeActivity::class.java)
+                    if (mostrarBienvenida) {
+                        intent.putExtra("SHOW_WELCOME", true)
+                    }
+                    startActivity(intent)
+                    finish()
+                }
             }
-
-            startActivity(intent)
-            finish()
         }
     }
 

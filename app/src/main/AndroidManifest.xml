@@ -118,6 +118,10 @@
         <activity
             android:name=".ui.LugaresActivity"
             android:exported="false" />
+        <activity
+            android:name=".InitialSetupActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
     </application>
 
 </manifest>
