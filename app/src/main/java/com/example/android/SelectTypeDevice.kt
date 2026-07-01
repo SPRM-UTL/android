@@ -303,10 +303,11 @@ class SelectTypeDevice : AppCompatActivity() {
         
         btnEsp32.setOnClickListener {
             bottomSheet.dismiss()
+            pendingTipoToCreate = tipo
             val intent = Intent(this, EspConfigActivity::class.java)
             intent.putExtra("EXTRA_TIPO_DISPOSITIVO", tipo.nombreTipo)
             intent.putExtra("EXTRA_ICONO_DISPOSITIVO", tipo.icono)
-            startActivity(intent)
+            espConfigLauncher.launch(intent)
         }
         
         btnBluetooth.setOnClickListener {
