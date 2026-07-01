@@ -129,7 +129,7 @@ class InitialSetupActivity : AppCompatActivity() {
                     val casaCreada = casaResponse.body()?.data!!
                     
                     withContext(Dispatchers.IO) {
-                        db.casaDao().insert(casaCreada)
+                        db.casaDao().insertAll(listOf(casaCreada))
                     }
 
                     // 2. Crear Habitación
@@ -138,7 +138,7 @@ class InitialSetupActivity : AppCompatActivity() {
                     
                     if (habResponse.isSuccessful && habResponse.body()?.data != null) {
                         withContext(Dispatchers.IO) {
-                            db.habitacionDao().insert(habResponse.body()?.data!!)
+                            db.habitacionDao().insertAll(listOf(habResponse.body()?.data!!))
                         }
                         
                         // Todo correcto, ir al Home

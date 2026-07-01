@@ -55,7 +55,7 @@
             android:layout_height="80dp"
             android:layout_gravity="center_horizontal"
             android:layout_marginBottom="24dp"
-            android:src="@drawable/home"
+            android:src="@drawable/house"
             app:tint="?attr/colorPrimary" />
 
         <com.google.android.material.textfield.TextInputLayout
@@ -99,7 +99,7 @@
             android:layout_height="80dp"
             android:layout_gravity="center_horizontal"
             android:layout_marginBottom="24dp"
-            android:src="@drawable/grid"
+            android:src="@drawable/layers"
             app:tint="?attr/colorPrimary" />
 
         <com.google.android.material.textfield.TextInputLayout
