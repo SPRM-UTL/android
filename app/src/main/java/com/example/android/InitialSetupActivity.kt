@@ -54,7 +54,7 @@ class InitialSetupActivity : AppCompatActivity() {
 
         val root = findViewById<View>(R.id.rootInitialSetup)
         ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
-            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.ime())
             v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
             insets
         }
