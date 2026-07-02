@@ -24,6 +24,11 @@ import com.google.mediapipe.tasks.core.BaseOptions
 import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarker
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarker
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import com.example.android.actions.GestureActionExecutor
 import java.util.Calendar
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -39,6 +44,7 @@ class BackgroundCameraService : LifecycleService() {
     private var ipCameraUrl = ""
     private var mjpegStreamReader: MjpegStreamReader? = null
     private var isCameraActuallyRunning = false
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private val scheduleHandler = Handler(Looper.getMainLooper())
     private val scheduleRunnable = object : Runnable {
@@ -239,11 +245,22 @@ class BackgroundCameraService : LifecycleService() {
             } catch (e: Exception) {
                 Log.e("Audio", "Error al reproducir sonido", e)
             }
-            
-            val accion = combo.accionVinculada ?: "Ninguna"
-            Log.i("Manordomo AI", "Ejecución diferida: Acción '$accion' solicitada por Gesto '${combo.name}'.")
-            
-            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+
+            serviceScope.launch {
+                val ejecutado = GestureActionExecutor.executeComboAction(this@BackgroundCameraService, combo)
+                val accion = combo.accionVinculada ?: "Sin acción"
+                if (ejecutado) {
+                    Log.i("Manordomo AI", "Combo '${combo.name}' ejecutó: $accion")
+                    updateNotification("Gesto detectado", "Acción ejecutada: $accion")
+                } else if (combo.aparatoId != null) {
+                    Log.w("Manordomo AI", "Combo '${combo.name}' detectado pero falló la acción: $accion")
+                    updateNotification("Gesto detectado", "No se pudo ejecutar: $accion")
+                } else {
+                    Log.i("Manordomo AI", "Combo '${combo.name}' completado sin dispositivo vinculado.")
+                }
+            }
+
+            Handler(Looper.getMainLooper()).postDelayed({
                 gestureAnalyzer.sequenceDetector.resetAll()
             }, 3000)
         }

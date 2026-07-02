@@ -129,6 +129,8 @@ class EspConfigActivity : AppCompatActivity() {
 
     private var tipoDispositivo: String = ""
     private var iconoDispositivo: String? = null
+    private var dispositivoGuardadoEnBd = false
+    private var aparatoIdRegistrado: Int? = null
 
     // Constantes
     companion object {
@@ -139,6 +141,9 @@ class EspConfigActivity : AppCompatActivity() {
         private const val PREF_NAME = "EspConfigPrefs"
         private const val KEY_MAC = "saved_mac_address"
         private const val KEY_NAME = "saved_device_name"
+        const val EXTRA_TIPO_DISPOSITIVO = "EXTRA_TIPO_DISPOSITIVO"
+        const val EXTRA_ICONO_DISPOSITIVO = "EXTRA_ICONO_DISPOSITIVO"
+        const val EXTRA_MODO_SOCKET = "EXTRA_MODO_SOCKET"
     }
 
     private val handler = Handler(Looper.getMainLooper())
@@ -171,7 +176,7 @@ class EspConfigActivity : AppCompatActivity() {
         if (permissions.entries.all { it.value }) {
             verificarBluetoothEncendido()
         } else {
-            mostrarSnackbar("Activa los permisos de Bluetooth y ubicación para buscar tu cámara", true)
+            mostrarSnackbar("Activa los permisos de Bluetooth y ubicación para buscar tu ESP32", true)
         }
     }
 
@@ -181,7 +186,7 @@ class EspConfigActivity : AppCompatActivity() {
         if (result.resultCode == RESULT_OK) {
             iniciarEscaneoBle()
         } else {
-            mostrarSnackbar("Necesitas Bluetooth activado para conectar tu cámara", false)
+            mostrarSnackbar("Necesitas Bluetooth activado para conectar tu ESP32", false)
         }
     }
 
@@ -216,22 +221,22 @@ class EspConfigActivity : AppCompatActivity() {
         configurarListeners()
         mostrarPaso(1)
 
-        tipoDispositivo = intent.getStringExtra("EXTRA_TIPO_DISPOSITIVO") ?: ""
-        iconoDispositivo = intent.getStringExtra("EXTRA_ICONO_DISPOSITIVO")
+        tipoDispositivo = intent.getStringExtra(EXTRA_TIPO_DISPOSITIVO) ?: ""
+        iconoDispositivo = intent.getStringExtra(EXTRA_ICONO_DISPOSITIVO)
 
-        val nombreTipo = if (tipoDispositivo.equals("Cámara", ignoreCase = true)) "cámara" else "aparato"
-        val capitalizedTipo = nombreTipo.replaceFirstChar { it.uppercase() }
-        
-        findViewById<TextView>(R.id.tvTituloConfig).text = "Configurar $nombreTipo"
-        
-        tvStep1Title.text = "Busca tu $nombreTipo"
-        tvStep1Subtitle.text = "Acerca tu teléfono al $nombreTipo ESP32 y activa Bluetooth para detectarlo."
-        tvStep2Title.text = "Conecta tu $nombreTipo al Wi-Fi"
-        tvStep2Subtitle.text = "Ingresa los datos de tu red Wi-Fi para que el $nombreTipo se conecte a internet."
+        val etiqueta = if (tipoDispositivo.isNotBlank()) tipoDispositivo.lowercase() else "dispositivo ESP32"
+        val capitalizedTipo = etiqueta.replaceFirstChar { it.uppercase() }
+
+        findViewById<TextView>(R.id.tvTituloConfig).text = "Configurar $etiqueta"
+
+        tvStep1Title.text = "Busca tu $etiqueta"
+        tvStep1Subtitle.text = "Acerca tu teléfono al ESP32 ($etiqueta) y activa Bluetooth para detectarlo."
+        tvStep2Title.text = "Conecta tu $etiqueta al Wi-Fi"
+        tvStep2Subtitle.text = "Ingresa los datos de tu red Wi-Fi para que el ESP32 se conecte al servidor."
         tvStep3Title.text = "Confirma y envía"
-        tvStep3Subtitle.text = "Revisa los datos antes de enviarlos a tu $nombreTipo."
+        tvStep3Subtitle.text = "Revisa los datos antes de enviarlos a tu ESP32."
         tvTipoResumen.text = capitalizedTipo
-        tvSubEstadoConexion.text = "Aún no se ha encontrado tu $nombreTipo."
+        tvSubEstadoConexion.text = "Aún no se ha encontrado tu $etiqueta."
 
         db = AppDatabase.getDatabase(this)
         cargarAparatosLocales()
@@ -248,7 +253,7 @@ class EspConfigActivity : AppCompatActivity() {
                     val response = RetrofitClient.deviceService.getWsStatus(savedMac)
                     if (response.isSuccessful && response.body()?.connected == true) {
                         actualizarEstadoConexion(true)
-                        tvSubEstadoConexion.text = "Tu cámara ya está conectada a tu red Wi-Fi."
+                        tvSubEstadoConexion.text = "Tu ESP32 ya está conectado a la red Wi-Fi."
                         btnBuscarDispositivos.text = "Configurar otra red"
                         // Nota: isConnected sigue en false (BLE) para no habilitar el botón "Siguiente" por accidente, 
                         // ya que "Siguiente" sirve para enviar config por Bluetooth.
@@ -349,7 +354,7 @@ class EspConfigActivity : AppCompatActivity() {
         btnBack.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
 
         ivHelp.setOnClickListener {
-            val nombreTipo = if (tipoDispositivo.equals("Cámara", ignoreCase = true)) "cámara" else "aparato"
+            val nombreTipo = if (tipoDispositivo.isNotBlank()) tipoDispositivo.lowercase() else "dispositivo ESP32"
             mostrarSnackbar("Acerca tu teléfono a tu $nombreTipo y mantén el Bluetooth encendido durante todo el proceso.", false)
         }
 
@@ -417,7 +422,7 @@ class EspConfigActivity : AppCompatActivity() {
                 currentPasswordInput = password
                 tvSelectedSsid.text = currentSsidInput
                 tvResumenDispositivo.text =
-                    if (connectedEspName.isNotBlank()) connectedEspName else "Cámara ESP32"
+                    if (connectedEspName.isNotBlank()) connectedEspName else "ESP32 Socket"
                 mostrarPaso(3)
             }
             3 -> {
@@ -625,7 +630,7 @@ class EspConfigActivity : AppCompatActivity() {
     @SuppressLint("MissingPermission")
     private fun conectarADispositivo(device: BluetoothDevice) {
         detenerEscaneo()
-        mostrarSnackbar("Conectando a ${device.name ?: "tu cámara"}...", false)
+        mostrarSnackbar("Conectando a ${device.name ?: "ESP32"}...", false)
 
         bluetoothGatt?.close()
         bluetoothGatt = device.connectGatt(this, false, gattCallback)
@@ -639,7 +644,7 @@ class EspConfigActivity : AppCompatActivity() {
                     BluetoothProfile.STATE_CONNECTED -> {
                         isConnected = true
                         actualizarEstadoConexion(true)
-                        mostrarSnackbar("Cámara conectada", false)
+                        mostrarSnackbar("ESP32 conectado", false)
                         gatt.requestMtu(512)
                     }
                     BluetoothProfile.STATE_DISCONNECTED -> {
@@ -650,13 +655,13 @@ class EspConfigActivity : AppCompatActivity() {
                             runOnUiThread {
                                 mostrarPaso(3)
                                 ipRecibida = true
-                                mostrarSnackbar("Cámara configurada y reiniciando...", false)
+                                mostrarSnackbar("ESP32 configurado y reiniciando...", false)
                                 // Proceder sin IP local, ya que se conectará por WebSocket
-                                finalizarConfiguracion("")
+                                finalizarConfiguracion(connectedEspIp)
                             }
                         } else {
                             if (pasoActual == 1) btnSiguiente.isEnabled = false
-                            mostrarSnackbar("Cámara desconectada", false)
+                            mostrarSnackbar("ESP32 desconectado", false)
                         }
                     }
                 }
@@ -682,8 +687,6 @@ class EspConfigActivity : AppCompatActivity() {
                         val descriptor = charac.getDescriptor(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"))
                         descriptor?.let { desc ->
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                // API 33+: writeDescriptor(descriptor, value) es el reemplazo;
-                                // BluetoothGattDescriptor.value ya no tiene setter público.
                                 gatt.writeDescriptor(desc, android.bluetooth.BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
                             } else {
                                 @Suppress("DEPRECATION")
@@ -692,24 +695,41 @@ class EspConfigActivity : AppCompatActivity() {
                                 gatt.writeDescriptor(desc)
                             }
                         }
+                        gatt.readCharacteristic(charac)
                     }
 
                     runOnUiThread {
                         @SuppressLint("MissingPermission")
-                        val deviceName = gatt.device.name ?: "Cámara ESP32"
-                        connectedEspMac = gatt.device.address
+                        val deviceName = gatt.device.name ?: "ESP32 Socket"
                         connectedEspName = deviceName
+                        if (connectedEspMac.isBlank()) {
+                            connectedEspMac = gatt.device.address
+                        }
                         ipRecibida = false
-                        guardarDispositivo(deviceName, gatt.device.address)
 
                         tvSubEstadoConexion.text = "Conectado a $deviceName."
                         btnSiguiente.isEnabled = true
-                        mostrarSnackbar("Cámara lista. Continúa para configurar el Wi-Fi.", false)
+                        mostrarSnackbar("ESP32 listo. Continúa para configurar el Wi-Fi.", false)
                     }
                 }
             } else {
                 runOnUiThread {
-                    mostrarSnackbar("Error al descubrir servicios de la cámara", true)
+                    mostrarSnackbar("Error al descubrir servicios del ESP32", true)
+                }
+            }
+        }
+
+        @Deprecated("Deprecated in Java")
+        override fun onCharacteristicRead(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            status: Int
+        ) {
+            if (characteristic.uuid == IP_CHAR_UUID && status == BluetoothGatt.GATT_SUCCESS) {
+                @Suppress("DEPRECATION")
+                val raw = characteristic.getStringValue(0)
+                runOnUiThread {
+                    procesarEstadoSocket(raw, finalizarSiCompleto = false)
                 }
             }
         }
@@ -734,22 +754,47 @@ class EspConfigActivity : AppCompatActivity() {
             characteristic: BluetoothGattCharacteristic
         ) {
             if (characteristic.uuid == IP_CHAR_UUID) {
-                val ip = characteristic.getStringValue(0)
-
-                val prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-                prefs.edit().putString("saved_device_ip", ip).apply()
+                @Suppress("DEPRECATION")
+                val raw = characteristic.getStringValue(0)
 
                 runOnUiThread {
-                    // Evitar repetir el flujo de asociación si BLE notifica la IP más de una vez
                     if (!ipRecibida) {
                         ipRecibida = true
-                        connectedEspIp = ip
-                        mostrarSnackbar("¡Red asignada correctamente!", false)
-                        finalizarConfiguracion(ip)
+                        procesarEstadoSocket(raw, finalizarSiCompleto = true)
                     }
                 }
             }
         }
+    }
+
+    private fun procesarEstadoSocket(raw: String?, finalizarSiCompleto: Boolean) {
+        val (ip, mac) = parseEstadoSocket(raw)
+        mac?.let { connectedEspMac = it }
+        if (connectedEspMac.isNotBlank()) {
+            guardarDispositivo(connectedEspName, connectedEspMac)
+            if (!dispositivoGuardadoEnBd) {
+                registrarDispositivoEnBackend(ip)
+            }
+        }
+        if (ip.isNotBlank() && ip != "0.0.0.0") {
+            connectedEspIp = ip
+            getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                .edit()
+                .putString("saved_device_ip", ip)
+                .apply()
+        }
+        if (finalizarSiCompleto) {
+            mostrarSnackbar("¡Red asignada correctamente!", false)
+            finalizarConfiguracion(connectedEspIp)
+        }
+    }
+
+    private fun parseEstadoSocket(raw: String?): Pair<String, String?> {
+        if (raw.isNullOrBlank()) return "" to null
+        val parts = raw.split("|", limit = 2)
+        val ip = parts[0].trim()
+        val mac = parts.getOrNull(1)?.trim()?.takeIf { it.isNotBlank() }
+        return ip to mac
     }
 
     // --- Operaciones BLE ---
@@ -763,7 +808,7 @@ class EspConfigActivity : AppCompatActivity() {
             return
         }
         if (!isConnected || bluetoothGatt == null) {
-            mostrarSnackbar("Busca y conéctate a tu cámara primero", true)
+            mostrarSnackbar("Busca y conéctate a tu ESP32 primero", true)
             return
         }
 
@@ -778,7 +823,7 @@ class EspConfigActivity : AppCompatActivity() {
             bluetoothGatt?.writeCharacteristic(characteristic)
             btnSiguiente.isEnabled = false
             mostrarSnackbar("Enviando configuración...", false)
-        } ?: mostrarSnackbar("La cámara no expone la característica Wi-Fi necesaria", true)
+        } ?: mostrarSnackbar("El ESP32 no expone la característica Wi-Fi necesaria", true)
     }
 
     // --- UI Helpers ---
@@ -791,7 +836,7 @@ class EspConfigActivity : AppCompatActivity() {
 
             tvEstadoConexion.text = "Conectado"
             tvEstadoConexion.setTextColor(ContextCompat.getColor(this, R.color.teal_primary))
-            tvSubEstadoConexion.text = "Tu cámara está conectada."
+            tvSubEstadoConexion.text = "Tu ESP32 está conectado."
         } else {
             cardEstado.setCardBackgroundColor(android.graphics.Color.parseColor("#FFF0F0"))
             iconEstadoBg.setBackgroundResource(R.drawable.bg_circle_red)
@@ -800,7 +845,7 @@ class EspConfigActivity : AppCompatActivity() {
 
             tvEstadoConexion.text = "No conectado"
             tvEstadoConexion.setTextColor(android.graphics.Color.parseColor("#F44336"))
-            tvSubEstadoConexion.text = "Aún no se ha encontrado tu cámara."
+            tvSubEstadoConexion.text = "Aún no se ha encontrado tu ESP32."
         }
     }
 
@@ -829,13 +874,125 @@ class EspConfigActivity : AppCompatActivity() {
      * para que pueda ser utilizada como "deviceKey" al momento de agregar nuevos dispositivos reales.
      */
     private fun finalizarConfiguracion(ip: String) {
-        val sharedPref = getSharedPreferences("EspConfigPrefs", Context.MODE_PRIVATE)
-        sharedPref.edit().putString("saved_mac_address", connectedEspMac).apply()
+        if (connectedEspMac.isNotBlank()) {
+            guardarDispositivo(connectedEspName, connectedEspMac)
+        }
 
-        mostrarSnackbar("Controlador configurado exitosamente (IP: $ip)", false)
-        
-        // Volvemos al inicio
-        finish()
+        lifecycleScope.launch {
+            asegurarDispositivoRegistrado(ip)
+
+            val mensaje = if (ip.isNotBlank()) {
+                "Dispositivo configurado y registrado (IP: $ip)"
+            } else {
+                "Dispositivo configurado y registrado"
+            }
+            mostrarSnackbar(mensaje, false)
+            setResult(RESULT_OK)
+            finish()
+        }
+    }
+
+    private fun registrarDispositivoEnBackend(ip: String = "") {
+        if (dispositivoGuardadoEnBd || connectedEspMac.isBlank()) return
+        lifecycleScope.launch { asegurarDispositivoRegistrado(ip) }
+    }
+
+    private suspend fun asegurarDispositivoRegistrado(ip: String = "") {
+        if (connectedEspMac.isBlank()) return
+
+        val token = getSharedPreferences("SesionApp", Context.MODE_PRIVATE).getString("apiToken", "") ?: ""
+        if (token.isBlank()) return
+
+        if (dispositivoGuardadoEnBd) {
+            aparatoIdRegistrado?.let { actualizarConfiguracionRedSync(it, connectedEspMac, ip, token) }
+            return
+        }
+
+        val existente = withContext(Dispatchers.IO) {
+            db.dispositivoDao().getAllDispositivosOnce()
+                .find { it.macBluetooth?.equals(connectedEspMac, ignoreCase = true) == true }
+        }
+
+        if (existente != null) {
+            aparatoIdRegistrado = existente.id
+            dispositivoGuardadoEnBd = true
+            actualizarConfiguracionRedSync(existente.id, connectedEspMac, ip, token)
+            return
+        }
+
+        val tipo = tipoDispositivo.ifBlank { "ESP32 Socket" }
+        val nombre = connectedEspName.ifBlank { tipo }
+        val dispositivo = Dispositivo(
+            id = 0,
+            nombre = nombre,
+            tipo = tipo,
+            accion = null,
+            comandoBluetooth = null,
+            icono = iconoDispositivo,
+            macBluetooth = connectedEspMac,
+            nombreBluetooth = nombre,
+            fechaSincronizacion = null
+        )
+
+        var registrado = false
+        ApiHandler.safeApiCall(
+            activity = this@EspConfigActivity,
+            showLoading = true,
+            loadingTitle = "Registrando",
+            loadingMessage = "Guardando dispositivo ESP32 en tu cuenta...",
+            apiCall = { RetrofitClient.deviceService.createDispositivo("Bearer $token", dispositivo) },
+            onSuccess = { response ->
+                val guardado = response.data
+                if (guardado != null) {
+                    aparatoIdRegistrado = guardado.id
+                    dispositivoGuardadoEnBd = true
+                    registrado = true
+                    withContext(Dispatchers.IO) {
+                        db.dispositivoDao().insertDispositivo(guardado)
+                    }
+                    actualizarConfiguracionRedSync(guardado.id, connectedEspMac, ip, token)
+                }
+            },
+            onError = { error ->
+                mostrarSnackbar("Error al registrar dispositivo: $error", true)
+            }
+        )
+
+        if (!registrado && !dispositivoGuardadoEnBd) {
+            mostrarSnackbar("No se pudo registrar el dispositivo en la nube", true)
+        }
+    }
+
+    private suspend fun actualizarConfiguracionRedSync(
+        aparatoId: Int,
+        mac: String,
+        ip: String,
+        token: String
+    ) {
+        ApiHandler.safeApiCall(
+            activity = this@EspConfigActivity,
+            showLoading = false,
+            apiCall = {
+                val config = ConfiguracionRedRequest(
+                    ipAddress = ip.ifBlank { "0.0.0.0" },
+                    macAddress = mac,
+                    hostName = connectedEspName.ifBlank { null },
+                    deviceKey = mac,
+                    puertoSocket = 81,
+                    protocoloSocket = "ws",
+                    rutaSocket = "/ws",
+                    activo = true
+                )
+                RetrofitClient.deviceService.saveConfiguracionRed("Bearer $token", aparatoId, config)
+            },
+            onSuccess = { },
+            onError = { }
+        )
+    }
+
+    private fun actualizarConfiguracionRed(aparatoId: Int, mac: String, ip: String) {
+        val token = getSharedPreferences("SesionApp", Context.MODE_PRIVATE).getString("apiToken", "") ?: return
+        lifecycleScope.launch { actualizarConfiguracionRedSync(aparatoId, mac, ip, token) }
     }
 
     // --- QR ---

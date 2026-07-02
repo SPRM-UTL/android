@@ -270,9 +270,8 @@ class SecuenciaConfigActivity : AppCompatActivity() {
         }
 
         btnSave.setOnClickListener {
-            // 1. Guarda localmente (pasos + activador + nombre, como siempre)
             SecuenciaConfigManager.saveCombos(this, todosCombos)
-            // 2. Sincroniza un registro simple (nombre + metadata) con el backend
+            notificarRecargaCombos()
             sincronizarGestoConServidor()
         }
     }
@@ -329,20 +328,64 @@ class SecuenciaConfigActivity : AppCompatActivity() {
     }
 
     private fun showActionSelectionDialog() {
-        val actions = arrayOf("Encender Luces Sala", "Apagar Luces", "Activar Alarma", "Desactivar Alarma", "Abrir Puerta", "Modo Nocturno", "Ninguna")
+        lifecycleScope.launch {
+            val dispositivos = db.dispositivoDao().getAllDispositivosOnce()
+            if (dispositivos.isEmpty()) {
+                Toast.makeText(
+                    this@SecuenciaConfigActivity,
+                    "Primero agrega un dispositivo en el inicio",
+                    Toast.LENGTH_LONG
+                ).show()
+                return@launch
+            }
 
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-            .setTitle("Seleccionar Acción")
-            .setItems(actions) { dialog, which ->
-                if (which == actions.size - 1) {
-                    comboActual.accionVinculada = null
-                } else {
-                    comboActual.accionVinculada = actions[which]
+            val nombres = dispositivos.map { it.nombre ?: "Dispositivo ${it.id}" }.toTypedArray()
+
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(this@SecuenciaConfigActivity)
+                .setTitle("Vincular dispositivo")
+                .setItems(nombres) { dialog, which ->
+                    dialog.dismiss()
+                    mostrarTipoAccionDialog(dispositivos[which])
                 }
+                .setNegativeButton("Quitar acción") { dialog, _ ->
+                    comboActual.aparatoId = null
+                    comboActual.accionEncendido = null
+                    comboActual.accionVinculada = null
+                    updateHeaders()
+                    dialog.dismiss()
+                }
+                .show()
+        }
+    }
+
+    private fun mostrarTipoAccionDialog(dispositivo: com.example.android.db.Dispositivo) {
+        val opciones = arrayOf("Encender", "Apagar", "Alternar estado")
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle("${dispositivo.nombre ?: "Dispositivo"}")
+            .setItems(opciones) { dialog, which ->
+                comboActual.aparatoId = dispositivo.id
+                comboActual.accionEncendido = when (which) {
+                    0 -> true
+                    1 -> false
+                    else -> null
+                }
+                val verbo = when (which) {
+                    0 -> "Encender"
+                    1 -> "Apagar"
+                    else -> "Alternar"
+                }
+                comboActual.accionVinculada = "$verbo · ${dispositivo.nombre ?: "Dispositivo"}"
                 updateHeaders()
                 dialog.dismiss()
             }
             .show()
+    }
+
+    private fun notificarRecargaCombos() {
+        val intent = Intent(this, BackgroundCameraService::class.java).apply {
+            action = BackgroundCameraService.ACTION_RELOAD_COMBOS
+        }
+        startService(intent)
     }
 
     // ==========================================================
@@ -365,7 +408,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
             identificadorIa = 0, // TODO: confirmar significado de identificador_ia
             nivelConfianzaMinimo = 0.7, // TODO: ajustar umbral real si aplica
             tipoDisparadorNombre = tipoDisparador,
-            aparatoId = null
+            aparatoId = comboActual.aparatoId
         )
 
         lifecycleScope.launch {

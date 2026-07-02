@@ -43,5 +43,17 @@ data class Dispositivo(
 
     @SerializedName("nombre_habitacion")
     @androidx.room.ColumnInfo(name = "nombre_habitacion")
-    val nombreHabitacion: String? = null
+    val nombreHabitacion: String? = null,
+
+    @SerializedName("estado_encendido")
+    @androidx.room.ColumnInfo(name = "estado_encendido")
+    val estadoEncendido: Boolean? = null,
+
+    @SerializedName("conectado_red")
+    @androidx.room.ColumnInfo(name = "conectado_red")
+    val conectadoRed: Boolean? = null,
+
+    @SerializedName("fecha_estado_actualizado")
+    @androidx.room.ColumnInfo(name = "fecha_estado_actualizado")
+    val fechaEstadoActualizado: String? = null
 )
