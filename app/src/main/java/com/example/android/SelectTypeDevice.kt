@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import android.graphics.Color
@@ -30,6 +31,17 @@ class SelectTypeDevice : AppCompatActivity() {
     private var allTipos: List<com.example.android.db.AparatoTipo> = emptyList()
     private var isExpanded = false
     private var filterState = 0
+    private var pendingTipoToCreate: com.example.android.db.AparatoTipo? = null
+
+    private val espConfigLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            Toast.makeText(this, "Dispositivo ESP32 registrado correctamente", Toast.LENGTH_SHORT).show()
+            finish()
+        }
+        pendingTipoToCreate = null
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -304,9 +316,11 @@ class SelectTypeDevice : AppCompatActivity() {
         btnEsp32.setOnClickListener {
             bottomSheet.dismiss()
             pendingTipoToCreate = tipo
-            val intent = Intent(this, EspConfigActivity::class.java)
-            intent.putExtra("EXTRA_TIPO_DISPOSITIVO", tipo.nombreTipo)
-            intent.putExtra("EXTRA_ICONO_DISPOSITIVO", tipo.icono)
+            val intent = Intent(this, EspConfigActivity::class.java).apply {
+                putExtra(EspConfigActivity.EXTRA_TIPO_DISPOSITIVO, tipo.nombreTipo)
+                putExtra(EspConfigActivity.EXTRA_ICONO_DISPOSITIVO, tipo.icono)
+                putExtra(EspConfigActivity.EXTRA_MODO_SOCKET, true)
+            }
             espConfigLauncher.launch(intent)
         }
         
@@ -343,4 +357,4 @@ class SelectTypeDevice : AppCompatActivity() {
         }
         startActivity(intent)
     }
-}
+}

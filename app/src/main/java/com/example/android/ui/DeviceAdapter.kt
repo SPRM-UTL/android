@@ -26,6 +26,15 @@ class DeviceAdapter(
         notifyDataSetChanged()
     }
 
+    fun sincronizarEstadosDesdeDispositivos(dispositivos: List<Dispositivo>) {
+        dispositivos.forEach { dispositivo ->
+            dispositivo.estadoEncendido?.let { encendido ->
+                deviceStates[dispositivo.id] = encendido
+            }
+        }
+        notifyDataSetChanged()
+    }
+
     fun actualizarEstadoDispositivo(id: Int, encendido: Boolean) {
         deviceStates[id] = encendido
         val index = currentList.indexOfFirst { it.id == id }
@@ -33,7 +42,8 @@ class DeviceAdapter(
     }
 
     fun isDeviceConnected(mac: String?): Boolean {
-        return connectedMacs.contains(mac)
+        if (mac.isNullOrBlank()) return false
+        return connectedMacs.any { it.equals(mac, ignoreCase = true) }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DeviceViewHolder {
@@ -56,7 +66,9 @@ class DeviceAdapter(
         fun bind(dispositivo: Dispositivo) {
             tvName.text = dispositivo.nombre
             
-            val isConnected = connectedMacs.contains(dispositivo.macBluetooth)
+            val isConnected = connectedMacs.any {
+                it.equals(dispositivo.macBluetooth, ignoreCase = true)
+            }
             if (isConnected) {
                 tvStatus.text = "En línea"
                 tvStatus.setTextColor(android.graphics.Color.parseColor("#009688"))
@@ -69,7 +81,7 @@ class DeviceAdapter(
             
             ivIcon.setImageResource(R.drawable.ic_power)
 
-            val isOn = deviceStates[dispositivo.id] ?: false
+            val isOn = deviceStates[dispositivo.id] ?: dispositivo.estadoEncendido ?: false
             switchDevice.setOnCheckedChangeListener(null)
             switchDevice.isChecked = isOn
 

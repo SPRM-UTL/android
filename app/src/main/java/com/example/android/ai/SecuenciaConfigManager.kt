@@ -13,6 +13,8 @@ data class Combo(
     var activador: PasoSecuencia? = null,
     var pasos: MutableList<PasoSecuencia> = mutableListOf(),
     var accionVinculada: String? = null,
+    var aparatoId: Int? = null,
+    var accionEncendido: Boolean? = null,
     var backendGestoId: Int? = null // ID del registro 'gesto' en el backend (null = aún no sincronizado)
 )
 
@@ -41,6 +43,8 @@ object SecuenciaConfigManager {
             comboObj.put("name", combo.name)
             if (combo.activador != null) comboObj.put("activador", stepToJson(combo.activador!!))
             if (combo.accionVinculada != null) comboObj.put("accionVinculada", combo.accionVinculada)
+            if (combo.aparatoId != null) comboObj.put("aparatoId", combo.aparatoId)
+            if (combo.accionEncendido != null) comboObj.put("accionEncendido", combo.accionEncendido)
             if (combo.backendGestoId != null) comboObj.put("backendGestoId", combo.backendGestoId)
 
             val pasosArray = JSONArray()
@@ -89,6 +93,12 @@ object SecuenciaConfigManager {
                 }
                 if (comboObj.has("accionVinculada")) {
                     combo.accionVinculada = comboObj.getString("accionVinculada")
+                }
+                if (comboObj.has("aparatoId")) {
+                    combo.aparatoId = comboObj.optInt("aparatoId").takeIf { it > 0 }
+                }
+                if (comboObj.has("accionEncendido")) {
+                    combo.accionEncendido = comboObj.getBoolean("accionEncendido")
                 }
                 if (comboObj.has("backendGestoId")) {
                     combo.backendGestoId = comboObj.getInt("backendGestoId")

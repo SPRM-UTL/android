@@ -64,6 +64,7 @@ class HomeFragment : Fragment() {
 
     private var isLoggingOut = false
     private var pollingJob: kotlinx.coroutines.Job? = null
+    private var pollCount = 0
     
     private var dispositivosJob: kotlinx.coroutines.Job? = null
 
@@ -125,9 +126,14 @@ class HomeFragment : Fragment() {
                 val sharedPref = requireContext().getSharedPreferences("EspConfigPrefs", Context.MODE_PRIVATE)
                 val savedMac = sharedPref.getString("saved_mac_address", "") ?: ""
                 if (savedMac.isNotBlank()) {
-                    actualizarUiEstadoRed(macsSet.contains(savedMac))
+                    actualizarUiEstadoRed(macsSet.any { it.equals(savedMac, ignoreCase = true) })
                 } else {
                     actualizarUiEstadoRed(false)
+                }
+
+                pollCount++
+                if (pollCount % 5 == 0) {
+                    refrescarEstadosDesdeServidor()
                 }
             } else {
                 deviceAdapter.actualizarEstados(emptySet())
@@ -141,9 +147,25 @@ class HomeFragment : Fragment() {
         }
     }
 
+    private suspend fun refrescarEstadosDesdeServidor() {
+        try {
+            val sharedPref = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+            val token = sharedPref.getString("apiToken", "") ?: return
+            val response = RetrofitClient.deviceService.getDispositivos("Bearer $token")
+            if (response.isSuccessful) {
+                val dispositivos = response.body()?.data ?: return
+                withContext(Dispatchers.IO) {
+                    dispositivos.forEach { db.dispositivoDao().insertDispositivo(it) }
+                }
+                deviceAdapter.sincronizarEstadosDesdeDispositivos(dispositivos)
+            }
+        } catch (_: Exception) {
+        }
+    }
+
     private fun actualizarDialogoInformacion(connectedMacs: Set<String>) {
         val mac = currentDeviceDialogMac ?: return
-        val isConnected = connectedMacs.contains(mac)
+        val isConnected = connectedMacs.any { it.equals(mac, ignoreCase = true) }
         
         tvDialogStatusRedGlobal?.let { tv ->
             statusDotInfoGlobal?.let { dot ->
@@ -185,7 +207,8 @@ class HomeFragment : Fragment() {
                     try {
                         val response = RetrofitClient.deviceService.toggleAparato(dispositivo.id, isChecked)
                         if (response.isSuccessful) {
-                            deviceAdapter.actualizarEstadoDispositivo(dispositivo.id, isChecked)
+                            val estadoConfirmado = response.body()?.estadoEncendido ?: isChecked
+                            deviceAdapter.actualizarEstadoDispositivo(dispositivo.id, estadoConfirmado)
                             Snackbars.success(
                                 mainHome,
                                 "${dispositivo.nombre} ${if (isChecked) "encendido" else "apagado"}",
@@ -477,6 +500,7 @@ class HomeFragment : Fragment() {
             val flow = db.dispositivoDao().getAllDispositivos()
             flow.collectLatest { dispositivos ->
                 if (!isLoggingOut) {
+                    deviceAdapter.sincronizarEstadosDesdeDispositivos(dispositivos)
                     deviceAdapter.submitList(dispositivos)
                     actualizarContadorDispositivos(dispositivos.size)
                 }
@@ -602,7 +626,12 @@ class HomeFragment : Fragment() {
         btnConfigurarRed.isEnabled = false
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                startActivity(Intent(requireContext(), EspConfigActivity::class.java))
+                startActivity(
+                    Intent(requireContext(), EspConfigActivity::class.java).apply {
+                        putExtra(EspConfigActivity.EXTRA_MODO_SOCKET, true)
+                        putExtra(EspConfigActivity.EXTRA_TIPO_DISPOSITIVO, "ESP32 Socket")
+                    }
+                )
                 delay(1000)
             } finally {
                 btnConfigurarRed.isEnabled = true
@@ -612,12 +641,12 @@ class HomeFragment : Fragment() {
 
     private fun actualizarUiEstadoRed(isConnected: Boolean) {
         if (isConnected) {
-            tvRedEstado.text = "Cámara en línea"
+            tvRedEstado.text = "Controlador en línea"
             tvRedEstado.setTextColor(requireContext().getColor(R.color.teal_primary))
             iconWifiContainer.setCardBackgroundColor(requireContext().getColor(R.color.teal_primary))
             iconWifi.imageTintList = ColorStateList.valueOf(requireContext().getColor(R.color.white))
         } else {
-            tvRedEstado.text = "Cámara desconectada"
+            tvRedEstado.text = "Controlador desconectado"
             tvRedEstado.setTextColor(requireContext().getColor(R.color.text_grey))
             iconWifi.imageTintList = ColorStateList.valueOf(requireContext().getColor(R.color.white))
             iconWifiContainer.setCardBackgroundColor(requireContext().getColor(R.color.text_grey))
@@ -633,6 +662,17 @@ class HomeFragment : Fragment() {
         dialogView.findViewById<TextView>(R.id.tvDialogTipo).text = dispositivo.tipo ?: "Desconocido"
         dialogView.findViewById<TextView>(R.id.tvDialogAccion).text = dispositivo.accion ?: "N/A"
         dialogView.findViewById<TextView>(R.id.tvDialogMac).text = dispositivo.macBluetooth ?: "N/A"
+
+        val tvDialogEstadoEncendido = dialogView.findViewById<TextView>(R.id.tvDialogEstadoEncendido)
+        val estadoTexto = when (dispositivo.estadoEncendido) {
+            true -> "Encendido"
+            false -> "Apagado"
+            null -> "Sin registrar"
+        }
+        tvDialogEstadoEncendido.text = estadoTexto
+
+        val tvDialogHistorial = dialogView.findViewById<TextView>(R.id.tvDialogHistorial)
+        tvDialogHistorial.text = "Cargando historial..."
 
         val isConnected = deviceAdapter.isDeviceConnected(dispositivo.macBluetooth)
         val tvDialogStatusRed = dialogView.findViewById<TextView>(R.id.tvDialogStatusRed)
@@ -679,6 +719,29 @@ class HomeFragment : Fragment() {
                 putExtra("EXTRA_DEVICE_ID", dispositivo.id)
             }
             startActivity(intent)
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val token = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+                    .getString("apiToken", "") ?: return@launch
+                val response = RetrofitClient.deviceService.getMensajesSocket("Bearer $token", dispositivo.id, 8)
+                if (response.isSuccessful) {
+                    val mensajes = response.body().orEmpty()
+                    tvDialogHistorial.text = if (mensajes.isEmpty()) {
+                        "Sin mensajes registrados todavía."
+                    } else {
+                        mensajes.joinToString("\n\n") { msg ->
+                            val resumen = msg.comando ?: msg.payloadJson.take(120)
+                            "${msg.direccion.uppercase()} · $resumen"
+                        }
+                    }
+                } else {
+                    tvDialogHistorial.text = "No se pudo cargar el historial."
+                }
+            } catch (_: Exception) {
+                tvDialogHistorial.text = "Error al cargar el historial."
+            }
         }
 
         dialog.show()

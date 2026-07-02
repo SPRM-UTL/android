@@ -61,13 +61,18 @@ class HomeActivity : AppCompatActivity() {
         val mac = prefs.getString("saved_mac_address", null)
         if (mac.isNullOrEmpty()) {
             MaterialAlertDialogBuilder(this)
-                .setTitle("Cámara no configurada")
-                .setMessage("Es recomendable configurar la cámara que controlará tus dispositivos. Puedes hacerlo ahora o más tarde.")
+                .setTitle("Controlador no configurado")
+                .setMessage("Es recomendable configurar tu ESP32 (SocketWebServer) para controlar tus dispositivos. Puedes hacerlo ahora o más tarde.")
                 .setCancelable(false)
                 .setPositiveButton("Configurar ahora") { _, _ ->
-                    startActivity(Intent(this, EspConfigActivity::class.java))
+                    startActivity(
+                        Intent(this, EspConfigActivity::class.java).apply {
+                            putExtra(EspConfigActivity.EXTRA_MODO_SOCKET, true)
+                            putExtra(EspConfigActivity.EXTRA_TIPO_DISPOSITIVO, "ESP32 Socket")
+                        }
+                    )
                 }
-                .setNegativeButton("Continuar sin cámara") { dialog, _ ->
+                .setNegativeButton("Continuar sin configurar") { dialog, _ ->
                     skipCameraConfig = true
                     dialog.dismiss()
                 }

@@ -51,16 +51,67 @@ interface DeviceApiService {
     suspend fun toggleAparato(
         @Path("sk_aparato_id") aparatoId: Int,
         @retrofit2.http.Query("estado") estado: Boolean
-    ): Response<ResponseBody>
+    ): Response<ToggleAparatoResponse>
 
     @GET("ws/status/all")
     suspend fun getWsStatusAll(): Response<WsStatusAllResponse>
+
+    @GET("ws/state/{sk_aparato_id}")
+    suspend fun getAparatoEstado(@Path("sk_aparato_id") aparatoId: Int): Response<AparatoEstadoResponse>
+
+    @GET("api/Dim_Aparatos/{sk_aparato_id}/mensajes")
+    suspend fun getMensajesSocket(
+        @Header("Authorization") token: String,
+        @Path("sk_aparato_id") aparatoId: Int,
+        @retrofit2.http.Query("limit") limit: Int = 20
+    ): Response<List<AparatoMensajeResponse>>
 }
 
 data class WsStatusResponse(
-    val connected: Boolean
+    val connected: Boolean,
+    @com.google.gson.annotations.SerializedName("estado_encendido")
+    val estadoEncendido: Boolean? = null
 )
 
 data class WsStatusAllResponse(
     val connectedDevices: List<String>
+)
+
+data class AparatoEstadoResponse(
+    @com.google.gson.annotations.SerializedName("sk_aparato_id")
+    val aparatoId: Int,
+    @com.google.gson.annotations.SerializedName("device_key")
+    val deviceKey: String?,
+    @com.google.gson.annotations.SerializedName("estado_encendido")
+    val estadoEncendido: Boolean?,
+    @com.google.gson.annotations.SerializedName("conectado")
+    val conectado: Boolean,
+    @com.google.gson.annotations.SerializedName("fecha_estado_actualizado")
+    val fechaEstadoActualizado: String?,
+    @com.google.gson.annotations.SerializedName("origen_estado")
+    val origenEstado: String?
+)
+
+data class AparatoMensajeResponse(
+    @com.google.gson.annotations.SerializedName("sk_mensaje_id")
+    val id: Long,
+    @com.google.gson.annotations.SerializedName("sk_aparato_id")
+    val aparatoId: Int,
+    @com.google.gson.annotations.SerializedName("direccion")
+    val direccion: String,
+    @com.google.gson.annotations.SerializedName("payload_json")
+    val payloadJson: String,
+    @com.google.gson.annotations.SerializedName("comando")
+    val comando: String?,
+    @com.google.gson.annotations.SerializedName("procesado")
+    val procesado: Boolean,
+    @com.google.gson.annotations.SerializedName("fecha_creacion")
+    val fechaCreacion: String
+)
+
+data class ToggleAparatoResponse(
+    val success: Boolean,
+    val comando: String?,
+    @com.google.gson.annotations.SerializedName("estado_encendido")
+    val estadoEncendido: Boolean?
 )
