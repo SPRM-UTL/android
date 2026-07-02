@@ -261,6 +261,9 @@ class HomeFragment : Fragment() {
                 loadingMessage = "Borrando dispositivo...",
                 apiCall = { RetrofitClient.deviceService.deleteDispositivo("Bearer $token", dispositivo.id) },
                 onSuccess = {
+                    viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                        db.dispositivoDao().deleteDispositivo(dispositivo)
+                    }
                     Snackbars.success(mainHome, "Dispositivo eliminado con éxito", Snackbar.LENGTH_SHORT).show()
                     cargarDatos()
                 },
