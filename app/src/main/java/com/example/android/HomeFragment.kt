@@ -261,16 +261,28 @@ class HomeFragment : Fragment() {
                 loadingMessage = "Borrando dispositivo...",
                 apiCall = { RetrofitClient.deviceService.deleteDispositivo("Bearer $token", dispositivo.id) },
                 onSuccess = {
-                    viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-                        db.dispositivoDao().deleteDispositivo(dispositivo)
-                    }
+                    eliminarDispositivoLocal(dispositivo)
                     Snackbars.success(mainHome, "Dispositivo eliminado con éxito", Snackbar.LENGTH_SHORT).show()
-                    cargarDatos()
                 },
                 onError = { error ->
-                    Snackbars.error(mainHome, "Error al eliminar: $error", Snackbar.LENGTH_LONG).show()
+                    if (error == ApiHandler.RESOURCE_NOT_FOUND_MESSAGE) {
+                        eliminarDispositivoLocal(dispositivo)
+                        Snackbars.info(
+                            mainHome,
+                            "El dispositivo ya no existía en el servidor. Se limpió de tu lista.",
+                            Snackbar.LENGTH_LONG
+                        ).show()
+                    } else {
+                        Snackbars.error(mainHome, "Error al eliminar: $error", Snackbar.LENGTH_LONG).show()
+                    }
                 }
             )
+        }
+    }
+
+    private suspend fun eliminarDispositivoLocal(dispositivo: com.example.android.db.Dispositivo) {
+        withContext(Dispatchers.IO) {
+            db.dispositivoDao().deleteDispositivoById(dispositivo.id)
         }
     }
 
@@ -558,6 +570,7 @@ class HomeFragment : Fragment() {
                 },
                 onSuccess = { dispositivosResponse ->
                     val dispositivos = dispositivosResponse.data
+                    deviceAdapter.sincronizarEstadosDesdeDispositivos(dispositivos)
                     withContext(Dispatchers.IO) {
                         db.dispositivoDao().deleteAllDispositivos()
                         db.dispositivoDao().insertAll(dispositivos)
