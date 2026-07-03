@@ -26,6 +26,8 @@ import com.example.android.network.ApiHandler
 import com.example.android.network.ConfiguracionRedRequest
 import com.example.android.network.RetrofitClient
 import com.google.android.material.button.MaterialButton
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.material.snackbar.Snackbar
@@ -131,6 +133,7 @@ class EspConfigActivity : AppCompatActivity() {
     private var iconoDispositivo: String? = null
     private var dispositivoGuardadoEnBd = false
     private var aparatoIdRegistrado: Int? = null
+    private val registroMutex = Mutex()
 
     // Constantes
     companion object {
@@ -772,9 +775,6 @@ class EspConfigActivity : AppCompatActivity() {
         mac?.let { connectedEspMac = it }
         if (connectedEspMac.isNotBlank()) {
             guardarDispositivo(connectedEspName, connectedEspMac)
-            if (!dispositivoGuardadoEnBd) {
-                registrarDispositivoEnBackend(ip)
-            }
         }
         if (ip.isNotBlank() && ip != "0.0.0.0") {
             connectedEspIp = ip
@@ -892,74 +892,71 @@ class EspConfigActivity : AppCompatActivity() {
         }
     }
 
-    private fun registrarDispositivoEnBackend(ip: String = "") {
-        if (dispositivoGuardadoEnBd || connectedEspMac.isBlank()) return
-        lifecycleScope.launch { asegurarDispositivoRegistrado(ip) }
-    }
-
     private suspend fun asegurarDispositivoRegistrado(ip: String = "") {
         if (connectedEspMac.isBlank()) return
 
         val token = getSharedPreferences("SesionApp", Context.MODE_PRIVATE).getString("apiToken", "") ?: ""
         if (token.isBlank()) return
 
-        if (dispositivoGuardadoEnBd) {
-            aparatoIdRegistrado?.let { actualizarConfiguracionRedSync(it, connectedEspMac, ip, token) }
-            return
-        }
-
-        val existente = withContext(Dispatchers.IO) {
-            db.dispositivoDao().getAllDispositivosOnce()
-                .find { it.macBluetooth?.equals(connectedEspMac, ignoreCase = true) == true }
-        }
-
-        if (existente != null) {
-            aparatoIdRegistrado = existente.id
-            dispositivoGuardadoEnBd = true
-            actualizarConfiguracionRedSync(existente.id, connectedEspMac, ip, token)
-            return
-        }
-
-        val tipo = tipoDispositivo.ifBlank { "ESP32 Socket" }
-        val nombre = connectedEspName.ifBlank { tipo }
-        val dispositivo = Dispositivo(
-            id = 0,
-            nombre = nombre,
-            tipo = tipo,
-            accion = null,
-            comandoBluetooth = null,
-            icono = iconoDispositivo,
-            macBluetooth = connectedEspMac,
-            nombreBluetooth = nombre,
-            fechaSincronizacion = null
-        )
-
-        var registrado = false
-        ApiHandler.safeApiCall(
-            activity = this@EspConfigActivity,
-            showLoading = true,
-            loadingTitle = "Registrando",
-            loadingMessage = "Guardando dispositivo ESP32 en tu cuenta...",
-            apiCall = { RetrofitClient.deviceService.createDispositivo("Bearer $token", dispositivo) },
-            onSuccess = { response ->
-                val guardado = response.data
-                if (guardado != null) {
-                    aparatoIdRegistrado = guardado.id
-                    dispositivoGuardadoEnBd = true
-                    registrado = true
-                    withContext(Dispatchers.IO) {
-                        db.dispositivoDao().insertDispositivo(guardado)
-                    }
-                    actualizarConfiguracionRedSync(guardado.id, connectedEspMac, ip, token)
-                }
-            },
-            onError = { error ->
-                mostrarSnackbar("Error al registrar dispositivo: $error", true)
+        registroMutex.withLock {
+            if (dispositivoGuardadoEnBd) {
+                aparatoIdRegistrado?.let { actualizarConfiguracionRedSync(it, connectedEspMac, ip, token) }
+                return
             }
-        )
 
-        if (!registrado && !dispositivoGuardadoEnBd) {
-            mostrarSnackbar("No se pudo registrar el dispositivo en la nube", true)
+            val existente = withContext(Dispatchers.IO) {
+                db.dispositivoDao().getAllDispositivosOnce()
+                    .find { it.macBluetooth?.equals(connectedEspMac, ignoreCase = true) == true }
+            }
+
+            if (existente != null) {
+                aparatoIdRegistrado = existente.id
+                dispositivoGuardadoEnBd = true
+                actualizarConfiguracionRedSync(existente.id, connectedEspMac, ip, token)
+                return
+            }
+
+            val tipo = tipoDispositivo.ifBlank { "ESP32 Socket" }
+            val nombre = connectedEspName.ifBlank { tipo }
+            val dispositivo = Dispositivo(
+                id = 0,
+                nombre = nombre,
+                tipo = tipo,
+                accion = null,
+                comandoBluetooth = null,
+                icono = iconoDispositivo,
+                macBluetooth = connectedEspMac,
+                nombreBluetooth = nombre,
+                fechaSincronizacion = null
+            )
+
+            var registrado = false
+            ApiHandler.safeApiCall(
+                activity = this@EspConfigActivity,
+                showLoading = true,
+                loadingTitle = "Registrando",
+                loadingMessage = "Guardando dispositivo ESP32 en tu cuenta...",
+                apiCall = { RetrofitClient.deviceService.createDispositivo("Bearer $token", dispositivo) },
+                onSuccess = { response ->
+                    val guardado = response.data
+                    if (guardado != null) {
+                        aparatoIdRegistrado = guardado.id
+                        dispositivoGuardadoEnBd = true
+                        registrado = true
+                        withContext(Dispatchers.IO) {
+                            db.dispositivoDao().insertDispositivo(guardado)
+                        }
+                        actualizarConfiguracionRedSync(guardado.id, connectedEspMac, ip, token)
+                    }
+                },
+                onError = { error ->
+                    mostrarSnackbar("Error al registrar dispositivo: $error", true)
+                }
+            )
+
+            if (!registrado && !dispositivoGuardadoEnBd) {
+                mostrarSnackbar("No se pudo registrar el dispositivo en la nube", true)
+            }
         }
     }
 
