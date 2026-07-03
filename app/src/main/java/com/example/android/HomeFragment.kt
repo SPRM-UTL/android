@@ -535,9 +535,15 @@ class HomeFragment : Fragment() {
             val flow = db.dispositivoDao().getAllDispositivos()
             flow.collectLatest { dispositivos ->
                 if (!isLoggingOut) {
-                    deviceAdapter.sincronizarEstadosDesdeDispositivos(dispositivos)
-                    deviceAdapter.submitList(dispositivos)
-                    actualizarContadorDispositivos(dispositivos.size)
+                    // Filtrar cámaras para que no aparezcan en la lista "Mis dispositivos"
+                    val dispositivosFiltrados = dispositivos.filter { 
+                        !it.tipo.equals("Cámara", ignoreCase = true) && 
+                        !it.tipo.equals("Cámara ESP32", ignoreCase = true) && 
+                        !it.tipo.equals("ESP32-CAM", ignoreCase = true) 
+                    }
+                    deviceAdapter.sincronizarEstadosDesdeDispositivos(dispositivosFiltrados)
+                    deviceAdapter.submitList(dispositivosFiltrados)
+                    actualizarContadorDispositivos(dispositivosFiltrados.size)
                 }
                 actualizarNombreUsuario()
             }
