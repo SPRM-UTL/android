@@ -705,8 +705,6 @@ class HomeFragment : Fragment() {
 
         dialogView.findViewById<TextView>(R.id.tvDialogNombre).text = dispositivo.nombre ?: "Desconocido"
         dialogView.findViewById<TextView>(R.id.tvDialogTipo).text = dispositivo.tipo ?: "Desconocido"
-        dialogView.findViewById<TextView>(R.id.tvDialogAccion).text = dispositivo.accion ?: "N/A"
-        dialogView.findViewById<TextView>(R.id.tvDialogMac).text = dispositivo.macBluetooth ?: "N/A"
 
         val tvDialogEstadoEncendido = dialogView.findViewById<TextView>(R.id.tvDialogEstadoEncendido)
         val estadoTexto = when (dispositivo.estadoEncendido) {
