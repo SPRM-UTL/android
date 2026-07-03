@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -71,10 +72,10 @@ class EditDeviceFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        view.findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar)
-            .setNavigationOnClickListener {
-                parentFragmentManager.popBackStack()
-            }
+        // Botón regresar del nuevo diseño de barra superior sólida
+        view.findViewById<ImageButton>(R.id.btnBack).setOnClickListener {
+            parentFragmentManager.popBackStack()
+        }
 
         tvTarget = view.findViewById(R.id.tvDeviceTarget)
         etName = view.findViewById(R.id.etDeviceName)
@@ -86,6 +87,15 @@ class EditDeviceFragment : Fragment() {
         ivTipoIcono = view.findViewById(R.id.ivTipoIcono)
 
         cargarDatos()
+
+        // Ajuste preciso de padding para contrarrestar el modo Edge-to-Edge
+        val cardBack = view.findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardBack)
+        val basePaddingBottom = cardBack.paddingBottom
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(cardBack) { v, insets ->
+            val statusBarInsets = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.statusBars())
+            v.setPadding(v.paddingLeft, statusBarInsets.top, v.paddingRight, basePaddingBottom)
+            insets
+        }
     }
 
     private fun cargarDatos() {
@@ -122,7 +132,7 @@ class EditDeviceFragment : Fragment() {
 
             val adapterTipos = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, tipos)
             etType.setAdapter(adapterTipos)
-            
+
             val tipoEdit = dev.tipo ?: tipos[0]
             etType.setText(tipoEdit, false)
             actualizarIconoTipo(tipoEdit, ivTipoIcono)
@@ -171,7 +181,7 @@ class EditDeviceFragment : Fragment() {
             val nombresHabitaciones = habitaciones.map { it.nombre }
             val adapterHabitaciones = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, nombresHabitaciones)
             etHabitacion.setAdapter(adapterHabitaciones)
-            
+
             if (habitaciones.isNotEmpty()) {
                 val habInicial = habitaciones.find { h -> h.id == localSelectedHabitacionId } ?: habitaciones.first()
                 localSelectedHabitacionId = habInicial.id
@@ -194,9 +204,19 @@ class EditDeviceFragment : Fragment() {
             "ventilador", "ventiladores" -> R.drawable.wind
             "televisión", "television", "tv" -> R.drawable.tv_minimal
             "audífonos", "audifonos" -> R.drawable.headphones
-            else -> R.drawable.ic_launcher_foreground
+            else -> R.drawable.ic_power
         }
+
         iv.setImageResource(resId)
+
+        if (resId == R.drawable.ic_power) {
+            iv.imageTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE)
+        } else {
+            val colorTeal = androidx.core.content.ContextCompat.getColor(requireContext(), R.color.teal_primary)
+            iv.imageTintList = android.content.res.ColorStateList.valueOf(colorTeal)
+            iv.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.TRANSPARENT)
+        }
+
         iv.visibility = View.VISIBLE
     }
 

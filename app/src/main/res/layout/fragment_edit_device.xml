@@ -1,164 +1,212 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mainEditDevice"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F7FBFD"
+    android:background="#F8FFFF"
     android:clickable="true"
     android:focusable="true">
 
-    <com.google.android.material.appbar.AppBarLayout
+    <!-- Barra Superior Sólida con mayor holgura superior e inferior -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardBack"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@android:color/transparent"
-        app:elevation="0dp">
+        android:backgroundTint="@color/teal_primary"
+        android:clipToPadding="false"
+        android:paddingTop="12dp"
+        android:paddingBottom="16dp"
+        app:cardCornerRadius="0dp"
+        app:strokeWidth="0dp"
+        app:layout_constraintTop_toTopOf="parent">
 
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:navigationIcon="@drawable/arrow_back"
-            app:title="Editar Dispositivo"
-            app:titleCentered="true"
-            app:titleTextAppearance="@style/TextAppearance.Material3.TitleLarge" />
-
-    </com.google.android.material.appbar.AppBarLayout>
-
-    <androidx.core.widget.NestedScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fillViewport="true"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
-
-        <LinearLayout
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="24dp">
+            android:layout_marginTop="24dp"> <!-- Incrementada la separación de la flecha/título -->
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="12dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/arrow_left"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="@color/white" />
 
             <TextView
+                android:id="@+id/tvTituloEditar"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="Estás editando la configuración de:"
-                android:textColor="#8A8A8A"
-                android:textSize="14sp" />
+                android:text="Editar Dispositivo"
+                android:textColor="@color/white"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="@id/btnBack"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@id/btnBack" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </com.google.android.material.card.MaterialCardView>
 
+    <!-- Formulario con Scroll -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollForm"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/cardBack">
+
+        <LinearLayout
+            android:id="@+id/containerFormDevice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipToPadding="false"
+            android:orientation="vertical"
+            android:paddingHorizontal="24dp"
+            android:paddingTop="24dp"
+            android:paddingBottom="40dp">
+
+            <!-- Cabecera -->
             <TextView
                 android:id="@+id/tvDeviceTarget"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginTop="4dp"
+                android:layout_gravity="center_horizontal"
                 android:text="Nombre del Hardware"
-                android:textColor="@color/teal_primary"
-                android:textSize="18sp"
+                android:textColor="#1A1A1A"
+                android:textSize="22sp"
                 android:textStyle="bold" />
 
-            <ImageView
-                android:id="@+id/ivTipoIcono"
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:layout_gravity="center"
-                android:layout_marginTop="24dp"
-                app:tint="@color/teal_primary" />
+            <TextView
+                android:id="@+id/tvSubtituloEditar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="4dp"
+                android:text="Estás editando la configuración del dispositivo"
+                android:textColor="#666666"
+                android:textSize="13sp" />
 
+            <!-- Icono circular personalizado -->
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/ivTipoIcono"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="24dp"
+                android:padding="20dp"
+                android:scaleType="centerInside"
+                android:backgroundTint="@color/teal_primary"
+                android:background="?attr/colorSecondary"
+                app:shapeAppearanceOverlay="@style/CircleImage"
+                app:strokeColor="@color/teal_primary"
+                app:strokeWidth="2dp" />
+
+            <!-- Input: Nombre -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/layoutNombre"
                 style="@style/Widget.Custom.TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="32dp"
+                android:layout_marginBottom="16dp"
                 android:hint="Nombre del dispositivo"
-                app:startIconDrawable="@drawable/pencil"
-                app:startIconTint="@color/teal_primary">
+                app:startIconDrawable="@drawable/pencil">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etDeviceName"
                     style="@style/Widget.Custom.TextInputEditText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="text"
-                    android:textColor="#1A1A1A" />
+                    android:inputType="text" />
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- Input: Tipo -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/layoutTipo"
                 style="@style/Widget.Custom.ExposedDropdownMenu"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:hint="Selecciona tipo de dispositivo"
-                app:startIconTint="@color/teal_primary">
+                android:layout_marginBottom="16dp"
+                android:hint="Selecciona tipo de dispositivo">
 
                 <com.google.android.material.textfield.MaterialAutoCompleteTextView
                     android:id="@+id/etDeviceType"
                     style="@style/Widget.Custom.TextInputEditText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="none"
-                    android:textColor="#1A1A1A" />
+                    android:inputType="none" />
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- Input: Casa -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/layoutCasa"
                 style="@style/Widget.Custom.ExposedDropdownMenu"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:hint="Selecciona Casa"
-                app:startIconTint="@color/teal_primary">
+                android:layout_marginBottom="16dp"
+                android:hint="Selecciona Casa">
 
                 <com.google.android.material.textfield.MaterialAutoCompleteTextView
                     android:id="@+id/etCasa"
                     style="@style/Widget.Custom.TextInputEditText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="none"
-                    android:textColor="#1A1A1A" />
+                    android:inputType="none" />
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- Input: Habitación -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/layoutHabitacion"
                 style="@style/Widget.Custom.ExposedDropdownMenu"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:hint="Selecciona Habitación"
-                app:startIconTint="@color/teal_primary">
+                android:layout_marginBottom="24dp"
+                android:hint="Selecciona Habitación">
 
                 <com.google.android.material.textfield.MaterialAutoCompleteTextView
                     android:id="@+id/etHabitacion"
                     style="@style/Widget.Custom.TextInputEditText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="none"
-                    android:textColor="#1A1A1A" />
+                    android:inputType="none" />
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- Botón Guardar -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnConfirm"
                 android:layout_width="match_parent"
-                android:layout_height="54dp"
-                android:layout_marginTop="32dp"
+                android:layout_height="56dp"
                 android:text="Guardar Cambios"
                 android:textAllCaps="false"
                 android:textColor="@color/white"
-                android:textSize="16sp"
+                android:textSize="18sp"
                 android:textStyle="bold"
                 app:backgroundTint="@color/teal_primary"
-                app:cornerRadius="12dp" />
+                app:cornerRadius="10dp"
+                app:elevation="4dp" />
 
+            <!-- Botón Eliminar -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnDelete"
                 style="@style/Widget.MaterialComponents.Button.TextButton"
                 android:layout_width="match_parent"
                 android:layout_height="54dp"
-                android:layout_marginTop="8dp"
-                android:text="Eliminar Dispositivo"
-                android:textColor="@color/red" />
+                android:layout_marginTop="12dp"
+                android:text="ELIMINAR DISPOSITIVO"
+                android:textColor="@color/red"
+                android:textStyle="bold"
+                android:textSize="14sp" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

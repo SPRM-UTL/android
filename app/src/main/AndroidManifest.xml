@@ -35,13 +35,17 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Android"
         android:usesCleartextTraffic="true">
+
         <activity
             android:name=".ai.PermisosActivity"
             android:exported="false" />
+
+        <!-- SE CORRIGIÓ AQUÍ: Se eliminó configChanges y se añadió windowSoftInputMode -->
         <activity
             android:name=".EspConfigActivity"
-            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode"
+            android:windowSoftInputMode="adjustResize"
             android:exported="false" />
+
         <activity
             android:name=".DeviceCameraActivity"
             android:exported="true" /> <!-- IA Simple Activities -->

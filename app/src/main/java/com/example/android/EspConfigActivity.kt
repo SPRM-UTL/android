@@ -54,6 +54,9 @@ class EspConfigActivity : AppCompatActivity() {
     private lateinit var stepContent2: LinearLayout
     private lateinit var stepContent3: LinearLayout
 
+    // --- Container general con Scroll ---
+    private lateinit var scrollContent: ScrollView
+
     // --- Step 1: buscar dispositivo ---
     private lateinit var cardEstado: MaterialCardView
     private lateinit var iconEstadoBg: FrameLayout
@@ -88,6 +91,7 @@ class EspConfigActivity : AppCompatActivity() {
     private lateinit var btnEditarWifi: TextView
 
     // --- Bottom action bar ---
+    private lateinit var bottomActionBar: LinearLayout
     private lateinit var btnAtras: MaterialButton
     private lateinit var btnSiguiente: MaterialButton
 
@@ -120,13 +124,8 @@ class EspConfigActivity : AppCompatActivity() {
     private var connectedEspMac: String = ""
     private var connectedEspName: String = ""
     private var connectedEspIp: String = ""
-    // Aparato local seleccionado para asociar (índice en aparatosLocales)
     private var aparatoSeleccionadoIdx: Int = -1
-    // Flag para evitar que la pantalla de confirmación se dispare en bucle
-    // (BLE puede disparar onCharacteristicChanged varias veces con la misma IP)
     private var ipRecibida = false
-
-    // Flag para evitar que el diálogo de asociación se abra en bucle
     private var dialogEspMostrado = false
 
     private var tipoDispositivo: String = ""
@@ -172,7 +171,6 @@ class EspConfigActivity : AppCompatActivity() {
         }
     }
 
-    // Permisos
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -215,7 +213,11 @@ class EspConfigActivity : AppCompatActivity() {
 
         ViewCompat.setOnApplyWindowInsetsListener(vistaRaiz!!) { view, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+
+            // Si el teclado está visible, usamos el bottom del IME para empujar las vistas hacia arriba automáticamente
+            val bottomPadding = if (ime.bottom > 0) ime.bottom else bars.bottom
+            view.setPadding(bars.left, bars.top, bars.right, bottomPadding)
             insets
         }
 
@@ -258,8 +260,6 @@ class EspConfigActivity : AppCompatActivity() {
                         actualizarEstadoConexion(true)
                         tvSubEstadoConexion.text = "Tu ESP32 ya está conectado a la red Wi-Fi."
                         btnBuscarDispositivos.text = "Configurar otra red"
-                        // Nota: isConnected sigue en false (BLE) para no habilitar el botón "Siguiente" por accidente, 
-                        // ya que "Siguiente" sirve para enviar config por Bluetooth.
                     }
                 } catch (e: Exception) {
                     // Ignorar
@@ -283,7 +283,8 @@ class EspConfigActivity : AppCompatActivity() {
         stepLabel2 = findViewById(R.id.stepLabel2)
         stepLabel3 = findViewById(R.id.stepLabel3)
 
-        // Step content
+        // Scrollview e hilos contenedores
+        scrollContent = findViewById(R.id.scrollContent)
         stepContent1 = findViewById(R.id.stepContent1)
         stepContent2 = findViewById(R.id.stepContent2)
         stepContent3 = findViewById(R.id.stepContent3)
@@ -295,7 +296,7 @@ class EspConfigActivity : AppCompatActivity() {
         tvEstadoConexion = findViewById(R.id.tvEstadoConexion)
         tvSubEstadoConexion = findViewById(R.id.tvSubEstadoConexion)
         btnBuscarDispositivos = findViewById(R.id.btnBuscarDispositivos)
-        
+
         tvStep1Title = findViewById(R.id.tvStep1Title)
         tvStep1Subtitle = findViewById(R.id.tvStep1Subtitle)
         tvStep2Title = findViewById(R.id.tvStep2Title)
@@ -313,6 +314,17 @@ class EspConfigActivity : AppCompatActivity() {
         etSsid = findViewById(R.id.etSsid)
         etPassword = findViewById(R.id.etPassword)
 
+        // Forzar desplazamiento automático del scroll al ganar foco en los inputs
+        val focusScrollListener = View.OnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                handler.postDelayed({
+                    scrollContent.smoothScrollTo(0, scrollContent.bottom)
+                }, 200) // Pequeño delay para esperar el despliegue de animación del teclado
+            }
+        }
+        etSsid.onFocusChangeListener = focusScrollListener
+        etPassword.onFocusChangeListener = focusScrollListener
+
         // Step 3
         tvResumenDispositivo = findViewById(R.id.tvResumenDispositivo)
         cardSeleccionWifi = findViewById(R.id.cardSeleccionWifi)
@@ -320,6 +332,7 @@ class EspConfigActivity : AppCompatActivity() {
         btnEditarWifi = findViewById(R.id.btnEditarWifi)
 
         // Bottom bar
+        bottomActionBar = findViewById(R.id.bottomActionBar)
         btnAtras = findViewById(R.id.btnAtras)
         btnSiguiente = findViewById(R.id.btnSiguiente)
     }
@@ -340,6 +353,7 @@ class EspConfigActivity : AppCompatActivity() {
             tvDeviceMac.text = device?.address ?: "00:00:00:00:00:00"
 
             btnConectar.setOnClickListener {
+                bottomSheetDialog?.dismiss()
                 device?.let { conectarADispositivo(it) }
             }
 
@@ -370,9 +384,6 @@ class EspConfigActivity : AppCompatActivity() {
             }
         }
 
-
-
-        // Step 2: métodos de carga de Wi-Fi
         cardOptionWifi.setOnClickListener {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                 autocompletarRedActual()
@@ -391,12 +402,10 @@ class EspConfigActivity : AppCompatActivity() {
             iniciarEscaneoQr()
         }
 
-        // Step 3
         btnEditarWifi.setOnClickListener {
             mostrarPaso(2)
         }
 
-        // Navegación del wizard
         btnAtras.setOnClickListener {
             if (pasoActual > 1) mostrarPaso(pasoActual - 1)
         }
@@ -406,12 +415,9 @@ class EspConfigActivity : AppCompatActivity() {
         }
     }
 
-    // --- Navegación del wizard ---
-
     private fun manejarSiguiente() {
         when (pasoActual) {
             1 -> {
-                // Solo se llega aquí si ya hay un ESP32 conectado (botón habilitado)
                 mostrarPaso(2)
             }
             2 -> {
@@ -531,7 +537,6 @@ class EspConfigActivity : AppCompatActivity() {
         }
     }
 
-    // --- Permisos ---
     private fun pedirPermisos() {
         val permisos = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             arrayOf(
@@ -567,7 +572,6 @@ class EspConfigActivity : AppCompatActivity() {
         }
     }
 
-    // --- Escaneo BLE ---
     @SuppressLint("MissingPermission")
     private fun iniciarEscaneoBle() {
         if (!tienePermisosNecesarios()) {
@@ -611,25 +615,24 @@ class EspConfigActivity : AppCompatActivity() {
         if (bottomSheetDialog == null) {
             bottomSheetDialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
             val view = layoutInflater.inflate(R.layout.bottom_sheet_devices, null)
-            
+
             lvDispositivos = view.findViewById(R.id.lvDispositivos)
             progressScan = view.findViewById(R.id.progressScan)
             tvSinDispositivos = view.findViewById(R.id.tvSinDispositivos)
-            
+
             lvDispositivos?.adapter = listAdapter
-            
+
             lvDispositivos?.setOnItemClickListener { _, _, position, _ ->
                 val device = discoveredDevices[position]
                 bottomSheetDialog?.dismiss()
                 conectarADispositivo(device)
             }
-            
+
             bottomSheetDialog?.setContentView(view)
         }
         bottomSheetDialog?.show()
     }
 
-    // --- Conexión GATT ---
     @SuppressLint("MissingPermission")
     private fun conectarADispositivo(device: BluetoothDevice) {
         detenerEscaneo()
@@ -659,7 +662,6 @@ class EspConfigActivity : AppCompatActivity() {
                                 mostrarPaso(3)
                                 ipRecibida = true
                                 mostrarSnackbar("ESP32 configurado y reiniciando...", false)
-                                // Proceder sin IP local, ya que se conectará por WebSocket
                                 finalizarConfiguracion(connectedEspIp)
                             }
                         } else {
@@ -797,7 +799,6 @@ class EspConfigActivity : AppCompatActivity() {
         return ip to mac
     }
 
-    // --- Operaciones BLE ---
     @SuppressLint("MissingPermission")
     private fun enviarConfiguracionWifi() {
         val ssid = currentSsidInput
@@ -826,7 +827,6 @@ class EspConfigActivity : AppCompatActivity() {
         } ?: mostrarSnackbar("El ESP32 no expone la característica Wi-Fi necesaria", true)
     }
 
-    // --- UI Helpers ---
     private fun actualizarEstadoConexion(conectado: Boolean) {
         if (conectado) {
             cardEstado.setCardBackgroundColor(android.graphics.Color.parseColor("#E8F5E9"))
@@ -852,14 +852,15 @@ class EspConfigActivity : AppCompatActivity() {
     private fun mostrarSnackbar(mensaje: String, esError: Boolean) {
         vistaRaiz?.let { view ->
             val snackbar = Snackbar.make(view, mensaje, Snackbar.LENGTH_SHORT)
+            if (::bottomActionBar.isInitialized) {
+                snackbar.setAnchorView(bottomActionBar)
+            }
             if (esError) {
                 snackbar.setBackgroundTint(android.graphics.Color.parseColor("#F44336"))
             }
             snackbar.show()
         }
     }
-
-    // --- Asociación con aparato local + guardado de red ---
 
     private fun cargarAparatosLocales() {
         lifecycleScope.launch {
@@ -869,10 +870,6 @@ class EspConfigActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Tras finalizar la configuración de red del ESP32, guardamos su MAC de forma global
-     * para que pueda ser utilizada como "deviceKey" al momento de agregar nuevos dispositivos reales.
-     */
     private fun finalizarConfiguracion(ip: String) {
         if (connectedEspMac.isNotBlank()) {
             guardarDispositivo(connectedEspName, connectedEspMac)
@@ -987,12 +984,6 @@ class EspConfigActivity : AppCompatActivity() {
         )
     }
 
-    private fun actualizarConfiguracionRed(aparatoId: Int, mac: String, ip: String) {
-        val token = getSharedPreferences("SesionApp", Context.MODE_PRIVATE).getString("apiToken", "") ?: return
-        lifecycleScope.launch { actualizarConfiguracionRedSync(aparatoId, mac, ip, token) }
-    }
-
-    // --- QR ---
     private fun iniciarEscaneoQr() {
         val options = com.journeyapps.barcodescanner.ScanOptions()
         options.setDesiredBarcodeFormats(com.journeyapps.barcodescanner.ScanOptions.QR_CODE)
@@ -1030,7 +1021,6 @@ class EspConfigActivity : AppCompatActivity() {
         }
     }
 
-    // --- Ciclo de vida ---
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     override fun onDestroy() {
         super.onDestroy()
