@@ -58,7 +58,10 @@ class CameraStreamActivity : AppCompatActivity() {
                     val dispositivo = withContext(Dispatchers.IO) {
                         db.dispositivoDao().getAllDispositivosOnce().find { it.id == dispositivoId }
                     }
-                    val savedIp = dispositivo?.ipAddress
+                    var savedIp = dispositivo?.ipAddress
+                    if (savedIp != null && savedIp.contains("::ffff:")) {
+                        savedIp = savedIp.replace("::ffff:", "")
+                    }
                     if (!savedIp.isNullOrEmpty()) {
                         val ipCameraUrl = "http://$savedIp:81/stream"
                         mjpegStreamReader = MjpegStreamReader(ipCameraUrl) { bmp ->
