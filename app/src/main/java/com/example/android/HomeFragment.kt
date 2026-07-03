@@ -687,6 +687,22 @@ class HomeFragment : Fragment() {
         }
         tvDialogEstadoEncendido.text = estadoTexto
 
+        val tvDialogCorriente = dialogView.findViewById<TextView>(R.id.tvDialogCorriente)
+        val tvDialogPotencia = dialogView.findViewById<TextView>(R.id.tvDialogPotencia)
+        val tvDialogEnergia = dialogView.findViewById<TextView>(R.id.tvDialogEnergia)
+        val tvDialogHistorialConsumo = dialogView.findViewById<TextView>(R.id.tvDialogHistorialConsumo)
+
+        fun formatearConsumoActual() {
+            val corriente = dispositivo.corrienteA
+            val potencia = dispositivo.potenciaW
+            val energia = dispositivo.energiaAcumuladaWh
+
+            tvDialogCorriente.text = corriente?.let { String.format("%.3f A", it) } ?: "Sin medición"
+            tvDialogPotencia.text = potencia?.let { String.format("%.2f W", it) } ?: "Sin medición"
+            tvDialogEnergia.text = energia?.let { String.format("%.3f Wh", it) } ?: "Sin medición"
+        }
+        formatearConsumoActual()
+
         val tvDialogHistorial = dialogView.findViewById<TextView>(R.id.tvDialogHistorial)
         tvDialogHistorial.text = "Cargando historial..."
 
@@ -741,6 +757,34 @@ class HomeFragment : Fragment() {
             try {
                 val token = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
                     .getString("apiToken", "") ?: return@launch
+
+                val consumoActualResponse = RetrofitClient.deviceService.getConsumoActual("Bearer $token", dispositivo.id)
+                if (consumoActualResponse.isSuccessful) {
+                    val consumo = consumoActualResponse.body()
+                    tvDialogCorriente.text = consumo?.corrienteA?.let { String.format("%.3f A", it) } ?: "Sin medición"
+                    tvDialogPotencia.text = consumo?.potenciaW?.let { String.format("%.2f W", it) } ?: "Sin medición"
+                    tvDialogEnergia.text = consumo?.energiaAcumuladaWh?.let { String.format("%.3f Wh", it) } ?: "Sin medición"
+                }
+
+                val consumoHistoricoResponse = RetrofitClient.deviceService.getConsumoHistorico("Bearer $token", dispositivo.id, 8)
+                if (consumoHistoricoResponse.isSuccessful) {
+                    val lecturas = consumoHistoricoResponse.body().orEmpty()
+                    tvDialogHistorialConsumo.text = if (lecturas.isEmpty()) {
+                        "Sin lecturas de consumo registradas."
+                    } else {
+                        lecturas.joinToString("\n") { lectura ->
+                            String.format(
+                                "%.3f A · %.2f W · %.3f Wh",
+                                lectura.corrienteA,
+                                lectura.potenciaW,
+                                lectura.energiaWh
+                            )
+                        }
+                    }
+                } else {
+                    tvDialogHistorialConsumo.text = "No se pudo cargar el historial de consumo."
+                }
+
                 val response = RetrofitClient.deviceService.getMensajesSocket("Bearer $token", dispositivo.id, 8)
                 if (response.isSuccessful) {
                     val mensajes = response.body().orEmpty()

@@ -55,5 +55,21 @@ data class Dispositivo(
 
     @SerializedName("fecha_estado_actualizado")
     @androidx.room.ColumnInfo(name = "fecha_estado_actualizado")
-    val fechaEstadoActualizado: String? = null
+    val fechaEstadoActualizado: String? = null,
+
+    @SerializedName("corriente_a")
+    @androidx.room.ColumnInfo(name = "corriente_a")
+    val corrienteA: Float? = null,
+
+    @SerializedName("potencia_w")
+    @androidx.room.ColumnInfo(name = "potencia_w")
+    val potenciaW: Float? = null,
+
+    @SerializedName("energia_acumulada_wh")
+    @androidx.room.ColumnInfo(name = "energia_acumulada_wh")
+    val energiaAcumuladaWh: Float? = null,
+
+    @SerializedName("fecha_medicion_consumo")
+    @androidx.room.ColumnInfo(name = "fecha_medicion_consumo")
+    val fechaMedicionConsumo: String? = null
 )
