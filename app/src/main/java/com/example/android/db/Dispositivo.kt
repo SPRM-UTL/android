@@ -53,6 +53,10 @@ data class Dispositivo(
     @androidx.room.ColumnInfo(name = "conectado_red")
     val conectadoRed: Boolean? = null,
 
+    @SerializedName("ip_address")
+    @androidx.room.ColumnInfo(name = "ip_address")
+    val ipAddress: String? = null,
+
     @SerializedName("fecha_estado_actualizado")
     @androidx.room.ColumnInfo(name = "fecha_estado_actualizado")
     val fechaEstadoActualizado: String? = null,

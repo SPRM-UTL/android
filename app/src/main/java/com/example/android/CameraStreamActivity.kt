@@ -10,8 +10,13 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.example.android.ai.CameraSharedState
 import com.example.android.ai.MjpegStreamReader
+import com.example.android.db.AppDatabase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class CameraStreamActivity : AppCompatActivity() {
 
@@ -46,20 +51,33 @@ class CameraStreamActivity : AppCompatActivity() {
         if (CameraSharedState.isServiceRunning) {
             uiHandler.post(updateRunnable)
         } else {
-            val prefs = getSharedPreferences("EspConfigPrefs", Context.MODE_PRIVATE)
-            val savedIp = prefs.getString("saved_device_ip", "")
-            if (!savedIp.isNullOrEmpty()) {
-                val ipCameraUrl = "http://$savedIp:81/stream"
-                mjpegStreamReader = MjpegStreamReader(ipCameraUrl) { bmp ->
-                    runOnUiThread { 
-                        tvConnecting.visibility = View.GONE
-                        viewFinder.setImageBitmap(bmp) 
+            val dispositivoId = intent.getIntExtra("dispositivo_id", -1)
+            if (dispositivoId != -1) {
+                lifecycleScope.launch {
+                    val db = AppDatabase.getDatabase(this@CameraStreamActivity)
+                    val dispositivo = withContext(Dispatchers.IO) {
+                        db.dispositivoDao().getAllDispositivosOnce().find { it.id == dispositivoId }
+                    }
+                    val savedIp = dispositivo?.ipAddress
+                    if (!savedIp.isNullOrEmpty()) {
+                        val ipCameraUrl = "http://$savedIp:81/stream"
+                        mjpegStreamReader = MjpegStreamReader(ipCameraUrl) { bmp ->
+                            runOnUiThread { 
+                                tvConnecting.visibility = View.GONE
+                                viewFinder.setImageBitmap(bmp) 
+                            }
+                        }
+                        mjpegStreamReader?.start()
+                    } else {
+                        runOnUiThread {
+                            tvConnecting.text = "IP de la cámara no configurada o no sincronizada"
+                            Toast.makeText(this@CameraStreamActivity, "La cámara no está configurada o no ha reportado su IP.", Toast.LENGTH_LONG).show()
+                        }
                     }
                 }
-                mjpegStreamReader?.start()
             } else {
-                tvConnecting.text = "IP de la cámara no configurada"
-                Toast.makeText(this, "La cámara no está configurada.", Toast.LENGTH_SHORT).show()
+                tvConnecting.text = "Error al obtener cámara"
+                Toast.makeText(this, "Dispositivo no especificado", Toast.LENGTH_SHORT).show()
             }
         }
     }

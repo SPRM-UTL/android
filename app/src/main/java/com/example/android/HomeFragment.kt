@@ -203,7 +203,9 @@ class HomeFragment : Fragment() {
                         db.dispositivoDao().getAllDispositivosOnce().find { it.macBluetooth.equals(savedMac, ignoreCase = true) }
                     }
                     if (dispositivo != null) {
-                        val intent = Intent(requireContext(), CameraStreamActivity::class.java)
+                        val intent = Intent(requireContext(), CameraStreamActivity::class.java).apply {
+                            putExtra("dispositivo_id", dispositivo.id)
+                        }
                         startActivity(intent)
                     } else {
                         Snackbars.info(mainHome, "La cámara aún no se ha sincronizado", Snackbar.LENGTH_SHORT).show()
