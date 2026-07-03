@@ -61,6 +61,14 @@
             android:layout_weight="1"
             android:text="Por Mes" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnEnVivo"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="En Vivo" />
+
     </com.google.android.material.button.MaterialButtonToggleGroup>
 
     <!-- Rango de Fechas -->

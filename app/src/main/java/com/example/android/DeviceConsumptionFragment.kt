@@ -25,6 +25,9 @@ import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.datepicker.MaterialDatePicker
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -49,6 +52,7 @@ class DeviceConsumptionFragment : Fragment() {
     private var desdeIso: String? = null
     private var hastaIso: String? = null
     private var currentGranularity = "dia"
+    private var pollingJob: Job? = null
 
     private lateinit var chartPotencia: LineChart
     private lateinit var chartEnergia: BarChart
@@ -88,8 +92,22 @@ class DeviceConsumptionFragment : Fragment() {
         val toggleGroup = view.findViewById<MaterialButtonToggleGroup>(R.id.toggleGranularidad)
         toggleGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (isChecked) {
-                currentGranularity = if (checkedId == R.id.btnMes) "mes" else "dia"
-                fetchConsumo()
+                currentGranularity = when (checkedId) {
+                    R.id.btnMes -> "mes"
+                    R.id.btnEnVivo -> "envivo"
+                    else -> "dia"
+                }
+                
+                if (currentGranularity == "envivo") {
+                    btnDesde.visibility = View.GONE
+                    btnHasta.visibility = View.GONE
+                    startPolling()
+                } else {
+                    btnDesde.visibility = View.VISIBLE
+                    btnHasta.visibility = View.VISIBLE
+                    stopPolling()
+                    fetchConsumo()
+                }
             }
         }
 
@@ -125,6 +143,26 @@ class DeviceConsumptionFragment : Fragment() {
             onDateSelected(selection)
         }
         picker.show(parentFragmentManager, "DATE_PICKER")
+    }
+
+    private fun startPolling() {
+        stopPolling()
+        pollingJob = viewLifecycleOwner.lifecycleScope.launch {
+            while (isActive) {
+                fetchConsumo()
+                delay(3000)
+            }
+        }
+    }
+
+    private fun stopPolling() {
+        pollingJob?.cancel()
+        pollingJob = null
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        stopPolling()
     }
 
     private fun configurarGraficas() {
@@ -186,10 +224,10 @@ class DeviceConsumptionFragment : Fragment() {
         val etiquetas = ArrayList<String>()
 
         val formatterEntrada = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-        val formatterSalida = if (granularidad == "mes") {
-            SimpleDateFormat("dd/MM", Locale.getDefault())
-        } else {
-            SimpleDateFormat("dd/MM HH:mm", Locale.getDefault())
+        val formatterSalida = when (granularidad) {
+            "mes" -> SimpleDateFormat("dd/MM", Locale.getDefault())
+            "envivo" -> SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+            else -> SimpleDateFormat("dd/MM HH:mm", Locale.getDefault())
         }
 
         for ((index, punto) in puntos.withIndex()) {
