@@ -84,6 +84,8 @@ class DeviceAdapter(
             val isOn = deviceStates[dispositivo.id] ?: dispositivo.estadoEncendido ?: false
             switchDevice.setOnCheckedChangeListener(null)
             switchDevice.isChecked = isOn
+            switchDevice.isEnabled = isConnected
+            switchDevice.alpha = if (isConnected) 1f else 0.5f
 
             val iconBg = itemView.findViewById<com.google.android.material.card.MaterialCardView>(R.id.iconBg)
             if (isOn) {
@@ -93,6 +95,7 @@ class DeviceAdapter(
             }
 
             switchDevice.setOnCheckedChangeListener { _, isChecked ->
+                if (!isConnected) return@setOnCheckedChangeListener
                 deviceStates[dispositivo.id] = isChecked
                 onToggleClick(dispositivo, isChecked)
                 if (isChecked) {

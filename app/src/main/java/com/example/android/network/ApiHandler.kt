@@ -24,6 +24,7 @@ import retrofit2.Response
 import kotlin.coroutines.resume
 
 object ApiHandler {
+    const val RESOURCE_NOT_FOUND_MESSAGE = "El recurso ya no se encuentra en el servidor."
 
     suspend fun <T> safeApiCall(
         activity: Activity,
@@ -65,30 +66,7 @@ object ApiHandler {
                     }
                 } else {
                     val errorJson = response.errorBody()?.string()
-                    var parsedErrorMsg = "Error de servidor (${response.code()})"
-                    if (!errorJson.isNullOrBlank()) {
-                        try {
-                            val jsonObject = org.json.JSONObject(errorJson)
-                            if (jsonObject.has("data")) {
-                                val dataObj = jsonObject.get("data")
-                                if (dataObj is String) {
-                                    parsedErrorMsg = dataObj
-                                } else if (dataObj is org.json.JSONObject) {
-                                    if (dataObj.has("mensaje")) {
-                                        parsedErrorMsg = dataObj.getString("mensaje")
-                                    } else {
-                                        parsedErrorMsg = dataObj.toString()
-                                    }
-                                } else {
-                                    parsedErrorMsg = dataObj.toString()
-                                }
-                            } else {
-                                parsedErrorMsg = errorJson
-                            }
-                        } catch (e: Exception) {
-                            parsedErrorMsg = errorJson
-                        }
-                    }
+                    val parsedErrorMsg = parseErrorMessage(response.code(), errorJson)
                     onError(parsedErrorMsg)
                 }
             }
@@ -98,6 +76,45 @@ object ApiHandler {
                 onError("Error de conexión. Revisa tu red.")
             }
         }
+    }
+
+    private fun parseErrorMessage(statusCode: Int, errorJson: String?): String {
+        if (statusCode == 404) return RESOURCE_NOT_FOUND_MESSAGE
+
+        if (errorJson.isNullOrBlank()) {
+            return "Error de servidor ($statusCode)"
+        }
+
+        return try {
+            val jsonObject = org.json.JSONObject(errorJson)
+            extractMessage(jsonObject) ?: "Error de servidor ($statusCode)"
+        } catch (_: Exception) {
+            errorJson
+        }
+    }
+
+    private fun extractMessage(jsonObject: org.json.JSONObject): String? {
+        val directKeys = listOf("mensaje", "message", "detail", "title", "error")
+        directKeys.forEach { key ->
+            jsonObject.optString(key)
+                .takeIf { it.isNotBlank() }
+                ?.let { return it }
+        }
+
+        if (jsonObject.has("data") && !jsonObject.isNull("data")) {
+            val dataObj = jsonObject.get("data")
+            when (dataObj) {
+                is String -> return dataObj.takeIf { it.isNotBlank() }
+                is org.json.JSONObject -> return extractMessage(dataObj) ?: dataObj.toString()
+                else -> return dataObj.toString()
+            }
+        }
+
+        if (jsonObject.has("errors") && !jsonObject.isNull("errors")) {
+            return jsonObject.get("errors").toString()
+        }
+
+        return null
     }
 
     private suspend fun showReauthDialog(activity: Activity): Boolean = suspendCancellableCoroutine { continuation ->

@@ -65,6 +65,19 @@ interface DeviceApiService {
         @Path("sk_aparato_id") aparatoId: Int,
         @retrofit2.http.Query("limit") limit: Int = 20
     ): Response<List<AparatoMensajeResponse>>
+
+    @GET("api/Dim_Aparatos/{sk_aparato_id}/consumo")
+    suspend fun getConsumoHistorico(
+        @Header("Authorization") token: String,
+        @Path("sk_aparato_id") aparatoId: Int,
+        @retrofit2.http.Query("limit") limit: Int = 20
+    ): Response<List<AparatoConsumoResponse>>
+
+    @GET("api/Dim_Aparatos/{sk_aparato_id}/consumo/actual")
+    suspend fun getConsumoActual(
+        @Header("Authorization") token: String,
+        @Path("sk_aparato_id") aparatoId: Int
+    ): Response<AparatoConsumoActualResponse>
 }
 
 data class WsStatusResponse(
@@ -114,4 +127,30 @@ data class ToggleAparatoResponse(
     val comando: String?,
     @com.google.gson.annotations.SerializedName("estado_encendido")
     val estadoEncendido: Boolean?
+)
+
+data class AparatoConsumoResponse(
+    @com.google.gson.annotations.SerializedName("sk_consumo_id")
+    val id: Long,
+    @com.google.gson.annotations.SerializedName("sk_aparato_id")
+    val aparatoId: Int,
+    @com.google.gson.annotations.SerializedName("corriente_a")
+    val corrienteA: Float,
+    @com.google.gson.annotations.SerializedName("potencia_w")
+    val potenciaW: Float,
+    @com.google.gson.annotations.SerializedName("energia_wh")
+    val energiaWh: Float,
+    @com.google.gson.annotations.SerializedName("fecha_medicion")
+    val fechaMedicion: String
+)
+
+data class AparatoConsumoActualResponse(
+    @com.google.gson.annotations.SerializedName("corriente_a")
+    val corrienteA: Float?,
+    @com.google.gson.annotations.SerializedName("potencia_w")
+    val potenciaW: Float?,
+    @com.google.gson.annotations.SerializedName("energia_acumulada_wh")
+    val energiaAcumuladaWh: Float?,
+    @com.google.gson.annotations.SerializedName("fecha_medicion_consumo")
+    val fechaMedicionConsumo: String?
 )
