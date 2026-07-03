@@ -61,6 +61,9 @@
             android:foregroundServiceType="camera" />
 
         <activity
+            android:name=".CameraStreamActivity"
+            android:exported="false" />
+        <activity
             android:name=".ProfileActivity"
             android:exported="false" />
         <activity
