@@ -24,6 +24,7 @@ import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.datepicker.MaterialDatePicker
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -33,6 +34,10 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import android.graphics.Typeface
+import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 
 class DeviceConsumptionFragment : Fragment() {
 
@@ -60,6 +65,7 @@ class DeviceConsumptionFragment : Fragment() {
     private lateinit var progressConsumo: ProgressBar
     private lateinit var btnDesde: MaterialButton
     private lateinit var btnHasta: MaterialButton
+    private lateinit var cardRangoFechas: MaterialCardView
 
     private val dateFormatLocal = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     private val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
@@ -76,13 +82,26 @@ class DeviceConsumptionFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_device_consumption, container, false)
-        
+
+        // CORRECCIÓN AVANZADA: Forzar diseño Edge-to-Edge nativo para este fragmento
+        activity?.window?.let { window ->
+            // Le dice al sistema que no use paddings automáticos de ventana
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+            // Pintamos la barra de estado transparente para que se vea el fondo de tu cabecera
+            window.statusBarColor = android.graphics.Color.TRANSPARENT
+
+            // Mantiene las letras e íconos superiores en color blanco
+            val decorView = window.decorView
+            WindowInsetsControllerCompat(window, decorView).isAppearanceLightStatusBars = false
+        }
+
         chartPotencia = view.findViewById(R.id.chartPotencia)
         chartEnergia = view.findViewById(R.id.chartEnergia)
         chartCorriente = view.findViewById(R.id.chartCorriente)
         progressConsumo = view.findViewById(R.id.progressConsumo)
         btnDesde = view.findViewById(R.id.btnDesde)
         btnHasta = view.findViewById(R.id.btnHasta)
+        cardRangoFechas = view.findViewById(R.id.cardRangoFechas)
 
         val btnClose = view.findViewById<ImageView>(R.id.btnConsumptionClose)
         btnClose.setOnClickListener {
@@ -97,14 +116,12 @@ class DeviceConsumptionFragment : Fragment() {
                     R.id.btnEnVivo -> "envivo"
                     else -> "dia"
                 }
-                
+
                 if (currentGranularity == "envivo") {
-                    btnDesde.visibility = View.GONE
-                    btnHasta.visibility = View.GONE
+                    cardRangoFechas.visibility = View.GONE
                     startPolling()
                 } else {
-                    btnDesde.visibility = View.VISIBLE
-                    btnHasta.visibility = View.VISIBLE
+                    cardRangoFechas.visibility = View.VISIBLE
                     stopPolling()
                     fetchConsumo()
                 }
@@ -131,7 +148,7 @@ class DeviceConsumptionFragment : Fragment() {
 
         configurarGraficas()
         fetchConsumo()
-        
+
         return view
     }
 
@@ -163,16 +180,29 @@ class DeviceConsumptionFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         stopPolling()
+
+        // REVERTIR CAMBIOS AL SALIR: Asegura que el resto de la app regrese a su comportamiento normal
+        activity?.window?.let { window ->
+            WindowCompat.setDecorFitsSystemWindows(window, true)
+            window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.teal_primary)
+        }
     }
 
     private fun configurarGraficas() {
         val charts = listOf(chartPotencia, chartEnergia, chartCorriente)
+        val colorTeal = ContextCompat.getColor(requireContext(), R.color.teal_primary)
+        val tfSansSerif = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+
         for (chart in charts) {
             chart.description.isEnabled = false
             chart.setDrawGridBackground(false)
             chart.xAxis.position = XAxis.XAxisPosition.BOTTOM
             chart.axisRight.isEnabled = false
             chart.legend.isEnabled = false
+
+            chart.setNoDataText("No hay lecturas disponibles para mostrar")
+            chart.setNoDataTextColor(colorTeal)
+            chart.setNoDataTextTypeface(tfSansSerif)
         }
     }
 
@@ -190,7 +220,7 @@ class DeviceConsumptionFragment : Fragment() {
                     desdeIso,
                     hastaIso
                 )
-                
+
                 progressConsumo.visibility = View.GONE
 
                 if (response.isSuccessful) {
@@ -234,12 +264,11 @@ class DeviceConsumptionFragment : Fragment() {
             entradasPotencia.add(Entry(index.toFloat(), punto.potenciaPromedioW))
             entradasEnergia.add(BarEntry(index.toFloat(), punto.energiaConsumidaWh))
             entradasCorriente.add(Entry(index.toFloat(), punto.corrientePromedioA))
-            
+
             try {
-                // Eliminar sufijo 'Z' y parsear si es necesario
                 var p = punto.periodo
                 if (p.endsWith("Z")) p = p.dropLast(1)
-                
+
                 val date = formatterEntrada.parse(p)
                 etiquetas.add(if (date != null) formatterSalida.format(date) else punto.periodo)
             } catch (e: Exception) {
