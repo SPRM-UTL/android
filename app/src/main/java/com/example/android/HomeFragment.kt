@@ -170,11 +170,11 @@ class HomeFragment : Fragment() {
         tvDialogStatusRedGlobal?.let { tv ->
             statusDotInfoGlobal?.let { dot ->
                 if (isConnected) {
-                    tv.text = "En línea"
+                    tv.text = "Cámara en línea"
                     tv.setTextColor(android.graphics.Color.parseColor("#009688"))
                     dot.setCardBackgroundColor(android.graphics.Color.parseColor("#009688"))
                 } else {
-                    tv.text = "Desconectado"
+                    tv.text = "Cámara desconectada"
                     tv.setTextColor(android.graphics.Color.parseColor("#6F7EA8"))
                     dot.setCardBackgroundColor(android.graphics.Color.parseColor("#6F7EA8"))
                 }
@@ -192,6 +192,26 @@ class HomeFragment : Fragment() {
         iconWifi           = view.findViewById(R.id.iconWifi)
         btnConfigurarRed   = view.findViewById(R.id.btnConfigurarRed)
         tvUsuario          = view.findViewById(R.id.tvUsuario)
+        
+        val redContainer = view.findViewById<View>(R.id.tvRedEstado)?.parent as? View
+        redContainer?.setOnClickListener {
+            val sharedPref = requireContext().getSharedPreferences("EspConfigPrefs", Context.MODE_PRIVATE)
+            val savedMac = sharedPref.getString("saved_mac_address", "") ?: ""
+            if (savedMac.isNotBlank()) {
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val dispositivo = withContext(Dispatchers.IO) {
+                        db.dispositivoDao().getAllDispositivosOnce().find { it.macBluetooth.equals(savedMac, ignoreCase = true) }
+                    }
+                    if (dispositivo != null) {
+                        mostrarInformacionDispositivo(dispositivo)
+                    } else {
+                        Snackbars.info(mainHome, "La cámara aún no se ha sincronizado", Snackbar.LENGTH_SHORT).show()
+                    }
+                }
+            } else {
+                Snackbars.info(mainHome, "Configura la red primero", Snackbar.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun inicializarAdapters() {
@@ -645,7 +665,7 @@ class HomeFragment : Fragment() {
                 startActivity(
                     Intent(requireContext(), EspConfigActivity::class.java).apply {
                         putExtra(EspConfigActivity.EXTRA_MODO_SOCKET, true)
-                        putExtra(EspConfigActivity.EXTRA_TIPO_DISPOSITIVO, "ESP32 Socket")
+                        putExtra(EspConfigActivity.EXTRA_TIPO_DISPOSITIVO, "ESP32-CAM")
                     }
                 )
                 delay(1000)
@@ -657,12 +677,12 @@ class HomeFragment : Fragment() {
 
     private fun actualizarUiEstadoRed(isConnected: Boolean) {
         if (isConnected) {
-            tvRedEstado.text = "Controlador en línea"
+            tvRedEstado.text = "Cámara en línea"
             tvRedEstado.setTextColor(requireContext().getColor(R.color.teal_primary))
             iconWifiContainer.setCardBackgroundColor(requireContext().getColor(R.color.teal_primary))
             iconWifi.imageTintList = ColorStateList.valueOf(requireContext().getColor(R.color.white))
         } else {
-            tvRedEstado.text = "Controlador desconectado"
+            tvRedEstado.text = "Cámara desconectada"
             tvRedEstado.setTextColor(requireContext().getColor(R.color.text_grey))
             iconWifi.imageTintList = ColorStateList.valueOf(requireContext().getColor(R.color.white))
             iconWifiContainer.setCardBackgroundColor(requireContext().getColor(R.color.text_grey))
