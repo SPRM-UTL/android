@@ -753,6 +753,15 @@ class HomeFragment : Fragment() {
             startActivity(intent)
         }
 
+        dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnDialogConsumo)?.setOnClickListener {
+            dialog.dismiss()
+            requireActivity().supportFragmentManager.beginTransaction()
+                .setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right, android.R.anim.slide_in_left, android.R.anim.slide_out_right)
+                .add(R.id.fragment_container_overlay, DeviceConsumptionFragment.newInstance(dispositivo.id))
+                .addToBackStack("DeviceConsumption")
+                .commit()
+        }
+
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val token = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
@@ -760,7 +769,7 @@ class HomeFragment : Fragment() {
 
                 val consumoActualResponse = RetrofitClient.deviceService.getConsumoActual("Bearer $token", dispositivo.id)
                 if (consumoActualResponse.isSuccessful) {
-                    val consumo = consumoActualResponse.body()
+                    val consumo = consumoActualResponse.body()?.data
                     tvDialogCorriente.text = consumo?.corrienteA?.let { String.format("%.3f A", it) } ?: "Sin medición"
                     tvDialogPotencia.text = consumo?.potenciaW?.let { String.format("%.2f W", it) } ?: "Sin medición"
                     tvDialogEnergia.text = consumo?.energiaAcumuladaWh?.let { String.format("%.3f Wh", it) } ?: "Sin medición"
@@ -768,7 +777,7 @@ class HomeFragment : Fragment() {
 
                 val consumoHistoricoResponse = RetrofitClient.deviceService.getConsumoHistorico("Bearer $token", dispositivo.id, 8)
                 if (consumoHistoricoResponse.isSuccessful) {
-                    val lecturas = consumoHistoricoResponse.body().orEmpty()
+                    val lecturas = consumoHistoricoResponse.body()?.data.orEmpty()
                     tvDialogHistorialConsumo.text = if (lecturas.isEmpty()) {
                         "Sin lecturas de consumo registradas."
                     } else {
@@ -787,7 +796,7 @@ class HomeFragment : Fragment() {
 
                 val response = RetrofitClient.deviceService.getMensajesSocket("Bearer $token", dispositivo.id, 8)
                 if (response.isSuccessful) {
-                    val mensajes = response.body().orEmpty()
+                    val mensajes = response.body()?.data.orEmpty()
                     tvDialogHistorial.text = if (mensajes.isEmpty()) {
                         "Sin mensajes registrados todavía."
                     } else {

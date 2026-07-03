@@ -64,20 +64,29 @@ interface DeviceApiService {
         @Header("Authorization") token: String,
         @Path("sk_aparato_id") aparatoId: Int,
         @retrofit2.http.Query("limit") limit: Int = 20
-    ): Response<List<AparatoMensajeResponse>>
+    ): Response<ApiResponse<List<AparatoMensajeResponse>>>
 
     @GET("api/Dim_Aparatos/{sk_aparato_id}/consumo")
     suspend fun getConsumoHistorico(
         @Header("Authorization") token: String,
         @Path("sk_aparato_id") aparatoId: Int,
         @retrofit2.http.Query("limit") limit: Int = 20
-    ): Response<List<AparatoConsumoResponse>>
+    ): Response<ApiResponse<List<AparatoConsumoResponse>>>
 
     @GET("api/Dim_Aparatos/{sk_aparato_id}/consumo/actual")
     suspend fun getConsumoActual(
         @Header("Authorization") token: String,
         @Path("sk_aparato_id") aparatoId: Int
-    ): Response<AparatoConsumoActualResponse>
+    ): Response<ApiResponse<AparatoConsumoActualResponse>>
+
+    @GET("api/Dim_Aparatos/{sk_aparato_id}/consumo/resumen")
+    suspend fun getConsumoResumen(
+        @Header("Authorization") token: String,
+        @Path("sk_aparato_id") aparatoId: Int,
+        @retrofit2.http.Query("granularidad") granularidad: String,
+        @retrofit2.http.Query("desde") desde: String?,
+        @retrofit2.http.Query("hasta") hasta: String?
+    ): Response<ApiResponse<AparatoConsumoResumenResponse>>
 }
 
 data class WsStatusResponse(
@@ -153,4 +162,26 @@ data class AparatoConsumoActualResponse(
     val energiaAcumuladaWh: Float?,
     @com.google.gson.annotations.SerializedName("fecha_medicion_consumo")
     val fechaMedicionConsumo: String?
+)
+
+data class AparatoConsumoPuntoResponse(
+    @com.google.gson.annotations.SerializedName("periodo")
+    val periodo: String,
+    @com.google.gson.annotations.SerializedName("potencia_promedio_w")
+    val potenciaPromedioW: Float,
+    @com.google.gson.annotations.SerializedName("corriente_promedio_a")
+    val corrientePromedioA: Float,
+    @com.google.gson.annotations.SerializedName("energia_consumida_wh")
+    val energiaConsumidaWh: Float
+)
+
+data class AparatoConsumoResumenResponse(
+    @com.google.gson.annotations.SerializedName("granularidad")
+    val granularidad: String,
+    @com.google.gson.annotations.SerializedName("desde")
+    val desde: String,
+    @com.google.gson.annotations.SerializedName("hasta")
+    val hasta: String,
+    @com.google.gson.annotations.SerializedName("puntos")
+    val puntos: List<AparatoConsumoPuntoResponse>
 )

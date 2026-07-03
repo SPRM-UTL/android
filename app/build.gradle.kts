@@ -127,4 +127,7 @@ dependencies {
     
     // TapTargetView for App Tutorial
     implementation("com.getkeepsafe.taptargetview:taptargetview:1.13.3")
+
+    // MPAndroidChart
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 }
