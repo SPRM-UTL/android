@@ -498,14 +498,23 @@ class HomeFragment : Fragment() {
             vistaRaiz.post {
                 if (!isAdded) return@post
 
+                // 1. Creamos el snackbar normal de Material Design
                 val snackbar = Snackbars.info(mainHome, "Bienvenido", Snackbar.LENGTH_SHORT)
 
+                // 2. Buscamos el contenedor de la barra inferior de la Activity
                 val bottomBar = activity.findViewById<View>(R.id.bottom_bar_container)
-                val bottomBarHeight = bottomBar?.height ?: 0
 
-                val params = snackbar.view.layoutParams as ViewGroup.MarginLayoutParams
-                params.bottomMargin = bottomBarHeight
-                snackbar.view.layoutParams = params
+                if (bottomBar != null) {
+                    // 3. Lo anclamos directamente sobre el contenedor.
+                    // Esto lo posiciona automáticamente arriba de la barra y del botón '+' sin romper el diseño.
+                    snackbar.setAnchorView(bottomBar)
+                } else {
+                    // Respaldo manual usando padding en caso de que no se encuentre la vista en el layout actual
+                    val bottomBarHeight = bottomBar?.height ?: 0
+                    val params = snackbar.view.layoutParams as ViewGroup.MarginLayoutParams
+                    params.bottomMargin = bottomBarHeight + (16 * resources.displayMetrics.density).toInt()
+                    snackbar.view.layoutParams = params
+                }
 
                 snackbar.show()
             }

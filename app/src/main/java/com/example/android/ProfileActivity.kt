@@ -90,10 +90,10 @@ class ProfileActivity : AppCompatActivity() {
             Snackbars.error(vistaRaiz, "Error al recortar: ${error?.message}", Snackbar.LENGTH_SHORT).show()
         }
     }
-    
+
     private fun launchUCrop(sourceUri: Uri) {
         val destinationUri = Uri.fromFile(File(cacheDir, "perfil_${System.currentTimeMillis()}.jpg"))
-        
+
         val options = com.yalantis.ucrop.UCrop.Options()
         options.setCircleDimmedLayer(true)
         options.setCompressionQuality(90)
@@ -102,7 +102,7 @@ class ProfileActivity : AppCompatActivity() {
         val colorPrimary = ContextCompat.getColor(this, R.color.teal_primary)
         val colorWhite = ContextCompat.getColor(this, R.color.white)
         val colorBackground = ContextCompat.getColor(this, R.color.background)
-        
+
         options.setStatusBarColor(colorPrimary)
         options.setToolbarColor(colorPrimary)
         options.setToolbarWidgetColor(colorWhite)
@@ -114,7 +114,7 @@ class ProfileActivity : AppCompatActivity() {
             .withMaxResultSize(512, 512)
             .withOptions(options)
             .getIntent(this)
-            
+
         uCropLauncher.launch(uCropIntent)
     }
 
@@ -123,14 +123,18 @@ class ProfileActivity : AppCompatActivity() {
         enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.navigationBarColor = android.graphics.Color.TRANSPARENT
-        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = true
+
+        // Replicado idéntico a Combos: Barra de navegación clara, barra de estado oscura con iconos blancos
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightNavigationBars = true
+            isAppearanceLightStatusBars = false
+        }
 
         setContentView(R.layout.activity_profile)
-        
-        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
 
         mainProfile = findViewById(R.id.mainProfile)
-        
+
+        // Insets configurados exactamente con la misma solución dinámica de Combos
         ViewCompat.setOnApplyWindowInsetsListener(mainProfile) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
@@ -144,8 +148,10 @@ class ProfileActivity : AppCompatActivity() {
                     currentFocus?.clearFocus()
                 }
             }
-            
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom + ime.bottom)
+
+            v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom + ime.bottom)
+
+            // ESTO INYECTA EL ESPACIO PERFECTO ARRIBA DE LA FLECHA Y EL TÍTULO
             val cardBack = findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardBack)
             cardBack?.getChildAt(0)?.setPadding(0, systemBars.top, 0, 0)
             insets
@@ -193,7 +199,6 @@ class ProfileActivity : AppCompatActivity() {
         ivProfile.setOnClickListener { mostrarOpcionesFotoPerfil() }
         btnCambiarFoto.setOnClickListener { mostrarOpcionesFotoPerfil() }
 
-        // ACTIVACIÓN DE ANIMACIÓN AL TOCAR CUALQUIER INPUT
         val inputs = listOf(etNombrePerfil, etCorreoPerfil, etContrasenaPerfil, etConfirmarContrasena)
         inputs.forEach { input ->
             input.setOnFocusChangeListener { _, hasFocus ->
@@ -201,9 +206,8 @@ class ProfileActivity : AppCompatActivity() {
             }
             input.setOnClickListener { mainProfile.transitionToEnd() }
 
-            // Al presionar Enter (Done/Next)
             input.setOnEditorActionListener { v, actionId, _ ->
-                if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE || 
+                if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE ||
                     v.id == R.id.etConfirmarContrasena) {
                     v.clearFocus()
                     val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
@@ -213,8 +217,7 @@ class ProfileActivity : AppCompatActivity() {
                 false
             }
         }
-        
-        // TOCAR FUERA para cerrar teclado y resetear pantalla
+
         val cerrarTecladoAction = View.OnClickListener {
             val focus = currentFocus
             if (focus is TextInputEditText) {
@@ -236,7 +239,6 @@ class ProfileActivity : AppCompatActivity() {
         }
 
         findViewById<MaterialButton>(R.id.btnGuardarPerfil)?.let { botonGuardar ->
-            // Se puede cargar icono local si se requiere
         }
 
         findViewById<MaterialButton>(R.id.logout)?.let { botonLogout ->
@@ -452,24 +454,24 @@ class ProfileActivity : AppCompatActivity() {
     private fun mostrarOpcionesFotoPerfil() {
         val bottomSheetDialog = BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.dialog_profile_photo_options, null)
-        
+
         view.findViewById<View>(R.id.btnVerFoto).setOnClickListener {
             bottomSheetDialog.dismiss()
             mostrarFotoCompleta()
         }
-        
+
         view.findViewById<View>(R.id.btnTomarFoto).setOnClickListener {
             bottomSheetDialog.dismiss()
             tomarFoto()
         }
-        
+
         view.findViewById<View>(R.id.btnGaleria).setOnClickListener {
             bottomSheetDialog.dismiss()
             photoPickerLauncher.launch(
                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
             )
         }
-        
+
         bottomSheetDialog.setContentView(view)
         bottomSheetDialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         bottomSheetDialog.window?.navigationBarColor = Color.WHITE
@@ -480,13 +482,13 @@ class ProfileActivity : AppCompatActivity() {
     private fun mostrarFotoCompleta() {
         val dialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
         dialog.setContentView(R.layout.dialog_view_photo)
-        
+
         val ivFullPhoto = dialog.findViewById<ImageView>(R.id.ivFullPhoto)
         val btnClose = dialog.findViewById<ImageButton>(R.id.btnCloseViewPhoto)
-        
+
         val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
         val imageUrl = sharedPref.getString("profileImageUrl", null)
-        
+
         if (!imageUrl.isNullOrEmpty()) {
             ivFullPhoto.load(imageUrl) {
                 crossfade(true)
@@ -495,7 +497,7 @@ class ProfileActivity : AppCompatActivity() {
         } else {
             ivFullPhoto.setImageResource(R.drawable.user_filled)
         }
-        
+
         btnClose.setOnClickListener { dialog.dismiss() }
         dialog.show()
     }

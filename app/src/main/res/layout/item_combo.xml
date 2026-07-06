@@ -4,8 +4,10 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="8dp"
-    android:layout_marginVertical="6dp"
+    android:layout_marginStart="16dp"
+    android:layout_marginEnd="16dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginBottom="8dp"
     app:cardBackgroundColor="@color/white"
     app:cardCornerRadius="16dp"
     app:cardElevation="3dp"
@@ -17,41 +19,56 @@
         android:layout_height="wrap_content"
         android:padding="16dp">
 
+        <ImageView
+            android:id="@+id/ivComboIcon"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:src="@drawable/ic_manordomo_sin_fondo"
+            android:scaleType="centerInside"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
         <TextView
             android:id="@+id/tvComboName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Nombre del Combo"
+            android:layout_marginStart="16dp"
+            android:text="Nuevo Combo"
             android:textColor="#073F4C"
-            android:textSize="18sp"
+            android:textSize="20sp"
             android:textStyle="bold"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/tvComboAction"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/ivComboIcon"
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
             android:id="@+id/tvComboAction"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Acción: Ninguna"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="6dp"
+            android:text="Acción: Encender · ESP32_Socket_Manordomo_Oso"
             android:textColor="#6F7E8E"
             android:textSize="14sp"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="@id/tvComboName" />
+            app:layout_constraintStart_toEndOf="@id/ivComboIcon"
+            app:layout_constraintTop_toBottomOf="@id/tvComboName" />
 
         <TextView
             android:id="@+id/tvComboDescription"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:text="Descripción de la secuencia generada..."
-            android:textColor="#6F7E8E"
-            android:textSize="14sp"
-            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="4dp"
+            android:text="Act: A PULGAR ARRIBA | Pasos: 0"
+            android:textColor="#A0AAB5"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvComboName" />
+            app:layout_constraintStart_toEndOf="@id/ivComboIcon"
+            app:layout_constraintTop_toBottomOf="@id/tvComboAction" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-
 </com.google.android.material.card.MaterialCardView>
