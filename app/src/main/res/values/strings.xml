@@ -66,4 +66,5 @@
     <string name="cat_manos">Manos</string>
     <string name="cat_brazos">Brazos</string>
     <string name="cat_cuerpo">Cuerpo completo</string>
+    <string name="icon">Icono</string>
 </resources>

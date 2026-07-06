@@ -48,11 +48,18 @@
 
         <activity
             android:name=".DeviceCameraActivity"
-            android:exported="true" /> <!-- IA Simple Activities -->
+            android:exported="true" />
+
+        <!-- IA Simple Activities -->
         <activity android:name=".ai.ComboListActivity" />
         <activity android:name=".ai.SecuenciaConfigActivity" />
         <activity android:name=".ai.PasoWizardActivity" />
         <activity android:name=".ai.ScheduleActivity" />
+
+        <!-- REGISTRO DEL NUEVO WIZARD DE DISPOSITIVOS -->
+        <activity
+            android:name=".ai.DispositivoWizardActivity"
+            android:exported="false" />
 
         <service
             android:name=".ai.BackgroundCameraService"
@@ -136,6 +143,7 @@
             android:name=".InitialSetupActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

@@ -29,26 +29,26 @@ class ComboListActivity : AppCompatActivity() {
         window.navigationBarColor = android.graphics.Color.TRANSPARENT
         WindowInsetsControllerCompat(window, window.decorView).apply {
             isAppearanceLightNavigationBars = true
-            isAppearanceLightStatusBars = false 
+            isAppearanceLightStatusBars = false
         }
-        
+
         setContentView(R.layout.activity_combo_list)
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.mainComboList)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-            
+
             v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom + ime.bottom)
-            
+
             val cardBack = findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardBack)
             cardBack?.getChildAt(0)?.setPadding(0, systemBars.top, 0, 0)
-            
+
             insets
         }
 
         rvCombos = findViewById(R.id.recyclerView)
         fabAddCombo = findViewById(R.id.fabAddCombo)
-        
+
         findViewById<android.widget.ImageButton>(R.id.btnBack).setOnClickListener {
             finish()
         }
@@ -70,7 +70,7 @@ class ComboListActivity : AppCompatActivity() {
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 val position = viewHolder.adapterPosition
                 val deletedCombo = adapter.combos[position]
-                
+
                 adapter.combos.removeAt(position)
                 adapter.notifyItemRemoved(position)
                 SecuenciaConfigManager.saveCombos(this@ComboListActivity, adapter.combos)
@@ -80,6 +80,9 @@ class ComboListActivity : AppCompatActivity() {
                     "Combo '${deletedCombo.name}' eliminado",
                     com.google.android.material.snackbar.Snackbar.LENGTH_LONG
                 ).apply {
+                    // Mantiene la notificación por encima del FAB de forma dinámica
+                    setAnchorView(fabAddCombo)
+
                     setAction("Deshacer") {
                         adapter.combos.add(position, deletedCombo)
                         adapter.notifyItemInserted(position)
@@ -107,7 +110,7 @@ class ComboListActivity : AppCompatActivity() {
                         color = androidx.core.content.ContextCompat.getColor(this@ComboListActivity, R.color.teal_primary)
                     }
                     val icon = androidx.core.content.ContextCompat.getDrawable(this@ComboListActivity, android.R.drawable.ic_menu_delete)
-                    
+
                     if (dX > 0) {
                         val rect = android.graphics.RectF(
                             itemView.left.toFloat(), itemView.top.toFloat(),
@@ -151,7 +154,7 @@ class ComboListActivity : AppCompatActivity() {
             val newCombo = Combo(id = UUID.randomUUID().toString(), name = "Nuevo Combo")
             adapter.combos.add(newCombo)
             SecuenciaConfigManager.saveCombos(this, adapter.combos)
-            
+
             val intent = Intent(this, SecuenciaConfigActivity::class.java)
             intent.putExtra("COMBO_ID", newCombo.id)
             startActivity(intent)
