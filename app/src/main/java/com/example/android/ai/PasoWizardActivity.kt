@@ -1,14 +1,13 @@
+// Archivo: PasoWizardActivity.kt
 package com.example.android.ai
 
+import com.example.android.adapters.GestureDropdownAdapter
 import com.example.android.R
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.SeekBar
@@ -43,19 +42,19 @@ class PasoWizardActivity : AppCompatActivity() {
         window.navigationBarColor = android.graphics.Color.TRANSPARENT
         WindowInsetsControllerCompat(window, window.decorView).apply {
             isAppearanceLightNavigationBars = true
-            isAppearanceLightStatusBars = false 
+            isAppearanceLightStatusBars = false
         }
         setContentView(R.layout.activity_step_wizard)
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.mainStepWizard)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-            
+
             v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom + ime.bottom)
-            
+
             val cardBack = findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardBack)
             cardBack?.getChildAt(0)?.setPadding(0, systemBars.top, 0, 0)
-            
+
             insets
         }
 
@@ -92,12 +91,12 @@ class PasoWizardActivity : AppCompatActivity() {
             resultIntent.putExtra("POSE_NAME", selectedPoseName)
             resultIntent.putExtra("TARGET_HAND", selectedHand.name)
             resultIntent.putExtra("FRAMES", selectedFrames)
-            
+
             val extraType = intent.getStringExtra("EXTRA_TYPE")
             if (extraType != null) {
                 resultIntent.putExtra("EXTRA_TYPE", extraType)
             }
-            
+
             val editIndex = intent.getIntExtra("EDIT_INDEX", -1)
             if (editIndex != -1) {
                 resultIntent.putExtra("EDIT_INDEX", editIndex)
@@ -109,23 +108,34 @@ class PasoWizardActivity : AppCompatActivity() {
     }
 
     private fun setupSpinners() {
-        val gestureAdapter = GestureAdapter(this, allPoses)
+        // ====== DROPDOWN 1: GESTO (AHORA USA EL MISMO ADAPTADOR) ======
+        val gestureAdapter = GestureDropdownAdapter(this, allPoses) { _ ->
+            // Retorna el icono base de la app para todos los gestos de la lista
+            R.drawable.ic_manordomo_sin_fondo
+        }
         spinnerGesto.setAdapter(gestureAdapter)
         spinnerGesto.setText(selectedPoseName, false)
         spinnerGesto.setOnItemClickListener { _, _, position, _ ->
             selectedPoseName = allPoses[position]
         }
 
-        val handAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, handOptions)
+        // ====== DROPDOWN 2: MANO ======
+        val handAdapter = GestureDropdownAdapter(this, handOptions) { mano ->
+            when (mano) {
+                "Mano Izquierda" -> R.drawable.ic_manordomo_sin_fondo // Puedes cambiarlo por un vector específico
+                "Mano Derecha"   -> R.drawable.ic_manordomo_sin_fondo // Puedes cambiarlo por un vector específico
+                else -> null // Usa el icono por defecto de Manordomo
+            }
+        }
         spinnerMano.setAdapter(handAdapter)
-        
+
         val handIndex = when (selectedHand) {
             ManoObjetivo.ANY -> 0
             ManoObjetivo.LEFT -> 1
             ManoObjetivo.RIGHT -> 2
         }
         spinnerMano.setText(handOptions[handIndex], false)
-        
+
         spinnerMano.setOnItemClickListener { _, _, position, _ ->
             selectedHand = when (position) {
                 1 -> ManoObjetivo.LEFT
@@ -147,14 +157,5 @@ class PasoWizardActivity : AppCompatActivity() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
-    }
-
-    inner class GestureAdapter(context: Context, private val poses: List<String>) : ArrayAdapter<String>(context, 0, poses) {
-        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-            val view = convertView ?: LayoutInflater.from(context).inflate(R.layout.item_gesture_dropdown, parent, false)
-            val tvName = view.findViewById<TextView>(R.id.tvGestureName)
-            tvName.text = poses[position]
-            return view
-        }
     }
 }

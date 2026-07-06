@@ -48,6 +48,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
     private lateinit var comboActual: Combo
     private var comboIndex: Int = -1
 
+    // Launcher existente para Pasos/Activadores
     private val wizardLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val data = result.data ?: return@registerForActivityResult
@@ -64,7 +65,6 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                     comboActual.activador = newStep
                     updateHeaders()
                 }
-
                 "STEP" -> {
                     adapter.pasos.add(newStep)
                     adapter.notifyItemInserted(adapter.pasos.size - 1)
@@ -77,6 +77,39 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                     }
                 }
             }
+        }
+    }
+
+    // === NUEVO LAUNCHER PARA EL WIZARD DE VINCULAR DISPOSITIVO ===
+    private val dispositivoWizardLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val data = result.data ?: return@registerForActivityResult
+
+            val dispositivoId = data.getIntExtra("DISPOSITIVO_ID", -1)
+            val nombreDispositivo = data.getStringExtra("DISPOSITIVO_NOMBRE") ?: "Dispositivo"
+            val accionTipo = data.getIntExtra("ACCION_TIPO", -1) // 0 = Encender, 1 = Apagar, 2 = Alternar, -1 = Quitar/Ninguna
+
+            if (dispositivoId == -1 || accionTipo == -1) {
+                // Si el usuario seleccionó "Quitar acción" dentro de su Wizard
+                comboActual.aparatoId = null
+                comboActual.accionEncendido = null
+                comboActual.accionVinculada = null
+            } else {
+                // Asignar los valores devueltos por el Wizard
+                comboActual.aparatoId = dispositivoId
+                comboActual.accionEncendido = when (accionTipo) {
+                    0 -> true
+                    1 -> false
+                    else -> null // Alternar estado
+                }
+                val verbo = when (accionTipo) {
+                    0 -> "Encender"
+                    1 -> "Apagar"
+                    else -> "Alternar"
+                }
+                comboActual.accionVinculada = "$verbo · $nombreDispositivo"
+            }
+            updateHeaders()
         }
     }
 
@@ -219,7 +252,6 @@ class SecuenciaConfigActivity : AppCompatActivity() {
             intent.putExtra("EXTRA_TYPE", "EDIT_STEP")
             intent.putExtra("EDIT_INDEX", position)
 
-            // Pass the existing values to pre-select them in the wizard
             val step = comboActual.pasos[position]
             intent.putExtra("INITIAL_POSE", step.nombreGesto)
             intent.putExtra("INITIAL_HAND", step.manoObjetivo.name)
@@ -261,6 +293,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
             }
         }
 
+        // Eventos modificados para abrir la nueva actividad Wizard en lugar del diálogo antiguo
         btnEditAccion.setOnClickListener {
             showActionSelectionDialog()
         }
@@ -327,58 +360,14 @@ class SecuenciaConfigActivity : AppCompatActivity() {
         }
     }
 
+    // === FUNCIÓN REDISEÑADA: ABRE LA NUEVA ACTIVIDAD DE TIPO WIZARD ===
     private fun showActionSelectionDialog() {
-        lifecycleScope.launch {
-            val dispositivos = db.dispositivoDao().getAllDispositivosOnce()
-            if (dispositivos.isEmpty()) {
-                Toast.makeText(
-                    this@SecuenciaConfigActivity,
-                    "Primero agrega un dispositivo en el inicio",
-                    Toast.LENGTH_LONG
-                ).show()
-                return@launch
-            }
-
-            val nombres = dispositivos.map { it.nombre ?: "Dispositivo ${it.id}" }.toTypedArray()
-
-            com.google.android.material.dialog.MaterialAlertDialogBuilder(this@SecuenciaConfigActivity)
-                .setTitle("Vincular dispositivo")
-                .setItems(nombres) { dialog, which ->
-                    dialog.dismiss()
-                    mostrarTipoAccionDialog(dispositivos[which])
-                }
-                .setNegativeButton("Quitar acción") { dialog, _ ->
-                    comboActual.aparatoId = null
-                    comboActual.accionEncendido = null
-                    comboActual.accionVinculada = null
-                    updateHeaders()
-                    dialog.dismiss()
-                }
-                .show()
+        // Debes crear una nueva Activity llamada 'DispositivoWizardActivity' (o el nombre que prefieras)
+        val intent = Intent(this, DispositivoWizardActivity::class.java).apply {
+            putExtra("INITIAL_DISPOSITIVO_ID", comboActual.aparatoId ?: -1)
+            putExtra("INITIAL_ACCION_ENCENDIDO", comboActual.accionEncendido)
         }
-    }
-
-    private fun mostrarTipoAccionDialog(dispositivo: com.example.android.db.Dispositivo) {
-        val opciones = arrayOf("Encender", "Apagar", "Alternar estado")
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-            .setTitle("${dispositivo.nombre ?: "Dispositivo"}")
-            .setItems(opciones) { dialog, which ->
-                comboActual.aparatoId = dispositivo.id
-                comboActual.accionEncendido = when (which) {
-                    0 -> true
-                    1 -> false
-                    else -> null
-                }
-                val verbo = when (which) {
-                    0 -> "Encender"
-                    1 -> "Apagar"
-                    else -> "Alternar"
-                }
-                comboActual.accionVinculada = "$verbo · ${dispositivo.nombre ?: "Dispositivo"}"
-                updateHeaders()
-                dialog.dismiss()
-            }
-            .show()
+        dispositivoWizardLauncher.launch(intent)
     }
 
     private fun notificarRecargaCombos() {
@@ -393,7 +382,6 @@ class SecuenciaConfigActivity : AppCompatActivity() {
     // ==========================================================
 
     private fun sincronizarGestoConServidor() {
-        // Nombre representativo del combo: el activador si existe, si no el primer paso, si no el nombre del combo.
         val nombreRepresentativo = comboActual.activador?.nombreGesto
             ?: comboActual.pasos.firstOrNull()?.nombreGesto
             ?: comboActual.name
@@ -403,10 +391,10 @@ class SecuenciaConfigActivity : AppCompatActivity() {
 
         val gesto = Gesto(
             id = comboActual.backendGestoId ?: 0,
-            bkId = comboActual.backendGestoId ?: 0, // TODO: confirmar qué valor real espera bk_gesto_id
+            bkId = comboActual.backendGestoId ?: 0,
             nombre = nombreValido,
-            identificadorIa = 0, // TODO: confirmar significado de identificador_ia
-            nivelConfianzaMinimo = 0.7, // TODO: ajustar umbral real si aplica
+            identificadorIa = 0,
+            nivelConfianzaMinimo = 0.7,
             tipoDisparadorNombre = tipoDisparador,
             aparatoId = comboActual.aparatoId
         )
