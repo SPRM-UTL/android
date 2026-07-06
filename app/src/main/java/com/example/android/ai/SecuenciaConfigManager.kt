@@ -133,4 +133,56 @@ object SecuenciaConfigManager {
             cuadrosRequeridos = obj.getInt("cuadrosRequeridos")
         )
     }
+
+    private fun comboToGesto(combo: Combo): com.example.android.db.Gesto {
+        val pasosList = mutableListOf<com.example.android.db.GestoPaso>()
+        var order = 1
+        if (combo.activador != null) {
+            pasosList.add(com.example.android.db.GestoPaso(orden = order++, esActivador = true, nombreGesto = combo.activador!!.nombreGesto, manoObjetivo = combo.activador!!.manoObjetivo.name, cuadrosRequeridos = combo.activador!!.cuadrosRequeridos))
+        }
+        combo.pasos.forEach { paso ->
+            pasosList.add(com.example.android.db.GestoPaso(orden = order++, esActivador = false, nombreGesto = paso.nombreGesto, manoObjetivo = paso.manoObjetivo.name, cuadrosRequeridos = paso.cuadrosRequeridos))
+        }
+        
+        return com.example.android.db.Gesto(
+            id = combo.backendGestoId ?: 0,
+            bkId = 0,
+            nombre = combo.name,
+            identificadorIa = 0,
+            nivelConfianzaMinimo = 0.5,
+            tipoDisparadorNombre = "COMBO",
+            aparatoId = combo.aparatoId,
+            pasos = pasosList
+        )
+    }
+
+    suspend fun pushComboToBackend(context: Context, combo: Combo): Boolean {
+        val prefs = context.getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+        val token = prefs.getString("token", "") ?: ""
+        if (token.isEmpty()) return false
+
+        try {
+            val gesto = comboToGesto(combo)
+            val service = com.example.android.network.RetrofitClient.gestureService
+            
+            if (combo.backendGestoId == null || combo.backendGestoId == 0) {
+                // Create
+                val response = service.createGesto("Bearer $token", gesto)
+                if (response.isSuccessful) {
+                    val createdGesto = response.body()?.data
+                    if (createdGesto != null) {
+                        combo.backendGestoId = createdGesto.id
+                        return true
+                    }
+                }
+            } else {
+                // Update
+                val response = service.updateGesto("Bearer $token", combo.backendGestoId!!, gesto)
+                return response.isSuccessful
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return false
+    }
 }

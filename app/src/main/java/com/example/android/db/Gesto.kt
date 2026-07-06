@@ -37,5 +37,12 @@ data class Gesto(
     val tipoDisparadorNombre: String?,
 
     @SerializedName("sk_aparato_id")
-    val aparatoId: Int?
-)
+    val aparatoId: Int?,
+
+    @androidx.room.Ignore
+    @SerializedName("pasos")
+    val pasos: List<GestoPaso>? = null
+) {
+    constructor(id: Int, bkId: Int, nombre: String?, identificadorIa: Int, nivelConfianzaMinimo: Double, tipoDisparadorNombre: String?, aparatoId: Int?) : 
+        this(id, bkId, nombre, identificadorIa, nivelConfianzaMinimo, tipoDisparadorNombre, aparatoId, null)
+}

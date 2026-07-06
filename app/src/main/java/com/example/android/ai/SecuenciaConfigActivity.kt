@@ -385,26 +385,34 @@ class SecuenciaConfigActivity : AppCompatActivity() {
         val nombreRepresentativo = comboActual.activador?.nombreGesto
             ?: comboActual.pasos.firstOrNull()?.nombreGesto
             ?: comboActual.name
+        val nombreValido = comboActual.name.ifBlank { nombreRepresentativo }
+        val tipoDisparador = if (comboActual.activador != null) "COMBO_SECUENCIA" else "COMBO_LIBRE"
 
-        val nombreValido = GestureBackendMapper.mapToValidBackendName(nombreRepresentativo)
-        val tipoDisparador = if (comboActual.activador != null) "Activador" else "Secuencia"
+        val pasosList = mutableListOf<com.example.android.db.GestoPaso>()
+        var order = 1
+        if (comboActual.activador != null) {
+            pasosList.add(com.example.android.db.GestoPaso(orden = order++, esActivador = true, nombreGesto = comboActual.activador!!.nombreGesto, manoObjetivo = comboActual.activador!!.manoObjetivo.name, cuadrosRequeridos = comboActual.activador!!.cuadrosRequeridos))
+        }
+        comboActual.pasos.forEach { paso ->
+            pasosList.add(com.example.android.db.GestoPaso(orden = order++, esActivador = false, nombreGesto = paso.nombreGesto, manoObjetivo = paso.manoObjetivo.name, cuadrosRequeridos = paso.cuadrosRequeridos))
+        }
 
         val gesto = Gesto(
             id = comboActual.backendGestoId ?: 0,
             bkId = comboActual.backendGestoId ?: 0,
             nombre = nombreValido,
             identificadorIa = 0,
-            nivelConfianzaMinimo = 0.7,
+            nivelConfianzaMinimo = 0.5,
             tipoDisparadorNombre = tipoDisparador,
-            aparatoId = comboActual.aparatoId
+            aparatoId = comboActual.aparatoId,
+            pasos = pasosList
         )
-
         lifecycleScope.launch {
             ApiHandler.safeApiCall(
                 activity = this@SecuenciaConfigActivity,
                 showLoading = true,
                 loadingTitle = "Guardando",
-                loadingMessage = "Sincronizando gesto...",
+                loadingMessage = "Sincronizando combo...",
                 apiCall = {
                     val token = getSharedPreferences("SesionApp", Context.MODE_PRIVATE).getString("apiToken", "") ?: ""
                     val bearer = "Bearer $token"
@@ -429,7 +437,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                             db.gestoDao().insertGesto(guardado)
                         }
                     }
-                    Toast.makeText(this@SecuenciaConfigActivity, "Combo guardado", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@SecuenciaConfigActivity, "Combo guardado y sincronizado", Toast.LENGTH_SHORT).show()
                     finish()
                 },
                 onError = { errorMsg ->
