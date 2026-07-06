@@ -65,6 +65,10 @@ class DeviceAdapter(
 
         fun bind(dispositivo: Dispositivo) {
             tvName.text = dispositivo.nombre
+            val isMultiSocket = dispositivo.tipo?.let { tipo ->
+                tipo.contains("MultiSocket", ignoreCase = true) ||
+                    tipo.contains("Regleta", ignoreCase = true)
+            } == true
             
             val isConnected = connectedMacs.any {
                 it.equals(dispositivo.macBluetooth, ignoreCase = true)
@@ -79,16 +83,22 @@ class DeviceAdapter(
                 statusDot.setCardBackgroundColor(android.graphics.Color.parseColor("#6F7EA8"))
             }
             
-            ivIcon.setImageResource(R.drawable.ic_power)
+            ivIcon.setImageResource(if (isMultiSocket) R.drawable.plug else R.drawable.ic_power)
 
             val isOn = deviceStates[dispositivo.id] ?: dispositivo.estadoEncendido ?: false
             switchDevice.setOnCheckedChangeListener(null)
+            switchDevice.visibility = if (isMultiSocket) View.GONE else View.VISIBLE
             switchDevice.isChecked = isOn
-            switchDevice.isEnabled = isConnected
+            switchDevice.isEnabled = isConnected && !isMultiSocket
             switchDevice.alpha = if (isConnected) 1f else 0.5f
 
             val iconBg = itemView.findViewById<com.google.android.material.card.MaterialCardView>(R.id.iconBg)
-            if (isOn) {
+            val anyOutletOn = dispositivo.estadoEncendido == true ||
+                dispositivo.estadoEncendido2 == true ||
+                dispositivo.estadoEncendido3 == true ||
+                dispositivo.estadoEncendido4 == true
+
+            if ((isMultiSocket && anyOutletOn) || (!isMultiSocket && isOn)) {
                 iconBg.setCardBackgroundColor(android.graphics.Color.parseColor("#009688"))
             } else {
                 iconBg.setCardBackgroundColor(android.graphics.Color.parseColor("#B0BEC5"))
@@ -96,6 +106,7 @@ class DeviceAdapter(
 
             switchDevice.setOnCheckedChangeListener { _, isChecked ->
                 if (!isConnected) return@setOnCheckedChangeListener
+                if (isMultiSocket) return@setOnCheckedChangeListener
                 deviceStates[dispositivo.id] = isChecked
                 onToggleClick(dispositivo, isChecked)
                 if (isChecked) {

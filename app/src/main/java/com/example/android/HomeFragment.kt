@@ -14,6 +14,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import coil.load
 import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -57,6 +58,7 @@ class HomeFragment : Fragment() {
     private lateinit var iconWifiContainer: MaterialCardView
     private lateinit var iconWifi: ImageView
     private lateinit var tvUsuario: TextView
+    private lateinit var ivProfile: ImageView
 
     private lateinit var btnConfigurarRed: View
 
@@ -192,6 +194,7 @@ class HomeFragment : Fragment() {
         iconWifi           = view.findViewById(R.id.iconWifi)
         btnConfigurarRed   = view.findViewById(R.id.btnConfigurarRed)
         tvUsuario          = view.findViewById(R.id.tvUsuario)
+        ivProfile          = view.findViewById(R.id.ivProfile)
         
         val redContainer = view.findViewById<View>(R.id.tvRedEstado)?.parent as? View
         redContainer?.setOnClickListener {
@@ -317,6 +320,17 @@ class HomeFragment : Fragment() {
         val nombreUsuario = sharedPreferences.getString("userName", "Mayordomo")
         if (!nombreUsuario.isNullOrBlank()) {
             tvUsuario.text = nombreUsuario
+        }
+        
+        val profileImageUrl = sharedPreferences.getString("profileImageUrl", null)
+        if (!profileImageUrl.isNullOrBlank()) {
+            ivProfile.load(profileImageUrl) {
+                placeholder(R.drawable.ic_manordomo_sin_fondo)
+                error(R.drawable.ic_manordomo_sin_fondo)
+                crossfade(true)
+            }
+        } else {
+            ivProfile.setImageResource(R.drawable.ic_manordomo_sin_fondo)
         }
         
         configurarAnimacionInicial()
@@ -774,8 +788,19 @@ class HomeFragment : Fragment() {
 
         dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnDialogControles).setOnClickListener {
             dialog.dismiss()
-            val intent = Intent(requireContext(), DeviceControlsActivity::class.java).apply {
-                putExtra("EXTRA_DEVICE_ID", dispositivo.id)
+            val isMultiSocket = dispositivo.tipo?.let { tipo ->
+                tipo.contains("MultiSocket", ignoreCase = true) ||
+                tipo.contains("Regleta", ignoreCase = true)
+            } == true
+            
+            val intent = if (isMultiSocket) {
+                Intent(requireContext(), MultiSocketActivity::class.java).apply {
+                    putExtra("EXTRA_DEVICE_ID", dispositivo.id)
+                }
+            } else {
+                Intent(requireContext(), DeviceControlsActivity::class.java).apply {
+                    putExtra("EXTRA_DEVICE_ID", dispositivo.id)
+                }
             }
             startActivity(intent)
         }

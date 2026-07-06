@@ -49,6 +49,18 @@ data class Dispositivo(
     @androidx.room.ColumnInfo(name = "estado_encendido")
     val estadoEncendido: Boolean? = null,
 
+    @SerializedName("estado_encendido_2")
+    @androidx.room.ColumnInfo(name = "estado_encendido_2")
+    val estadoEncendido2: Boolean? = null,
+
+    @SerializedName("estado_encendido_3")
+    @androidx.room.ColumnInfo(name = "estado_encendido_3")
+    val estadoEncendido3: Boolean? = null,
+
+    @SerializedName("estado_encendido_4")
+    @androidx.room.ColumnInfo(name = "estado_encendido_4")
+    val estadoEncendido4: Boolean? = null,
+
     @SerializedName("conectado_red")
     @androidx.room.ColumnInfo(name = "conectado_red")
     val conectadoRed: Boolean? = null,

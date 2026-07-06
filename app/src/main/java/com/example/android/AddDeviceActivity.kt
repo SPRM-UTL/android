@@ -533,6 +533,8 @@ class AddDeviceActivity : AppCompatActivity() {
                 "Luces"      -> R.drawable.lightbulb
                 "Ventilador" -> R.drawable.wind
                 "Televisión" -> R.drawable.tv_minimal
+                "Enchufe"    -> R.drawable.plug
+                "MultiSocket" -> R.drawable.plug
                 else         -> null
             }
             if (iconRes != null) {
@@ -580,7 +582,7 @@ class AddDeviceActivity : AppCompatActivity() {
         } else if (tiposDisponibles.isNotEmpty()) {
             tiposDisponibles.map { it.nombreTipo }
         } else {
-            listOf("Focos", "Bocinas", "Ventilador", "Televisión", "Audífonos")
+            listOf("Focos", "Bocinas", "Ventilador", "Televisión", "Audífonos", "Enchufe", "MultiSocket")
         }
 
         val adapter = ArrayAdapter(themedContext, android.R.layout.simple_spinner_dropdown_item, tipos)

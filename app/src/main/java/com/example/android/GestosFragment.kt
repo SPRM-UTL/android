@@ -14,6 +14,7 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.RadioButton
 import android.widget.RadioGroup
+import coil.load
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SwitchCompat
@@ -96,6 +97,20 @@ class GestosFragment : Fragment() {
         btnInfo = view.findViewById(R.id.btnInfo)
         tvNoCameraInfo = view.findViewById(R.id.tvNoCameraInfo)
         btnGuardarAccion = view.findViewById(R.id.btnGuardarAccion)
+
+        val ivProfileGestos = view.findViewById<ImageView>(R.id.ivProfileGestos)
+        val sharedPreferences = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+        val profileImageUrl = sharedPreferences.getString("profileImageUrl", null)
+        
+        if (!profileImageUrl.isNullOrBlank()) {
+            ivProfileGestos.load(profileImageUrl) {
+                placeholder(R.drawable.ic_manordomo_sin_fondo)
+                error(R.drawable.ic_manordomo_sin_fondo)
+                crossfade(true)
+            }
+        } else {
+            ivProfileGestos.setImageResource(R.drawable.ic_manordomo_sin_fondo)
+        }
 
         ViewCompat.setOnApplyWindowInsetsListener(view) { v, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())

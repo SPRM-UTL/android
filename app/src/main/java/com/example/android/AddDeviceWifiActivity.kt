@@ -455,6 +455,7 @@ class AddDeviceWifiActivity : AppCompatActivity() {
 
         // Palabras clave -> tipo. Se evalúan en orden, la primera coincidencia gana.
         val reglas = listOf(
+            listOf("MULTISOCKET", "MULTI SOCKET", "REGLETA", "POWERSTRIP", "POWER STRIP", "MULTIENCHUFE", "CONTACTOS") to "MultiSocket",
             listOf("BULB", "FOCO", "LIGHT", "LAMP", "STRIP", "LED") to "Focos",
             listOf("SPEAKER", "BOCINA", "AUDIO", "SOUND") to "Bocinas",
             listOf("FAN", "VENTILADOR") to "Ventilador",
@@ -502,6 +503,7 @@ class AddDeviceWifiActivity : AppCompatActivity() {
                 "Ventilador" -> R.drawable.wind
                 "Televisión" -> R.drawable.tv_minimal
                 "Enchufe"    -> R.drawable.plug
+                "MultiSocket" -> R.drawable.plug
                 "Cámara"     -> R.drawable.camera
                 else         -> R.drawable.circle_question
             }

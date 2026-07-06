@@ -8,8 +8,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.Toast
+import coil.load
 import com.example.android.network.ApiHandler
 import com.example.android.network.RetrofitClient
 import com.example.android.view.Snackbars
@@ -39,6 +41,20 @@ class MenuBottomSheetDialog(
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        val ivProfileSheet = view.findViewById<ImageView>(R.id.ivProfileSheet)
+        val sharedPref = appContext.getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+        val profileImageUrl = sharedPref.getString("profileImageUrl", null)
+        
+        if (!profileImageUrl.isNullOrBlank()) {
+            ivProfileSheet.load(profileImageUrl) {
+                placeholder(R.drawable.ic_manordomo_sin_fondo)
+                error(R.drawable.ic_manordomo_sin_fondo)
+                crossfade(true)
+            }
+        } else {
+            ivProfileSheet.setImageResource(R.drawable.ic_manordomo_sin_fondo)
+        }
 
         view.findViewById<ImageButton>(R.id.btnClose)
             .setOnClickListener {

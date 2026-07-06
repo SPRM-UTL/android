@@ -1,5 +1,20 @@
 package com.example.android
-
+import android.app.Dialog
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
+import android.net.Uri
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import coil.load
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.File
+import java.io.FileOutputStream
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -52,6 +67,57 @@ class ProfileActivity : AppCompatActivity() {
     private var userIdGuardado: Int = -1
     private var tokenGuardado: String = ""
 
+    private lateinit var ivProfile: ImageView
+    private lateinit var btnCambiarFoto: ImageButton
+    private var photoUri: Uri? = null
+
+    private val takePictureLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        if (success) {
+            photoUri?.let { launchUCrop(it) }
+        }
+    }
+
+    private val photoPickerLauncher = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        uri?.let { launchUCrop(it) }
+    }
+
+    private val uCropLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK && result.data != null) {
+            val resultUri = com.yalantis.ucrop.UCrop.getOutput(result.data!!)
+            resultUri?.let { subirImagenPerfil(it) }
+        } else if (result.resultCode == com.yalantis.ucrop.UCrop.RESULT_ERROR && result.data != null) {
+            val error = com.yalantis.ucrop.UCrop.getError(result.data!!)
+            Snackbars.error(vistaRaiz, "Error al recortar: ${error?.message}", Snackbar.LENGTH_SHORT).show()
+        }
+    }
+    
+    private fun launchUCrop(sourceUri: Uri) {
+        val destinationUri = Uri.fromFile(File(cacheDir, "perfil_${System.currentTimeMillis()}.jpg"))
+        
+        val options = com.yalantis.ucrop.UCrop.Options()
+        options.setCircleDimmedLayer(true)
+        options.setCompressionQuality(90)
+        options.setShowCropGrid(false)
+        options.setToolbarTitle("Recortar foto")
+        val colorPrimary = ContextCompat.getColor(this, R.color.teal_primary)
+        val colorWhite = ContextCompat.getColor(this, R.color.white)
+        val colorBackground = ContextCompat.getColor(this, R.color.background)
+        
+        options.setStatusBarColor(colorPrimary)
+        options.setToolbarColor(colorPrimary)
+        options.setToolbarWidgetColor(colorWhite)
+        options.setActiveControlsWidgetColor(colorPrimary)
+        options.setRootViewBackgroundColor(colorBackground)
+
+        val uCropIntent = com.yalantis.ucrop.UCrop.of(sourceUri, destinationUri)
+            .withAspectRatio(1f, 1f)
+            .withMaxResultSize(512, 512)
+            .withOptions(options)
+            .getIntent(this)
+            
+        uCropLauncher.launch(uCropIntent)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -79,7 +145,7 @@ class ProfileActivity : AppCompatActivity() {
                 }
             }
             
-            v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom + ime.bottom)
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom + ime.bottom)
             val cardBack = findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardBack)
             cardBack?.getChildAt(0)?.setPadding(0, systemBars.top, 0, 0)
             insets
@@ -104,6 +170,7 @@ class ProfileActivity : AppCompatActivity() {
         }
 
         cargarBoton()
+        cargarImagenPerfil(null)
     }
 
     private fun inicializarVistas() {
@@ -120,6 +187,11 @@ class ProfileActivity : AppCompatActivity() {
 
         btnGuardarPerfil = findViewById(R.id.btnGuardarPerfil)
         tvHola = findViewById(R.id.tvHola)
+        ivProfile = findViewById(R.id.ivProfile)
+        btnCambiarFoto = findViewById(R.id.btnCambiarFoto)
+
+        ivProfile.setOnClickListener { mostrarOpcionesFotoPerfil() }
+        btnCambiarFoto.setOnClickListener { mostrarOpcionesFotoPerfil() }
 
         // ACTIVACIÓN DE ANIMACIÓN AL TOCAR CUALQUIER INPUT
         val inputs = listOf(etNombrePerfil, etCorreoPerfil, etContrasenaPerfil, etConfirmarContrasena)
@@ -256,6 +328,16 @@ class ProfileActivity : AppCompatActivity() {
                     val primerNombre = datosUsuario.nombre?.split(" ")?.firstOrNull() ?: ""
                     tvHola.text = "¡Hola, $primerNombre! \uD83D\uDC4B"
 
+                    if (!datosUsuario.rutaImagen.isNullOrEmpty()) {
+                        cargarImagenPerfil(datosUsuario.rutaImagen)
+                        resolverUrlImagen(datosUsuario.rutaImagen)?.let { url ->
+                            getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+                                .edit()
+                                .putString("profileImageUrl", url)
+                                .apply()
+                        }
+                    }
+
                     btnGuardarPerfil.isEnabled = true
                 },
                 onError = { errorMsg ->
@@ -365,5 +447,148 @@ class ProfileActivity : AppCompatActivity() {
     override fun onDestroy() {
         CustomDialog.dismissDialog()
         super.onDestroy()
+    }
+
+    private fun mostrarOpcionesFotoPerfil() {
+        val bottomSheetDialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.dialog_profile_photo_options, null)
+        
+        view.findViewById<View>(R.id.btnVerFoto).setOnClickListener {
+            bottomSheetDialog.dismiss()
+            mostrarFotoCompleta()
+        }
+        
+        view.findViewById<View>(R.id.btnTomarFoto).setOnClickListener {
+            bottomSheetDialog.dismiss()
+            tomarFoto()
+        }
+        
+        view.findViewById<View>(R.id.btnGaleria).setOnClickListener {
+            bottomSheetDialog.dismiss()
+            photoPickerLauncher.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+            )
+        }
+        
+        bottomSheetDialog.setContentView(view)
+        bottomSheetDialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        bottomSheetDialog.window?.navigationBarColor = Color.WHITE
+        WindowInsetsControllerCompat(bottomSheetDialog.window!!, view).isAppearanceLightNavigationBars = true
+        bottomSheetDialog.show()
+    }
+
+    private fun mostrarFotoCompleta() {
+        val dialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+        dialog.setContentView(R.layout.dialog_view_photo)
+        
+        val ivFullPhoto = dialog.findViewById<ImageView>(R.id.ivFullPhoto)
+        val btnClose = dialog.findViewById<ImageButton>(R.id.btnCloseViewPhoto)
+        
+        val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+        val imageUrl = sharedPref.getString("profileImageUrl", null)
+        
+        if (!imageUrl.isNullOrEmpty()) {
+            ivFullPhoto.load(imageUrl) {
+                crossfade(true)
+                error(R.drawable.user_filled)
+            }
+        } else {
+            ivFullPhoto.setImageResource(R.drawable.user_filled)
+        }
+        
+        btnClose.setOnClickListener { dialog.dismiss() }
+        dialog.show()
+    }
+
+    private fun tomarFoto() {
+        val cacheFile = File(cacheDir, "camera_photo_${System.currentTimeMillis()}.jpg")
+        photoUri = FileProvider.getUriForFile(
+            this,
+            "${packageName}.fileprovider",
+            cacheFile
+        )
+        photoUri?.let { takePictureLauncher.launch(it) }
+    }
+
+    private fun subirImagenPerfil(uri: Uri) {
+        btnCambiarFoto.isEnabled = false
+        ivProfile.isEnabled = false
+
+        lifecycleScope.launch {
+            val imagenRecortada = File(uri.path!!)
+
+            if (!imagenRecortada.exists()) {
+                btnCambiarFoto.isEnabled = true
+                ivProfile.isEnabled = true
+                CustomDialog.showErrorDialog(
+                    titleDialog = "Imagen no válida",
+                    subtitleDialog = "No se pudo preparar la imagen seleccionada.",
+                    retryAction = { mostrarOpcionesFotoPerfil() },
+                    backAction = {}
+                )
+                return@launch
+            }
+
+            ApiHandler.safeApiCall(
+                activity = this@ProfileActivity,
+                showLoading = true,
+                loadingTitle = "Subiendo foto",
+                loadingMessage = "Actualizando tu imagen de perfil...",
+                apiCall = {
+                    val currentToken = getSharedPreferences("SesionApp", Context.MODE_PRIVATE).getString("apiToken", "") ?: ""
+                    val requestFile = imagenRecortada.asRequestBody("image/jpeg".toMediaTypeOrNull())
+                    val imagePart = MultipartBody.Part.createFormData("imagen", imagenRecortada.name, requestFile)
+                    val userIdPart = userIdGuardado.toString().toRequestBody("text/plain".toMediaTypeOrNull())
+                    RetrofitClient.apiService.uploadProfileImage("Bearer $currentToken", imagePart, userIdPart)
+                },
+                onSuccess = { response ->
+                    val nuevaImagen = response.data.urlImagen ?: response.data.rutaImagen
+                    cargarImagenPerfil(nuevaImagen)
+                    resolverUrlImagen(nuevaImagen)?.let { url ->
+                        getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+                            .edit()
+                            .putString("profileImageUrl", url)
+                            .apply()
+                    }
+                    Snackbars.success(vistaRaiz, "Foto actualizada correctamente", Snackbar.LENGTH_SHORT).show()
+                    btnCambiarFoto.isEnabled = true
+                    ivProfile.isEnabled = true
+                },
+                onError = { errorMsg ->
+                    if (errorMsg != "Sesión expirada") {
+                        CustomDialog.showErrorDialog(
+                            titleDialog = "Error al subir",
+                            subtitleDialog = errorMsg,
+                            retryAction = { subirImagenPerfil(uri) },
+                            backAction = {}
+                        )
+                    }
+                    btnCambiarFoto.isEnabled = true
+                    ivProfile.isEnabled = true
+                }
+            )
+        }
+    }
+
+    private fun cargarImagenPerfil(rutaImagen: String?) {
+        val imageUrl = resolverUrlImagen(rutaImagen)
+            ?: getSharedPreferences("SesionApp", Context.MODE_PRIVATE).getString("profileImageUrl", null)
+
+        if (!imageUrl.isNullOrEmpty()) {
+            ivProfile.load(imageUrl) {
+                crossfade(true)
+                placeholder(R.drawable.user_filled)
+                error(R.drawable.user_filled)
+            }
+        }
+    }
+
+    private fun resolverUrlImagen(rutaImagen: String?): String? {
+        if (rutaImagen.isNullOrEmpty()) return null
+        return if (rutaImagen.startsWith("http")) {
+            rutaImagen
+        } else {
+            "${BuildConfig.BASE_URL.removeSuffix("/")}/${rutaImagen.removePrefix("/")}"
+        }
     }
 }

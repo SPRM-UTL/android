@@ -1,6 +1,8 @@
 package com.example.android.network
 
 import com.example.android.BuildConfig
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.Retrofit
@@ -8,6 +10,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
+import retrofit2.http.Multipart
+import retrofit2.http.Part
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
@@ -53,14 +57,31 @@ data class UsuarioDataResponse(
 data class UserProfileData(
     val id: Int,
     val nombre: String?,
-    val correo: String
+    val correo: String,
+    @com.google.gson.annotations.SerializedName("ruta_imagen")
+    val rutaImagen: String? = null
 )
 
 data class UpdateUserRequest(
     val id: Int,
     val nombre: String?,
     val correo: String,
-    val contrasenia: String?
+    val contrasenia: String?,
+    @com.google.gson.annotations.SerializedName("rutaImagen")
+    val rutaImagen: String? = null
+)
+
+data class ProfileImageUploadResponse(
+    val success: Boolean,
+    val status: Int,
+    val data: ProfileImageUploadData
+)
+
+data class ProfileImageUploadData(
+    @com.google.gson.annotations.SerializedName("ruta_imagen")
+    val rutaImagen: String?,
+    @com.google.gson.annotations.SerializedName("url_imagen")
+    val urlImagen: String?
 )
 
 // ---- Configuración de red del ESP32 ----
@@ -119,6 +140,12 @@ interface AuthApiService {
     suspend fun updateUsuario(@Header("Authorization") token: String,
                               @Path("id") id: Int,
                               @Body request: UpdateUserRequest): Response<ResponseBody>
+
+    @Multipart
+    @POST("api/UsuariosApi/perfil/imagen")
+    suspend fun uploadProfileImage(@Header("Authorization") token: String,
+                                   @Part imagen: MultipartBody.Part,
+                                   @Part("usuarioId") usuarioId: RequestBody): Response<ProfileImageUploadResponse>
 }
 
 

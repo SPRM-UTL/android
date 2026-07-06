@@ -45,6 +45,7 @@ class AparatoTipoAdapter(
                 "Ventilador" -> "wind"
                 "Televisión" -> "tv_minimal"
                 "Sockets Inteligentes" -> "plug"
+                "MultiSocket" -> "plug"
                 "Asistente" -> "ic_input_add"
                 else -> "ic_menu_camera"
             }

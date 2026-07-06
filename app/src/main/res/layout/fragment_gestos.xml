@@ -75,10 +75,10 @@
             app:strokeWidth="1dp">
 
             <ImageView
+                android:id="@+id/ivProfileGestos"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:padding="4dp"
-                android:scaleType="fitCenter"
+                android:scaleType="centerCrop"
                 android:src="@drawable/ic_manordomo_sin_fondo" />
 
         </com.google.android.material.card.MaterialCardView>

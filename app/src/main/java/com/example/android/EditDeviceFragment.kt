@@ -204,6 +204,7 @@ class EditDeviceFragment : Fragment() {
             "ventilador", "ventiladores" -> R.drawable.wind
             "televisión", "television", "tv" -> R.drawable.tv_minimal
             "audífonos", "audifonos" -> R.drawable.headphones
+            "enchufe", "multisocket", "regleta" -> R.drawable.plug
             else -> R.drawable.ic_power
         }
 

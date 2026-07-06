@@ -53,6 +53,13 @@ interface DeviceApiService {
         @retrofit2.http.Query("estado") estado: Boolean
     ): Response<ToggleAparatoResponse>
 
+    @POST("ws/toggle/{sk_aparato_id}/contacto/{contacto}")
+    suspend fun toggleAparatoContacto(
+        @Path("sk_aparato_id") aparatoId: Int,
+        @Path("contacto") contacto: Int,
+        @retrofit2.http.Query("estado") estado: Boolean
+    ): Response<ToggleAparatoResponse>
+
     @GET("ws/status/all")
     suspend fun getWsStatusAll(): Response<WsStatusAllResponse>
 
@@ -106,12 +113,24 @@ data class AparatoEstadoResponse(
     val deviceKey: String?,
     @com.google.gson.annotations.SerializedName("estado_encendido")
     val estadoEncendido: Boolean?,
+    @com.google.gson.annotations.SerializedName("estado_encendido_2")
+    val estadoEncendido2: Boolean? = null,
+    @com.google.gson.annotations.SerializedName("estado_encendido_3")
+    val estadoEncendido3: Boolean? = null,
+    @com.google.gson.annotations.SerializedName("estado_encendido_4")
+    val estadoEncendido4: Boolean? = null,
     @com.google.gson.annotations.SerializedName("conectado")
     val conectado: Boolean,
     @com.google.gson.annotations.SerializedName("fecha_estado_actualizado")
     val fechaEstadoActualizado: String?,
     @com.google.gson.annotations.SerializedName("origen_estado")
-    val origenEstado: String?
+    val origenEstado: String?,
+    @com.google.gson.annotations.SerializedName("corriente_a")
+    val corrienteA: Float? = null,
+    @com.google.gson.annotations.SerializedName("potencia_w")
+    val potenciaW: Float? = null,
+    @com.google.gson.annotations.SerializedName("energia_acumulada_wh")
+    val energiaAcumuladaWh: Float? = null
 )
 
 data class AparatoMensajeResponse(
@@ -135,7 +154,15 @@ data class ToggleAparatoResponse(
     val success: Boolean,
     val comando: String?,
     @com.google.gson.annotations.SerializedName("estado_encendido")
-    val estadoEncendido: Boolean?
+    val estadoEncendido: Boolean?,
+    @com.google.gson.annotations.SerializedName("estado_encendido_2")
+    val estadoEncendido2: Boolean? = null,
+    @com.google.gson.annotations.SerializedName("estado_encendido_3")
+    val estadoEncendido3: Boolean? = null,
+    @com.google.gson.annotations.SerializedName("estado_encendido_4")
+    val estadoEncendido4: Boolean? = null,
+    val contacto: Int? = null,
+    val estado: Boolean? = null
 )
 
 data class AparatoConsumoResponse(
