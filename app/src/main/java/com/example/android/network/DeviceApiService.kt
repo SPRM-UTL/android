@@ -11,6 +11,7 @@ import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface DeviceApiService {
     @GET("api/Dim_Aparatos")
@@ -47,10 +48,11 @@ interface DeviceApiService {
     @GET("ws/status/{deviceKey}")
     suspend fun getWsStatus(@Path("deviceKey") deviceKey: String): Response<WsStatusResponse>
 
-    @POST("ws/toggle/{sk_aparato_id}")
+    @POST("ws/toggle/{id}")
     suspend fun toggleAparato(
-        @Path("sk_aparato_id") aparatoId: Int,
-        @retrofit2.http.Query("estado") estado: Boolean
+        @Path("id") id: Int,
+        @Query("estado") estado: Boolean,
+        @Query("sk_gesto_id") skGestoId: Int? = null
     ): Response<ToggleAparatoResponse>
 
     @POST("ws/toggle/{sk_aparato_id}/contacto/{contacto}")

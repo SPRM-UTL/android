@@ -22,7 +22,7 @@ object GestureActionExecutor {
         val encendido = resolveTargetState(aparatoId, combo.accionEncendido)
         return withContext(Dispatchers.IO) {
             try {
-                val response = RetrofitClient.deviceService.toggleAparato(aparatoId, encendido)
+                val response = RetrofitClient.deviceService.toggleAparato(aparatoId, encendido, combo.backendGestoId)
                 if (!response.isSuccessful) {
                     Log.w(TAG, "Toggle falló (${response.code()}) para aparato $aparatoId")
                     return@withContext false

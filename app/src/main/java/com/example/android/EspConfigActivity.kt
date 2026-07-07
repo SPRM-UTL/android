@@ -763,9 +763,9 @@ class EspConfigActivity : AppCompatActivity() {
                 val raw = characteristic.getStringValue(0)
 
                 runOnUiThread {
-                    if (!ipRecibida) {
+                    if (!ipRecibida || pasoActual == 3) {
                         ipRecibida = true
-                        procesarEstadoSocket(raw, finalizarSiCompleto = true)
+                        procesarEstadoSocket(raw, finalizarSiCompleto = (pasoActual == 3))
                     }
                 }
             }
@@ -775,9 +775,6 @@ class EspConfigActivity : AppCompatActivity() {
     private fun procesarEstadoSocket(raw: String?, finalizarSiCompleto: Boolean) {
         val (ip, mac) = parseEstadoSocket(raw)
         mac?.let { connectedEspMac = it }
-        if (connectedEspMac.isNotBlank()) {
-            guardarDispositivo(connectedEspName, connectedEspMac)
-        }
         if (ip.isNotBlank() && ip != "0.0.0.0") {
             connectedEspIp = ip
             getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)

@@ -39,10 +39,7 @@ object DeviceActionManager {
             ACTION_POWER -> {
                 val encendido = (valor as? Boolean) ?: false
                 
-                // Extraemos comandos personalizados (si los hay), por defecto BT_ON/BT_OFF
-                val cmdOn = dispositivo.comandoBluetooth ?: "BT_ON"
-                val cmdOff = cmdOn.replace("ON", "OFF") // Fallback simple para comandos de apagado
-                val comandoBase = if (encendido) cmdOn else cmdOff
+                val comandoBase = if (encendido) "ON" else "OFF"
                 
                 // Si el dispositivo es Bluetooth serial (como ESP32)
                 if (BluetoothController.isConnected) {

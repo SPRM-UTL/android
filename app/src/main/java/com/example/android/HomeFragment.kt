@@ -683,6 +683,16 @@ class HomeFragment : Fragment() {
                                 db.gestoDao().deleteAllGestos()
                                 db.gestoDao().insertAll(gestos)
                             }
+                            
+                            // Limpiar los combos locales eliminados en el backend
+                            val combosLocales = com.example.android.ai.SecuenciaConfigManager.loadCombos(requireContext()).toMutableList()
+                            val gestosIds = gestos.map { it.id }
+                            val combosValidos = combosLocales.filter { combo ->
+                                combo.backendGestoId == null || gestosIds.contains(combo.backendGestoId)
+                            }
+                            if (combosLocales.size != combosValidos.size) {
+                                com.example.android.ai.SecuenciaConfigManager.saveCombos(requireContext(), combosValidos)
+                            }
                         }
                     )
                 }
