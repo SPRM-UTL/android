@@ -16,6 +16,7 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material3.*
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.*
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -123,13 +124,10 @@ fun BottomBarWithFab(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
-                            imageVector = if (currentScreen == "home")
-                                Icons.Outlined.Home
-                            else
-                                Icons.Filled.Home,
+                            painter = painterResource(id = R.drawable.ic_lucide_house),
                             contentDescription = "Inicio",
                             tint = if (currentScreen == "home") activeColor else inactiveColor,
-                            modifier = Modifier.size(25.dp)
+                            modifier = Modifier.size(28.dp)
                         )
                         Text(
                             text = "Inicio",
@@ -161,13 +159,10 @@ fun BottomBarWithFab(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
-                            imageVector = if (currentScreen == "gestos")
-                                Icons.Outlined.BackHand
-                            else
-                                Icons.Filled.BackHand,
+                            painter = painterResource(id = R.drawable.ic_lucide_hand),
                             contentDescription = "Gestos",
                             tint = if (currentScreen == "gestos") activeColor else inactiveColor,
-                            modifier = Modifier.size(25.dp)
+                            modifier = Modifier.size(28.dp)
                         )
                         Text(
                             text = "Gestos",

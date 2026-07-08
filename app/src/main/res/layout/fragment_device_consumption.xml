@@ -4,50 +4,140 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F8FFFF">
+    android:background="@color/background">
 
-    <!-- CABECERA AZUL (Con padding superior adaptativo para la barra de estado) -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/cardBack"
+    <!-- CABECERA PRINCIPAL -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/headerLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:backgroundTint="@color/teal_primary"
-        app:cardCornerRadius="0dp"
-        app:strokeWidth="0dp"
+        android:background="@drawable/bg_header_teal_rounded"
+        android:paddingTop="36dp"
+        android:paddingBottom="16dp"
         app:layout_constraintTop_toTopOf="parent">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingTop="24dp"
-            android:paddingBottom="8dp">
+        <ImageButton
+            android:id="@+id/btnConsumptionClose"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="12dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/arrow_left"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="@color/white" />
 
-            <ImageButton
-                android:id="@+id/btnConsumptionClose"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:padding="12dp"
-                android:scaleType="fitCenter"
-                android:src="@drawable/arrow_left"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
+        <TextView
+            android:id="@+id/tvDeviceName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:text="Consumo Histórico"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="@id/btnConsumptionClose"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/btnConsumptionClose"
+            app:layout_constraintTop_toTopOf="@id/btnConsumptionClose" />
+
+        <!-- Total Consumido -->
+        <TextView
+            android:id="@+id/tvTotalConsumption"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="16dp"
+            android:text="0.00 kWh"
+            android:textColor="@color/white"
+            android:textSize="36sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/btnConsumptionClose" />
+
+        <!-- Costo Estimado -->
+        <TextView
+            android:id="@+id/tvEstimatedCost"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginBottom="6dp"
+            android:text="≈ $0.00 MXN"
+            android:textColor="#E0F2F1"
+            android:textSize="16sp"
+            app:layout_constraintBottom_toBottomOf="@id/tvTotalConsumption"
+            app:layout_constraintStart_toEndOf="@id/tvTotalConsumption" />
+
+        <!-- Comparación (Simulada si no hay datos) o Estado -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvTotalConsumption">
+
+            <ImageView
+                android:id="@+id/ivTrend"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_current"
                 app:tint="@color/white" />
 
             <TextView
-                android:id="@+id/tvConsumptionTitle"
+                android:id="@+id/tvTrendText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Consumo Histórico"
+                android:layout_marginStart="4dp"
+                android:text="Analizando datos del período..."
                 android:textColor="@color/white"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                app:layout_constraintBottom_toBottomOf="@id/btnConsumptionClose"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="@id/btnConsumptionClose" />
-        </androidx.constraintlayout.widget.ConstraintLayout>
-    </com.google.android.material.card.MaterialCardView>
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Consumo Actual -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardLiveConsumption"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="24dp"
+            app:cardBackgroundColor="#F0F9F8"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="0dp"
+            app:layout_constraintBottom_toBottomOf="@id/tvTotalConsumption"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/tvTotalConsumption">
+            
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="4dp"
+                android:orientation="vertical"
+                android:gravity="center">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="AHORA"
+                    android:textSize="10sp"
+                    android:textColor="@color/teal_primary"
+                    android:textStyle="bold"/>
+                <TextView
+                    android:id="@+id/tvLiveConsumption"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="--- W"
+                    android:textSize="14sp"
+                    android:textColor="@color/teal_primary"
+                    android:textStyle="bold"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <!-- CONTENIDO PRINCIPAL SCROLLABLE -->
     <androidx.core.widget.NestedScrollView
@@ -56,7 +146,7 @@
         android:fillViewport="true"
         android:scrollbars="none"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/cardBack">
+        app:layout_constraintTop_toBottomOf="@id/headerLayout">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -64,203 +154,116 @@
             android:orientation="vertical"
             android:padding="24dp">
 
-            <!-- SELECTOR DE GRANULARIDAD -->
-            <com.google.android.material.button.MaterialButtonToggleGroup
-                android:id="@+id/toggleGranularidad"
+            <!-- SELECTOR DE PERÍODO -->
+            <com.google.android.material.tabs.TabLayout
+                android:id="@+id/tabLayoutPeriod"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:singleSelection="true"
-                app:selectionRequired="true"
-                app:checkedButton="@+id/btnDia"
-                app:strokeColor="#E0E0E0">
+                android:layout_marginBottom="24dp"
+                android:background="@android:color/transparent"
+                app:tabIndicator="@drawable/tab_indicator"
+                app:tabIndicatorAnimationMode="elastic"
+                app:tabIndicatorColor="@color/teal_primary"
+                app:tabIndicatorGravity="center"
+                app:tabIndicatorHeight="36dp"
+                app:tabIndicatorFullWidth="true"
+                app:tabMode="scrollable"
+                app:tabRippleColor="@null"
+                app:tabSelectedTextColor="@color/white"
+                app:tabTextAppearance="@style/TextAppearance.AppCompat.Medium"
+                app:tabTextColor="#6F7E8E">
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnDia"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    android:layout_width="0dp"
-                    android:layout_height="44dp"
-                    android:layout_weight="1"
-                    android:text="Por Día"
-                    android:textAllCaps="false"
-                    android:textColor="@color/teal_primary"
-                    app:rippleColor="#1A009688" />
+                <com.google.android.material.tabs.TabItem
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Hoy" />
+                <com.google.android.material.tabs.TabItem
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Semana" />
+                <com.google.android.material.tabs.TabItem
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Mes" />
+                <com.google.android.material.tabs.TabItem
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Año" />
+            </com.google.android.material.tabs.TabLayout>
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnMes"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    android:layout_width="0dp"
-                    android:layout_height="44dp"
-                    android:layout_weight="1"
-                    android:text="Por Mes"
-                    android:textAllCaps="false"
-                    android:textColor="@color/teal_primary"
-                    app:rippleColor="#1A009688" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnEnVivo"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    android:layout_width="0dp"
-                    android:layout_height="44dp"
-                    android:layout_weight="1"
-                    android:text="En Vivo"
-                    android:textAllCaps="false"
-                    android:textColor="@color/teal_primary"
-                    app:rippleColor="#1A009688" />
-
-            </com.google.android.material.button.MaterialButtonToggleGroup>
-
-            <!-- RANGO DE FECHAS -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardRangoFechas"
+            <!-- SKELETON LOADER -->
+            <com.facebook.shimmer.ShimmerFrameLayout
+                android:id="@+id/shimmerConsumo"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
-                app:cardBackgroundColor="@color/white"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="#E0E0E0">
+                android:layout_marginBottom="32dp"
+                android:visibility="gone"
+                app:shimmer_auto_start="true">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingStart="4dp"
-                    android:paddingEnd="4dp">
+                    android:orientation="vertical">
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnDesde"
-                        style="@style/Widget.MaterialComponents.Button.TextButton"
-                        android:layout_width="0dp"
-                        android:layout_height="44dp"
-                        android:layout_weight="1"
-                        android:text="Desde: ..."
-                        android:textColor="#616161"
-                        android:textAllCaps="false"
-                        android:textSize="13sp"
-                        app:icon="@android:drawable/ic_menu_today"
-                        app:iconTint="@color/teal_primary" />
-
+                    <!-- Chart Skeleton -->
                     <View
-                        android:layout_width="1dp"
-                        android:layout_height="24dp"
-                        android:background="#E0E0E0" />
+                        android:layout_width="match_parent"
+                        android:layout_height="250dp"
+                        android:layout_marginBottom="32dp"
+                        android:background="@drawable/bg_skeleton" />
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnHasta"
-                        style="@style/Widget.MaterialComponents.Button.TextButton"
-                        android:layout_width="0dp"
-                        android:layout_height="44dp"
-                        android:layout_weight="1"
-                        android:text="Hasta: ..."
-                        android:textColor="#616161"
-                        android:textAllCaps="false"
-                        android:textSize="13sp"
-                        app:icon="@android:drawable/ic_menu_today"
-                        app:iconTint="@color/teal_primary" />
+                    <!-- Desglose Header Skeleton -->
+                    <View
+                        android:layout_width="150dp"
+                        android:layout_height="20dp"
+                        android:layout_marginBottom="16dp"
+                        android:background="@drawable/bg_skeleton" />
 
+                    <!-- Items Skeleton -->
+                    <View android:layout_width="match_parent" android:layout_height="60dp" android:background="@drawable/bg_skeleton" android:layout_marginBottom="8dp"/>
+                    <View android:layout_width="match_parent" android:layout_height="60dp" android:background="@drawable/bg_skeleton" android:layout_marginBottom="8dp"/>
+                    <View android:layout_width="match_parent" android:layout_height="60dp" android:background="@drawable/bg_skeleton" android:layout_marginBottom="8dp"/>
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+            </com.facebook.shimmer.ShimmerFrameLayout>
 
-            <ProgressBar
-                android:id="@+id/progressConsumo"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginBottom="16dp"
-                android:indeterminateTint="@color/teal_primary"
-                android:visibility="gone" />
+            <!-- GRÁFICA PRINCIPAL -->
+            <com.github.mikephil.charting.charts.BarChart
+                android:id="@+id/chartPrincipal"
+                android:layout_width="match_parent"
+                android:layout_height="250dp"
+                android:layout_marginBottom="32dp"/>
 
-            <!-- BLOQUE 1: POTENCIA -->
+            <!-- DESGLOSE DE PERÍODO -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Potencia Promedio (W)"
-                android:textSize="12sp"
+                android:text="Desglose del período"
+                android:textColor="#212121"
+                android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="#757575"
-                android:textAllCaps="true"
-                android:layout_marginStart="4dp"
-                android:layout_marginBottom="8dp"/>
+                android:layout_marginBottom="16dp"/>
 
-            <com.google.android.material.card.MaterialCardView
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvDesglose"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
-                app:cardBackgroundColor="@color/white"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="#E0E0E0">
-
-                <com.github.mikephil.charting.charts.LineChart
-                    android:id="@+id/chartPotencia"
-                    android:layout_width="match_parent"
-                    android:layout_height="200dp"
-                    android:layout_margin="12dp"/>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- BLOQUE 2: ENERGÍA -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Energía Consumida (Wh)"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:textColor="#757575"
-                android:textAllCaps="true"
-                android:layout_marginStart="4dp"
-                android:layout_marginBottom="8dp"/>
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
-                app:cardBackgroundColor="@color/white"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="#E0E0E0">
-
-                <com.github.mikephil.charting.charts.BarChart
-                    android:id="@+id/chartEnergia"
-                    android:layout_width="match_parent"
-                    android:layout_height="200dp"
-                    android:layout_margin="12dp"/>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- BLOQUE 3: CORRIENTE -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Corriente Promedio (A)"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:textColor="#757575"
-                android:textAllCaps="true"
-                android:layout_marginStart="4dp"
-                android:layout_marginBottom="8dp"/>
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardBackgroundColor="@color/white"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="#E0E0E0">
-
-                <com.github.mikephil.charting.charts.LineChart
-                    android:id="@+id/chartCorriente"
-                    android:layout_width="match_parent"
-                    android:layout_height="200dp"
-                    android:layout_margin="12dp"/>
-            </com.google.android.material.card.MaterialCardView>
+                android:nestedScrollingEnabled="false"
+                tools:listitem="@layout/item_consumo_punto"/>
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
+
+    <!-- FAB -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabExport"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="24dp"
+        android:src="@android:drawable/ic_menu_share"
+        app:tint="@color/white"
+        app:backgroundTint="@color/teal_primary"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

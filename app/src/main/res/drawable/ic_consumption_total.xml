@@ -4,9 +4,9 @@
     android:viewportWidth="24"
     android:viewportHeight="24">
     <path
-        android:pathData="M4 4c0-1.1 0.9-2 2-2h12c1.1 0 2 0.9 2 2v16c0 1.1-0.9 2-2 2h-12c-1.1 0-2-0.9-2-2z"/>
+        android:pathData="M5 21v-6"/>
     <path
-        android:pathData="M12 6h0.01"/>
+        android:pathData="M12 21V3"/>
     <path
-        android:pathData="M12 14h0.01"/>
+        android:pathData="M19 21V9"/>
 </vector>

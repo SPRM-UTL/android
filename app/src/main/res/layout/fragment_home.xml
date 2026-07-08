@@ -10,6 +10,13 @@
     app:layoutDescription="@xml/fragment_home_scene"
     tools:context=".HomeFragment">
 
+    <View
+        android:id="@+id/headerBackground"
+        android:layout_width="match_parent"
+        android:layout_height="165dp"
+        android:background="@color/teal_primary"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/cardSuperior"
         android:layout_width="0dp"
@@ -27,7 +34,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="!Hola!"
-            android:textColor="#6F7E8E"
+            android:textColor="#AEE2DE"
             android:textSize="18sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -41,7 +48,7 @@
             android:ellipsize="end"
             android:maxLines="1"
             android:text="Mayordomo"
-            android:textColor="#073F4C"
+            android:textColor="#FFFFFF"
             android:textSize="31sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toStartOf="@id/profileCircle"
@@ -55,7 +62,7 @@
             android:layout_marginTop="4dp"
             android:layout_marginEnd="12dp"
             android:text="0 dispositivos en funcionamiento"
-            android:textColor="#6F7E8E"
+            android:textColor="#AEE2DE"
             android:textSize="14sp"
             app:layout_constraintEnd_toStartOf="@id/profileCircle"
             app:layout_constraintStart_toStartOf="parent"

@@ -184,7 +184,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                         adapter.notifyItemRangeChanged(0, adapter.pasos.size)
                     }
                     setActionTextColor(androidx.core.content.ContextCompat.getColor(this@SecuenciaConfigActivity, R.color.teal_primary))
-                    view.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#073F4C"))
+                    this.view.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#073F4C"))
                     setTextColor(android.graphics.Color.WHITE)
                     show()
                 }

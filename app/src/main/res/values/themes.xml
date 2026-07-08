@@ -13,6 +13,7 @@
 
         <!-- CORRECCIÓN: Evita el fondo forzado oscuro en elementos de superficie flotante -->
         <item name="colorSurface">@android:color/white</item>
+        <item name="android:forceDarkAllowed">false</item>
     </style>
 
     <style name="Theme.Android" parent="Base.Theme.Android" />

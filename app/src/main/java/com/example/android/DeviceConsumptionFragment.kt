@@ -5,44 +5,56 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.ProgressBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.example.android.network.AparatoConsumoPuntoResponse
 import com.example.android.network.RetrofitClient
-import com.example.android.view.Snackbars
 import com.github.mikephil.charting.charts.BarChart
-import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.data.Entry
-import com.github.mikephil.charting.data.LineData
-import com.github.mikephil.charting.data.LineDataSet
+import com.github.mikephil.charting.highlight.Highlight
+import com.github.mikephil.charting.listener.OnChartValueSelectedListener
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
-import com.google.android.material.button.MaterialButton
-import com.google.android.material.button.MaterialButtonToggleGroup
-import com.google.android.material.card.MaterialCardView
-import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.tabs.TabLayout
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.Date
+import java.util.Calendar
 import java.util.Locale
 import java.util.TimeZone
 import android.graphics.Typeface
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.google.android.material.card.MaterialCardView
+
+data class DesgloseItem(
+    val periodoLabel: String,
+    val energiaConsumidaWh: Float,
+    val iconResId: Int
+)
 
 class DeviceConsumptionFragment : Fragment() {
 
     companion object {
         private const val ARG_DEVICE_ID = "device_id"
+        // Tarifa base simulada para conversión a MXN
+        private const val COSTO_POR_KWH = 0.95f
 
         fun newInstance(deviceId: Int): DeviceConsumptionFragment {
             val fragment = DeviceConsumptionFragment()
@@ -59,18 +71,23 @@ class DeviceConsumptionFragment : Fragment() {
     private var currentGranularity = "dia"
     private var pollingJob: Job? = null
 
-    private lateinit var chartPotencia: LineChart
-    private lateinit var chartEnergia: BarChart
-    private lateinit var chartCorriente: LineChart
-    private lateinit var progressConsumo: ProgressBar
-    private lateinit var btnDesde: MaterialButton
-    private lateinit var btnHasta: MaterialButton
-    private lateinit var cardRangoFechas: MaterialCardView
+    private lateinit var chartPrincipal: BarChart
+    private lateinit var shimmerConsumo: com.facebook.shimmer.ShimmerFrameLayout
+    private lateinit var tabLayoutPeriod: TabLayout
+    private lateinit var rvDesglose: RecyclerView
+    private lateinit var tvTotalConsumption: TextView
+    private lateinit var tvEstimatedCost: TextView
+    private lateinit var tvTrendText: TextView
+    private lateinit var ivTrend: ImageView
+    private lateinit var tvLiveConsumption: TextView
+    private lateinit var cardLiveConsumption: MaterialCardView
+    private lateinit var tvDeviceName: TextView
 
-    private val dateFormatLocal = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     private val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
         timeZone = TimeZone.getTimeZone("UTC")
     }
+
+    private var currentPuntos: List<AparatoConsumoPuntoResponse> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -83,131 +100,146 @@ class DeviceConsumptionFragment : Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_device_consumption, container, false)
 
-        // CORRECCIÓN AVANZADA: Forzar diseño Edge-to-Edge nativo para este fragmento
         activity?.window?.let { window ->
-            // Le dice al sistema que no use paddings automáticos de ventana
             WindowCompat.setDecorFitsSystemWindows(window, false)
-            // Pintamos la barra de estado transparente para que se vea el fondo de tu cabecera
             window.statusBarColor = android.graphics.Color.TRANSPARENT
-
-            // Mantiene las letras e íconos superiores en color blanco
-            val decorView = window.decorView
-            WindowInsetsControllerCompat(window, decorView).isAppearanceLightStatusBars = false
+            WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
         }
 
-        chartPotencia = view.findViewById(R.id.chartPotencia)
-        chartEnergia = view.findViewById(R.id.chartEnergia)
-        chartCorriente = view.findViewById(R.id.chartCorriente)
-        progressConsumo = view.findViewById(R.id.progressConsumo)
-        btnDesde = view.findViewById(R.id.btnDesde)
-        btnHasta = view.findViewById(R.id.btnHasta)
-        cardRangoFechas = view.findViewById(R.id.cardRangoFechas)
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(view) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(0, 0, 0, systemBars.bottom)
 
-        val btnClose = view.findViewById<ImageView>(R.id.btnConsumptionClose)
-        btnClose.setOnClickListener {
-            requireActivity().supportFragmentManager.popBackStack()
-        }
-
-        val toggleGroup = view.findViewById<MaterialButtonToggleGroup>(R.id.toggleGranularidad)
-        toggleGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
-            if (isChecked) {
-                currentGranularity = when (checkedId) {
-                    R.id.btnMes -> "mes"
-                    R.id.btnEnVivo -> "envivo"
-                    else -> "dia"
-                }
-
-                if (currentGranularity == "envivo") {
-                    cardRangoFechas.visibility = View.GONE
-                    startPolling()
-                } else {
-                    cardRangoFechas.visibility = View.VISIBLE
-                    stopPolling()
-                    fetchConsumo()
-                }
+            val header = view.findViewById<View>(R.id.headerLayout)
+            if (header != null) {
+                header.setPadding(
+                    header.paddingLeft,
+                    systemBars.top + (16 * resources.displayMetrics.density).toInt(),
+                    header.paddingRight,
+                    (16 * resources.displayMetrics.density).toInt()
+                )
             }
+            insets
         }
 
-        btnDesde.setOnClickListener {
-            mostrarDatePicker { timestamp ->
-                val date = Date(timestamp)
-                desdeIso = isoFormat.format(date)
-                btnDesde.text = "Desde: ${dateFormatLocal.format(date)}"
-                fetchConsumo()
+        tvTotalConsumption = view.findViewById(R.id.tvTotalConsumption)
+        tvEstimatedCost = view.findViewById(R.id.tvEstimatedCost)
+        tvTrendText = view.findViewById(R.id.tvTrendText)
+        ivTrend = view.findViewById(R.id.ivTrend)
+        tvLiveConsumption = view.findViewById(R.id.tvLiveConsumption)
+        cardLiveConsumption = view.findViewById(R.id.cardLiveConsumption)
+        tvDeviceName = view.findViewById(R.id.tvDeviceName)
+        
+        chartPrincipal = view.findViewById(R.id.chartPrincipal)
+        shimmerConsumo = view.findViewById(R.id.shimmerConsumo)
+        tabLayoutPeriod = view.findViewById(R.id.tabLayoutPeriod)
+        rvDesglose = view.findViewById(R.id.rvDesglose)
+        
+        rvDesglose.layoutManager = LinearLayoutManager(context)
+
+        view.findViewById<ImageButton>(R.id.btnConsumptionClose).setOnClickListener {
+            parentFragmentManager.popBackStack()
+        }
+
+        view.findViewById<FloatingActionButton>(R.id.fabExport).setOnClickListener {
+            Toast.makeText(context, "Exportar PDF / CSV (Próximamente)", Toast.LENGTH_SHORT).show()
+        }
+
+        configurarGrafica()
+        configurarTabs()
+
+        // Mostrar shimmer inmediatamente
+        shimmerConsumo.visibility = View.VISIBLE
+        shimmerConsumo.startShimmer()
+        chartPrincipal.visibility = View.INVISIBLE
+        rvDesglose.visibility = View.INVISIBLE
+
+        // Retrasamos la carga inicial de datos para no interferir con la animación de entrada
+        view.postDelayed({
+            if (isAdded && context != null) {
+                tabLayoutPeriod.selectTab(tabLayoutPeriod.getTabAt(0))
+                startPollingActual()
             }
-        }
-
-        btnHasta.setOnClickListener {
-            mostrarDatePicker { timestamp ->
-                val date = Date(timestamp)
-                hastaIso = isoFormat.format(date)
-                btnHasta.text = "Hasta: ${dateFormatLocal.format(date)}"
-                fetchConsumo()
-            }
-        }
-
-        configurarGraficas()
-        fetchConsumo()
+        }, 350)
 
         return view
     }
 
-    private fun mostrarDatePicker(onDateSelected: (Long) -> Unit) {
-        val picker = MaterialDatePicker.Builder.datePicker()
-            .setTitleText("Seleccionar fecha")
-            .build()
-        picker.addOnPositiveButtonClickListener { selection ->
-            onDateSelected(selection)
-        }
-        picker.show(parentFragmentManager, "DATE_PICKER")
-    }
-
-    private fun startPolling() {
-        stopPolling()
-        pollingJob = viewLifecycleOwner.lifecycleScope.launch {
-            while (isActive) {
-                fetchConsumo()
-                delay(3000)
+    private fun configurarTabs() {
+        tabLayoutPeriod.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab?) {
+                val calendar = Calendar.getInstance()
+                hastaIso = isoFormat.format(calendar.time)
+                
+                when (tab?.position) {
+                    0 -> { // Hoy
+                        currentGranularity = "envivo"
+                        calendar.add(Calendar.DAY_OF_YEAR, -1)
+                        desdeIso = isoFormat.format(calendar.time)
+                        tvTrendText.text = "Últimas 24 horas"
+                    }
+                    1 -> { // Semana
+                        currentGranularity = "dia"
+                        calendar.add(Calendar.DAY_OF_YEAR, -7)
+                        desdeIso = isoFormat.format(calendar.time)
+                        tvTrendText.text = "Últimos 7 días"
+                    }
+                    2 -> { // Mes
+                        currentGranularity = "dia"
+                        calendar.add(Calendar.DAY_OF_YEAR, -30)
+                        desdeIso = isoFormat.format(calendar.time)
+                        tvTrendText.text = "Últimos 30 días"
+                    }
+                    3 -> { // Año
+                        currentGranularity = "mes"
+                        calendar.add(Calendar.YEAR, -1)
+                        desdeIso = isoFormat.format(calendar.time)
+                        tvTrendText.text = "Último año"
+                    }
+                }
+                fetchConsumoResumen()
             }
-        }
+
+            override fun onTabUnselected(tab: TabLayout.Tab?) {}
+            override fun onTabReselected(tab: TabLayout.Tab?) {
+                onTabSelected(tab)
+            }
+        })
     }
 
-    private fun stopPolling() {
-        pollingJob?.cancel()
-        pollingJob = null
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        stopPolling()
-
-        // REVERTIR CAMBIOS AL SALIR: Asegura que el resto de la app regrese a su comportamiento normal
-        activity?.window?.let { window ->
-            WindowCompat.setDecorFitsSystemWindows(window, true)
-            window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.teal_primary)
-        }
-    }
-
-    private fun configurarGraficas() {
-        val charts = listOf(chartPotencia, chartEnergia, chartCorriente)
+    private fun configurarGrafica() {
         val colorTeal = ContextCompat.getColor(requireContext(), R.color.teal_primary)
         val tfSansSerif = Typeface.create("sans-serif-medium", Typeface.NORMAL)
 
-        for (chart in charts) {
-            chart.description.isEnabled = false
-            chart.setDrawGridBackground(false)
-            chart.xAxis.position = XAxis.XAxisPosition.BOTTOM
-            chart.axisRight.isEnabled = false
-            chart.legend.isEnabled = false
+        chartPrincipal.description.isEnabled = false
+        chartPrincipal.setDrawGridBackground(false)
+        chartPrincipal.xAxis.position = XAxis.XAxisPosition.BOTTOM
+        chartPrincipal.xAxis.setDrawGridLines(false)
+        chartPrincipal.axisRight.isEnabled = false
+        chartPrincipal.legend.isEnabled = false
+        chartPrincipal.setNoDataText("Cargando información...")
+        chartPrincipal.setNoDataTextColor(colorTeal)
+        chartPrincipal.setNoDataTextTypeface(tfSansSerif)
+        
+        chartPrincipal.setOnChartValueSelectedListener(object : OnChartValueSelectedListener {
+            override fun onValueSelected(e: Entry?, h: Highlight?) {
+                if (e != null) {
+                    val index = e.x.toInt()
+                    if (index in currentPuntos.indices) {
+                        mostrarDetalleBottomSheet(currentPuntos[index])
+                    }
+                }
+            }
 
-            chart.setNoDataText("No hay lecturas disponibles para mostrar")
-            chart.setNoDataTextColor(colorTeal)
-            chart.setNoDataTextTypeface(tfSansSerif)
-        }
+            override fun onNothingSelected() {}
+        })
     }
 
-    private fun fetchConsumo() {
-        progressConsumo.visibility = View.VISIBLE
+    private fun fetchConsumoResumen() {
+        shimmerConsumo.visibility = View.VISIBLE
+        shimmerConsumo.startShimmer()
+        chartPrincipal.visibility = View.INVISIBLE
+        rvDesglose.visibility = View.INVISIBLE
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val token = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
@@ -221,88 +253,230 @@ class DeviceConsumptionFragment : Fragment() {
                     hastaIso
                 )
 
-                progressConsumo.visibility = View.GONE
-
                 if (response.isSuccessful) {
                     val data = response.body()?.data
                     if (data != null && data.puntos.isNotEmpty()) {
-                        poblarGraficas(data.puntos, data.granularidad)
+                        shimmerConsumo.stopShimmer()
+                        shimmerConsumo.visibility = View.GONE
+                        chartPrincipal.visibility = View.VISIBLE
+                        rvDesglose.visibility = View.VISIBLE
+                        
+                        actualizarDashboard(data.puntos, data.granularidad)
                     } else {
-                        Toast.makeText(context, "No hay datos para el periodo seleccionado", Toast.LENGTH_SHORT).show()
-                        limpiarGraficas()
+                        shimmerConsumo.stopShimmer()
+                        shimmerConsumo.visibility = View.GONE
+                        chartPrincipal.visibility = View.VISIBLE
+                        rvDesglose.visibility = View.VISIBLE
+                        Toast.makeText(context, "No hay datos para este período", Toast.LENGTH_SHORT).show()
+                        limpiarDashboard()
                     }
                 } else {
+                    shimmerConsumo.stopShimmer()
+                    shimmerConsumo.visibility = View.GONE
+                    chartPrincipal.visibility = View.VISIBLE
+                    rvDesglose.visibility = View.VISIBLE
                     Toast.makeText(context, "Error al obtener historial", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                progressConsumo.visibility = View.GONE
+                shimmerConsumo.stopShimmer()
+                shimmerConsumo.visibility = View.GONE
+                chartPrincipal.visibility = View.VISIBLE
+                rvDesglose.visibility = View.VISIBLE
                 Toast.makeText(context, "Error de red: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
-
-    private fun limpiarGraficas() {
-        chartPotencia.clear()
-        chartEnergia.clear()
-        chartCorriente.clear()
-    }
-
-    private fun poblarGraficas(puntos: List<com.example.android.network.AparatoConsumoPuntoResponse>, granularidad: String) {
-        val entradasPotencia = ArrayList<Entry>()
-        val entradasEnergia = ArrayList<BarEntry>()
-        val entradasCorriente = ArrayList<Entry>()
-        val etiquetas = ArrayList<String>()
-
-        val formatterEntrada = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-        val formatterSalida = when (granularidad) {
-            "mes" -> SimpleDateFormat("dd/MM", Locale.getDefault())
-            "envivo" -> SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-            else -> SimpleDateFormat("dd/MM HH:mm", Locale.getDefault())
-        }
-
-        for ((index, punto) in puntos.withIndex()) {
-            entradasPotencia.add(Entry(index.toFloat(), punto.potenciaPromedioW))
-            entradasEnergia.add(BarEntry(index.toFloat(), punto.energiaConsumidaWh))
-            entradasCorriente.add(Entry(index.toFloat(), punto.corrientePromedioA))
-
-            try {
-                var p = punto.periodo
-                if (p.endsWith("Z")) p = p.dropLast(1)
-
-                val date = formatterEntrada.parse(p)
-                etiquetas.add(if (date != null) formatterSalida.format(date) else punto.periodo)
-            } catch (e: Exception) {
-                etiquetas.add(punto.periodo)
+    
+    private fun startPollingActual() {
+        pollingJob?.cancel()
+        pollingJob = viewLifecycleOwner.lifecycleScope.launch {
+            while (isActive) {
+                try {
+                    val token = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+                        .getString("apiToken", "") ?: return@launch
+                    val response = RetrofitClient.deviceService.getConsumoActual("Bearer $token", deviceId)
+                    if (response.isSuccessful) {
+                        val currentW = response.body()?.data?.potenciaW ?: 0f
+                        if (currentW > 0) {
+                            cardLiveConsumption.visibility = View.VISIBLE
+                            tvLiveConsumption.text = String.format("%.1f W", currentW)
+                        } else {
+                            cardLiveConsumption.visibility = View.GONE
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Ignorar errores de polling
+                }
+                delay(5000) // Actualizar cada 5s
             }
         }
+    }
 
-        // Configurar Potencia (Línea)
-        val dataSetPotencia = LineDataSet(entradasPotencia, "Potencia Promedio (W)")
-        dataSetPotencia.color = android.graphics.Color.RED
-        dataSetPotencia.setCircleColor(android.graphics.Color.RED)
-        val dataPotencia = LineData(dataSetPotencia)
-        chartPotencia.data = dataPotencia
-        chartPotencia.xAxis.valueFormatter = IndexAxisValueFormatter(etiquetas)
-        chartPotencia.xAxis.granularity = 1f
-        chartPotencia.invalidate()
+    private fun limpiarDashboard() {
+        chartPrincipal.clear()
+        rvDesglose.adapter = DesgloseAdapter(emptyList())
+        tvTotalConsumption.text = "0.00 kWh"
+        tvEstimatedCost.text = "≈ $0.00 MXN"
+        currentPuntos = emptyList()
+    }
 
-        // Configurar Energía (Barras)
+    private suspend fun actualizarDashboard(puntos: List<AparatoConsumoPuntoResponse>, granularidad: String) {
+        currentPuntos = puntos
+
+        // Mover el procesamiento pesado a un hilo secundario
+        val resultadoProcesamiento = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+            val entradasEnergia = ArrayList<BarEntry>()
+            val etiquetas = ArrayList<String>()
+            val itemsDesglose = ArrayList<DesgloseItem>()
+            var totalWh = 0f
+
+            val formatterEntrada = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+            val formatterSalidaGrafica = when (granularidad) {
+                "mes" -> SimpleDateFormat("MMM", Locale.getDefault())
+                "envivo" -> SimpleDateFormat("HH:mm", Locale.getDefault())
+                else -> SimpleDateFormat("dd/MM", Locale.getDefault())
+            }
+            val formatterSalidaLista = when (granularidad) {
+                "mes" -> SimpleDateFormat("MMMM yyyy", Locale.getDefault())
+                "envivo" -> SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+                else -> SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+            }
+            
+            val iconResId = when (granularidad) {
+                "envivo" -> R.drawable.ic_clock
+                else -> R.drawable.ic_consumption_today
+            }
+
+            for ((index, punto) in puntos.withIndex()) {
+                entradasEnergia.add(BarEntry(index.toFloat(), punto.energiaConsumidaWh))
+                totalWh += punto.energiaConsumidaWh
+
+                var labelGraf = punto.periodo
+                var labelLista = punto.periodo
+
+                try {
+                    var p = punto.periodo
+                    if (p.endsWith("Z")) p = p.dropLast(1)
+                    val date = formatterEntrada.parse(p)
+                    if (date != null) {
+                        labelGraf = formatterSalidaGrafica.format(date)
+                        labelLista = formatterSalidaLista.format(date)
+                    }
+                } catch (e: Exception) {
+                    // Mantener el texto original en caso de error
+                }
+
+                etiquetas.add(labelGraf)
+                itemsDesglose.add(DesgloseItem(labelLista, punto.energiaConsumidaWh, iconResId))
+            }
+
+            Triple(entradasEnergia, etiquetas, itemsDesglose) to totalWh
+        }
+
+        val (listas, totalWh) = resultadoProcesamiento
+        val (entradasEnergia, etiquetas, itemsDesglose) = listas
+
+
+        
+        // Actualizar Cabecera
+        val totalKwh = totalWh / 1000f
+        tvTotalConsumption.text = String.format("%.2f kWh", totalKwh)
+        
+        val costoTotal = totalKwh * COSTO_POR_KWH
+        tvEstimatedCost.text = String.format("≈ $%.2f MXN", costoTotal)
+
+        // Configurar Gráfica
         val dataSetEnergia = BarDataSet(entradasEnergia, "Energía (Wh)")
-        dataSetEnergia.color = android.graphics.Color.parseColor("#4CAF50")
+        dataSetEnergia.color = android.graphics.Color.parseColor("#009688") // Teal primary
+        dataSetEnergia.setDrawValues(false)
         val dataEnergia = BarData(dataSetEnergia)
-        chartEnergia.data = dataEnergia
-        chartEnergia.xAxis.valueFormatter = IndexAxisValueFormatter(etiquetas)
-        chartEnergia.xAxis.granularity = 1f
-        chartEnergia.invalidate()
+        chartPrincipal.data = dataEnergia
+        chartPrincipal.xAxis.valueFormatter = IndexAxisValueFormatter(etiquetas)
+        chartPrincipal.xAxis.granularity = 1f
+        chartPrincipal.invalidate()
+        chartPrincipal.animateY(800) // Animación fluida
+        
+        // Actualizar Lista (reversa para ver lo más reciente arriba)
+        rvDesglose.adapter = DesgloseAdapter(itemsDesglose.reversed())
+    }
+    
+    private fun mostrarDetalleBottomSheet(punto: AparatoConsumoPuntoResponse) {
+        val dialog = BottomSheetDialog(requireContext())
+        val view = layoutInflater.inflate(R.layout.layout_bottom_sheet_chart_detail, null)
+        dialog.setContentView(view)
+        
+        val tvSheetTitle = view.findViewById<TextView>(R.id.tvSheetTitle)
+        val tvSheetEnergy = view.findViewById<TextView>(R.id.tvSheetEnergy)
+        val tvSheetPower = view.findViewById<TextView>(R.id.tvSheetPower)
+        val tvSheetCost = view.findViewById<TextView>(R.id.tvSheetCost)
+        
+        // Formatear periodo
+        val formatterEntrada = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+        val formatterSalida = SimpleDateFormat("dd 'de' MMMM, HH:mm", Locale.getDefault())
+        try {
+            var p = punto.periodo
+            if (p.endsWith("Z")) p = p.dropLast(1)
+            val date = formatterEntrada.parse(p)
+            tvSheetTitle.text = if (date != null) formatterSalida.format(date) else punto.periodo
+        } catch (e: Exception) {
+            tvSheetTitle.text = punto.periodo
+        }
+        
+        val kwh = punto.energiaConsumidaWh / 1000f
+        val costo = kwh * COSTO_POR_KWH
+        
+        tvSheetEnergy.text = String.format("%.3f kWh", kwh)
+        tvSheetPower.text = String.format("%.1f W", punto.potenciaPromedioW)
+        tvSheetCost.text = String.format("$%.2f MXN", costo)
+        
+        view.findViewById<View>(R.id.btnSheetClose).setOnClickListener {
+            dialog.dismiss()
+        }
+        
+        dialog.show()
+    }
 
-        // Configurar Corriente (Línea)
-        val dataSetCorriente = LineDataSet(entradasCorriente, "Corriente Promedio (A)")
-        dataSetCorriente.color = android.graphics.Color.BLUE
-        dataSetCorriente.setCircleColor(android.graphics.Color.BLUE)
-        val dataCorriente = LineData(dataSetCorriente)
-        chartCorriente.data = dataCorriente
-        chartCorriente.xAxis.valueFormatter = IndexAxisValueFormatter(etiquetas)
-        chartCorriente.xAxis.granularity = 1f
-        chartCorriente.invalidate()
+    override fun onDestroyView() {
+        super.onDestroyView()
+        pollingJob?.cancel()
+
+        activity?.window?.let { window ->
+            WindowCompat.setDecorFitsSystemWindows(window, true)
+            window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.teal_primary)
+            WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
+        }
+    }
+    
+    // Adapter interno para el desglose
+    private inner class DesgloseAdapter(
+        private val items: List<DesgloseItem>
+    ) : RecyclerView.Adapter<DesgloseAdapter.ViewHolder>() {
+
+        inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            val tvItemPeriod: TextView = view.findViewById(R.id.tvItemPeriod)
+            val tvItemEnergy: TextView = view.findViewById(R.id.tvItemEnergy)
+            val tvItemCost: TextView = view.findViewById(R.id.tvItemCost)
+            val ivItemIcon: ImageView = view.findViewById(R.id.ivItemIcon)
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            val view = LayoutInflater.from(parent.context).inflate(R.layout.item_consumo_punto, parent, false)
+            return ViewHolder(view)
+        }
+
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            val item = items[position]
+            
+            holder.tvItemPeriod.text = item.periodoLabel
+            holder.ivItemIcon.setImageResource(item.iconResId)
+            
+            val kwh = item.energiaConsumidaWh / 1000f
+            holder.tvItemEnergy.text = String.format("%.3f kWh", kwh)
+            
+            val costo = kwh * COSTO_POR_KWH
+            holder.tvItemCost.text = String.format("$%.2f", costo)
+        }
+
+        override fun getItemCount() = items.size
     }
 }

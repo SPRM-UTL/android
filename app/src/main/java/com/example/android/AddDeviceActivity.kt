@@ -462,14 +462,12 @@ class AddDeviceActivity : AppCompatActivity() {
         dialogView.findViewById<TextView>(R.id.tvConectandoNombre).text =
             device.name ?: "Dispositivo Bluetooth"
 
-        dialogConectando = MaterialAlertDialogBuilder(themedContext)
-            .setView(dialogView)
-            .setCancelable(false)
-            .create()
-            .also {
-                it.window?.setBackgroundDrawable(null) // <- cambia ColorDrawable(TRANSPARENT) por null
-                it.show()
-            }
+        dialogConectando = android.app.Dialog(this).apply {
+            setContentView(dialogView)
+            setCancelable(false)
+            window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+            show()
+        }
 
         val job = lifecycleScope.launch(Dispatchers.IO) {
             var exito = false

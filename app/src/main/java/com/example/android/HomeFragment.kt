@@ -71,8 +71,9 @@ class HomeFragment : Fragment() {
     private var dispositivosJob: kotlinx.coroutines.Job? = null
 
     // Referencias para actualizar el diálogo abierto
-    private var currentDeviceInfoDialog: com.google.android.material.bottomsheet.BottomSheetDialog? = null
+    private var currentDeviceInfoDialog: android.app.Dialog? = null
     private var currentDeviceDialogMac: String? = null
+    private var currentDeviceDialogType: String? = null
     private var tvDialogStatusRedGlobal: TextView? = null
     private var statusDotInfoGlobal: com.google.android.material.card.MaterialCardView? = null
 
@@ -171,12 +172,13 @@ class HomeFragment : Fragment() {
         
         tvDialogStatusRedGlobal?.let { tv ->
             statusDotInfoGlobal?.let { dot ->
+                val tipo = currentDeviceDialogType ?: "Dispositivo"
                 if (isConnected) {
-                    tv.text = "Cámara en línea"
+                    tv.text = "$tipo en línea"
                     tv.setTextColor(android.graphics.Color.parseColor("#009688"))
                     dot.setCardBackgroundColor(android.graphics.Color.parseColor("#009688"))
                 } else {
-                    tv.text = "Cámara desconectada"
+                    tv.text = "$tipo desconectado"
                     tv.setTextColor(android.graphics.Color.parseColor("#6F7EA8"))
                     dot.setCardBackgroundColor(android.graphics.Color.parseColor("#6F7EA8"))
                 }
@@ -206,7 +208,7 @@ class HomeFragment : Fragment() {
                         db.dispositivoDao().getAllDispositivosOnce().find { it.macBluetooth.equals(savedMac, ignoreCase = true) }
                     }
                     if (dispositivo != null) {
-                        val intent = Intent(requireContext(), CameraStreamActivity::class.java).apply {
+                        val intent = Intent(requireContext(), com.example.android.ai.AIVisionActivity::class.java).apply {
                             putExtra("dispositivo_id", dispositivo.id)
                         }
                         startActivity(intent)
@@ -453,7 +455,39 @@ class HomeFragment : Fragment() {
     private fun configurarInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(mainHome) { view, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            view.setPadding(bars.left, bars.top, bars.right, 0)
+            view.setPadding(bars.left, 0, bars.right, 0)
+
+            val cardSuperior = view.findViewById<View>(R.id.cardSuperior)
+            if (cardSuperior != null) {
+                cardSuperior.setPadding(
+                    cardSuperior.paddingLeft,
+                    bars.top + (4 * resources.displayMetrics.density).toInt(),
+                    cardSuperior.paddingRight,
+                    cardSuperior.paddingBottom
+                )
+            }
+
+            val headerBg = view.findViewById<View>(R.id.headerBackground)
+            if (headerBg != null && view is androidx.constraintlayout.motion.widget.MotionLayout) {
+                val newHeight = bars.top + (165 * resources.displayMetrics.density).toInt()
+                
+                val startSet = view.getConstraintSet(R.id.start)
+                startSet?.constrainHeight(R.id.headerBackground, newHeight)
+                if (startSet != null) view.updateState(R.id.start, startSet)
+                
+                val endSet = view.getConstraintSet(R.id.end)
+                endSet?.constrainHeight(R.id.headerBackground, newHeight)
+                if (endSet != null) view.updateState(R.id.end, endSet)
+                
+                // Actualizar de inmediato
+                val bgParams = headerBg.layoutParams
+                bgParams.height = newHeight
+                headerBg.layoutParams = bgParams
+            } else if (headerBg != null) {
+                val bgParams = headerBg.layoutParams
+                bgParams.height = bars.top + (165 * resources.displayMetrics.density).toInt()
+                headerBg.layoutParams = bgParams
+            }
 
             val scrollView = view.findViewById<androidx.core.widget.NestedScrollView>(R.id.scrollContainer)
             scrollView?.setPadding(
@@ -550,7 +584,7 @@ class HomeFragment : Fragment() {
         }
 
         rvDispositivos.layoutManager = GridLayoutManager(requireContext(), 2)
-        rvDispositivos.adapter = ConcatAdapter(deviceAdapter, addDeviceAdapter)
+        rvDispositivos.adapter = ConcatAdapter(addDeviceAdapter, deviceAdapter)
 
         observarDispositivos()
     }
@@ -733,11 +767,18 @@ class HomeFragment : Fragment() {
 
     private fun mostrarInformacionDispositivo(dispositivo: com.example.android.db.Dispositivo) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_device_info, null)
-        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(requireContext())
+        val dialog = android.app.Dialog(requireContext())
         dialog.setContentView(dialogView)
+        dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
 
         dialogView.findViewById<TextView>(R.id.tvDialogNombre).text = dispositivo.nombre ?: "Desconocido"
+        dialogView.findViewById<TextView>(R.id.tvDialogHabitacion).text = dispositivo.nombreHabitacion ?: "Sin asignar"
         dialogView.findViewById<TextView>(R.id.tvDialogTipo).text = dispositivo.tipo ?: "Desconocido"
+        dialogView.findViewById<TextView>(R.id.tvDialogIp).text = dispositivo.ipAddress ?: "Desconocido"
+        dialogView.findViewById<TextView>(R.id.tvDialogFirmware).text = "N/A"
+        dialogView.findViewById<TextView>(R.id.tvDialogRssi).text = "N/A"
+        dialogView.findViewById<TextView>(R.id.tvDialogUltimaConexion).text = dispositivo.fechaEstadoActualizado ?: "Desconocido"
+        dialogView.findViewById<TextView>(R.id.tvDialogTiempoActivo).text = "N/A"
 
         val tvDialogEstadoEncendido = dialogView.findViewById<TextView>(R.id.tvDialogEstadoEncendido)
         val estadoTexto = when (dispositivo.estadoEncendido) {
@@ -750,7 +791,12 @@ class HomeFragment : Fragment() {
         val tvDialogCorriente = dialogView.findViewById<TextView>(R.id.tvDialogCorriente)
         val tvDialogPotencia = dialogView.findViewById<TextView>(R.id.tvDialogPotencia)
         val tvDialogEnergia = dialogView.findViewById<TextView>(R.id.tvDialogEnergia)
+        val tvDialogVoltaje = dialogView.findViewById<TextView>(R.id.tvDialogVoltaje)
+        val tvDialogConsumoHoy = dialogView.findViewById<TextView>(R.id.tvDialogConsumoHoy)
         val tvDialogHistorialConsumo = dialogView.findViewById<TextView>(R.id.tvDialogHistorialConsumo)
+
+        tvDialogVoltaje?.text = "N/A"
+        tvDialogConsumoHoy?.text = "N/A"
 
         fun formatearConsumoActual() {
             val corriente = dispositivo.corrienteA
@@ -770,12 +816,13 @@ class HomeFragment : Fragment() {
         val tvDialogStatusRed = dialogView.findViewById<TextView>(R.id.tvDialogStatusRed)
         val statusDotInfo = dialogView.findViewById<com.google.android.material.card.MaterialCardView>(R.id.statusDotInfo)
 
+        val tipo = dispositivo.tipo ?: "Dispositivo"
         if (isConnected) {
-            tvDialogStatusRed.text = "En línea"
+            tvDialogStatusRed.text = "$tipo en línea"
             tvDialogStatusRed.setTextColor(android.graphics.Color.parseColor("#009688"))
             statusDotInfo.setCardBackgroundColor(android.graphics.Color.parseColor("#009688"))
         } else {
-            tvDialogStatusRed.text = "Desconectado"
+            tvDialogStatusRed.text = "$tipo desconectado"
             tvDialogStatusRed.setTextColor(android.graphics.Color.parseColor("#6F7EA8"))
             statusDotInfo.setCardBackgroundColor(android.graphics.Color.parseColor("#6F7EA8"))
         }
@@ -786,17 +833,75 @@ class HomeFragment : Fragment() {
 
         currentDeviceInfoDialog = dialog
         currentDeviceDialogMac = dispositivo.macBluetooth
+        currentDeviceDialogType = dispositivo.tipo
         tvDialogStatusRedGlobal = tvDialogStatusRed
         statusDotInfoGlobal = statusDotInfo
 
         dialog.setOnDismissListener {
             currentDeviceInfoDialog = null
             currentDeviceDialogMac = null
+            currentDeviceDialogType = null
             tvDialogStatusRedGlobal = null
             statusDotInfoGlobal = null
         }
 
-        dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnDialogEditar).setOnClickListener {
+        val fabMain = dialogView.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fabMain)
+        val llFabConsumo = dialogView.findViewById<android.view.View>(R.id.llFabConsumo)
+        val llFabControles = dialogView.findViewById<android.view.View>(R.id.llFabControles)
+        val llFabEditar = dialogView.findViewById<android.view.View>(R.id.llFabEditar)
+        val fabOverlay = dialogView.findViewById<android.view.View>(R.id.fabOverlay)
+        var isFabOpen = false
+
+        fun toggleFab() {
+            isFabOpen = !isFabOpen
+            if (isFabOpen) {
+                fabMain.animate().rotation(45f).setDuration(200).start()
+                fabOverlay.visibility = android.view.View.VISIBLE
+                fabOverlay.animate().alpha(1f).setDuration(200).start()
+                
+                val views = listOf(llFabConsumo, llFabControles, llFabEditar)
+                views.forEachIndexed { index, view ->
+                    view.visibility = android.view.View.VISIBLE
+                    view.alpha = 0f
+                    view.translationY = 50f
+                    view.animate()
+                        .alpha(1f)
+                        .translationY(0f)
+                        .setDuration(200)
+                        .setStartDelay((index * 50).toLong())
+                        .start()
+                }
+            } else {
+                fabMain.animate().rotation(0f).setDuration(200).start()
+                fabOverlay.animate().alpha(0f).setDuration(200).withEndAction {
+                    fabOverlay.visibility = android.view.View.GONE
+                }.start()
+                
+                val views = listOf(llFabConsumo, llFabControles, llFabEditar)
+                views.forEach { view ->
+                    view.animate()
+                        .alpha(0f)
+                        .translationY(50f)
+                        .setDuration(200)
+                        .withEndAction { view.visibility = android.view.View.GONE }
+                        .start()
+                }
+            }
+        }
+
+        fabMain.setOnClickListener { toggleFab() }
+        fabOverlay.setOnClickListener { if (isFabOpen) toggleFab() }
+        
+        dialog.setOnKeyListener { _, keyCode, event ->
+            if (keyCode == android.view.KeyEvent.KEYCODE_BACK && event.action == android.view.KeyEvent.ACTION_UP && isFabOpen) {
+                toggleFab()
+                true
+            } else {
+                false
+            }
+        }
+
+        dialogView.findViewById<android.view.View>(R.id.btnDialogEditar).setOnClickListener {
             dialog.dismiss()
             requireActivity().supportFragmentManager.beginTransaction()
                 .setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right, android.R.anim.slide_in_left, android.R.anim.slide_out_right)
@@ -805,7 +910,7 @@ class HomeFragment : Fragment() {
                 .commit()
         }
 
-        dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnDialogControles).setOnClickListener {
+        dialogView.findViewById<android.view.View>(R.id.btnDialogControles).setOnClickListener {
             dialog.dismiss()
             val isMultiSocket = dispositivo.tipo?.let { tipo ->
                 tipo.contains("MultiSocket", ignoreCase = true) ||
@@ -824,13 +929,27 @@ class HomeFragment : Fragment() {
             startActivity(intent)
         }
 
-        dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnDialogConsumo)?.setOnClickListener {
-            dialog.dismiss()
-            requireActivity().supportFragmentManager.beginTransaction()
-                .setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right, android.R.anim.slide_in_left, android.R.anim.slide_out_right)
+        dialogView.findViewById<android.view.View>(R.id.btnDialogConsumo)?.setOnClickListener {
+            dialog.hide()
+            
+            val fragmentManager = requireActivity().supportFragmentManager
+            fragmentManager.beginTransaction()
+                .setCustomAnimations(R.anim.slide_in_bottom, R.anim.stationary, R.anim.stationary, R.anim.slide_out_bottom)
                 .add(R.id.fragment_container_overlay, DeviceConsumptionFragment.newInstance(dispositivo.id))
                 .addToBackStack("DeviceConsumption")
                 .commit()
+
+            fragmentManager.addOnBackStackChangedListener(object : androidx.fragment.app.FragmentManager.OnBackStackChangedListener {
+                override fun onBackStackChanged() {
+                    val currentFragment = fragmentManager.findFragmentById(R.id.fragment_container_overlay)
+                    if (currentFragment !is DeviceConsumptionFragment) {
+                        try {
+                            dialog.show()
+                        } catch (e: Exception) {}
+                        fragmentManager.removeOnBackStackChangedListener(this)
+                    }
+                }
+            })
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -885,5 +1004,12 @@ class HomeFragment : Fragment() {
         }
 
         dialog.show()
+        val window = dialog.window
+        if (window != null) {
+            val displayMetrics = resources.displayMetrics
+            val width = (displayMetrics.widthPixels * 0.95).toInt()
+            val height = (displayMetrics.heightPixels * 0.90).toInt()
+            window.setLayout(width, height)
+        }
     }
 }

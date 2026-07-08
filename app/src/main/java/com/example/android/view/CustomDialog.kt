@@ -23,7 +23,7 @@ object CustomDialog {
         INFO
     }
 
-    private lateinit var dialog: AlertDialog
+    private lateinit var dialog: android.app.Dialog
     private lateinit var activity: Activity
 
     private lateinit var title: TextView
@@ -48,8 +48,6 @@ object CustomDialog {
     ) {
 
         dismissDialog()
-
-        val builder = AlertDialog.Builder(activity)
 
         val view = LayoutInflater.from(activity)
             .inflate(R.layout.custom_dialog, null)
@@ -125,20 +123,16 @@ object CustomDialog {
             }
         }
 
-        builder.setView(view)
-        builder.setCancelable(cancelable)
-
-        dialog = builder.create()
+        dialog = android.app.Dialog(activity)
+        dialog.setContentView(view)
+        dialog.setCancelable(cancelable)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         dialog.show()
 
         // Ajustar el ancho del diálogo para que sea responsivo (90% del ancho de pantalla)
         val metrics = activity.resources.displayMetrics
         val width = (metrics.widthPixels * 0.90).toInt()
         dialog.window?.setLayout(width, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
-
-        dialog.window?.setBackgroundDrawable(
-            ColorDrawable(Color.TRANSPARENT)
-        )
     }
 
     fun showErrorDialog(

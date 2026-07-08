@@ -1,102 +1,37 @@
 package com.example.android
 
-import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.ImageButton
 import android.widget.ImageView
-import android.widget.RadioButton
-import android.widget.RadioGroup
-import coil.load
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.widget.SwitchCompat
+import android.widget.TextView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
-import androidx.activity.result.contract.ActivityResultContracts
-import android.Manifest
-import android.content.pm.PackageManager
-import androidx.core.content.ContextCompat
-import com.example.android.ai.BackgroundCameraService
-import com.example.android.ai.CameraSharedState
-import com.example.android.ai.Combo
-import com.example.android.ai.ComboListActivity
-import com.example.android.ai.OverlayView
-import com.example.android.ai.PrefsManager
-import com.example.android.ai.ScheduleActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import coil.load
+import com.example.android.ai.AIVisionActivity
 import com.example.android.ai.SecuenciaConfigActivity
 import com.example.android.ai.SecuenciaConfigManager
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-import com.google.android.material.snackbar.Snackbar
+import androidx.recyclerview.widget.ItemTouchHelper
+import com.example.android.ai.Combo
 import java.util.UUID
 
 class GestosFragment : Fragment() {
 
-    private var cameraMode = 0 // 0: Frontal, 1: Trasera, 2: Wi-Fi IP
-    private var ipCameraUrl = ""
+    private lateinit var adapter: GestosAdminAdapter
+    private lateinit var rvGestos: RecyclerView
+    
 
-    private lateinit var viewFinder: ImageView
-    private lateinit var overlayView: OverlayView
-    private lateinit var switchService: SwitchCompat
-    private lateinit var btnInfo: ImageButton
-    private lateinit var tvNoCameraInfo: android.widget.TextView
-    private lateinit var btnGuardarAccion: ExtendedFloatingActionButton
-
-    private val requestCameraPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
-            proceedStartCamera()
-        } else {
-            switchService.isChecked = false
-        }
-    }
-
-    private val uiHandler = Handler(Looper.getMainLooper())
-    private val updateRunnable = object : Runnable {
-        override fun run() {
-            if (!isAdded) return
-
-            if (CameraSharedState.isServiceRunning) {
-                CameraSharedState.latestBitmap?.let { bmp ->
-                    viewFinder.setImageBitmap(bmp)
-                }
-
-                overlayView.updateResults(
-                    CameraSharedState.lastPoseResult,
-                    CameraSharedState.lastHandResult,
-                    CameraSharedState.imageWidth,
-                    CameraSharedState.imageHeight
-                )
-
-                overlayView.updateAction(CameraSharedState.currentGesture)
-                tvNoCameraInfo.visibility = View.GONE
-            } else {
-                viewFinder.setImageBitmap(null)
-                overlayView.updateResults(null, null, 1, 1)
-                tvNoCameraInfo.visibility = View.VISIBLE
-            }
-            uiHandler.postDelayed(this, 33) // ~30 fps
-        }
-    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_gestos, container, false)
-
-        viewFinder = view.findViewById(R.id.viewFinder)
-        overlayView = view.findViewById(R.id.overlayView)
-        switchService = view.findViewById(R.id.switchService)
-        btnInfo = view.findViewById(R.id.btnInfo)
-        tvNoCameraInfo = view.findViewById(R.id.tvNoCameraInfo)
-        btnGuardarAccion = view.findViewById(R.id.btnGuardarAccion)
 
         val ivProfileGestos = view.findViewById<ImageView>(R.id.ivProfileGestos)
         val sharedPreferences = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
@@ -114,231 +49,155 @@ class GestosFragment : Fragment() {
 
         ViewCompat.setOnApplyWindowInsetsListener(view) { v, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(bars.left, bars.top, bars.right, bars.bottom + (90 * resources.displayMetrics.density).toInt())
+            v.setPadding(bars.left, 0, bars.right, bars.bottom + (90 * resources.displayMetrics.density).toInt())
+
+            val cardSuperior = view.findViewById<View>(R.id.cardSuperior)
+            if (cardSuperior != null) {
+                cardSuperior.setPadding(
+                    cardSuperior.paddingLeft,
+                    bars.top + (4 * resources.displayMetrics.density).toInt(),
+                    cardSuperior.paddingRight,
+                    cardSuperior.paddingBottom
+                )
+            }
+
+            val headerBg = view.findViewById<View>(R.id.headerBackground)
+            if (headerBg != null) {
+                val bgParams = headerBg.layoutParams as ViewGroup.LayoutParams
+                bgParams.height = bars.top + (165 * resources.displayMetrics.density).toInt()
+                headerBg.layoutParams = bgParams
+            }
             insets
         }
 
-        btnInfo.setOnClickListener {
-            showInfoDialog()
+        val btnMonitorIA = view.findViewById<MaterialCardView>(R.id.btnMonitorIA)
+        btnMonitorIA.setOnClickListener {
+            // Abrir la nueva actividad AI Vision
+            val intent = Intent(requireContext(), AIVisionActivity::class.java)
+            startActivity(intent)
         }
 
-        btnGuardarAccion.setOnClickListener {
-            guardarAccionActual()
-        }
+        val fabNuevoGesto = view.findViewById<ExtendedFloatingActionButton>(R.id.fabNuevoGesto)
+        fabNuevoGesto.setOnClickListener {
+            val newCombo = Combo(id = UUID.randomUUID().toString(), name = "Nuevo Gesto")
+            adapter.combos.add(newCombo)
+            SecuenciaConfigManager.saveCombos(requireContext(), adapter.combos)
 
-        switchService.setOnCheckedChangeListener { _, isChecked ->
-            switchService.text = if (isChecked) "Encendido" else "Apagado"
-            if (isChecked) {
-                checkAndStartCamera()
-            } else {
-                stopCameraService()
+            val intent = Intent(requireContext(), SecuenciaConfigActivity::class.java).apply {
+                putExtra("COMBO_ID", newCombo.id)
             }
+            startActivity(intent)
         }
+
+
+
+        rvGestos = view.findViewById(R.id.rvGestos)
+        rvGestos.layoutManager = LinearLayoutManager(requireContext())
+        adapter = GestosAdminAdapter(mutableListOf(), { combo ->
+            val intent = Intent(requireContext(), SecuenciaConfigActivity::class.java)
+            intent.putExtra("COMBO_ID", combo.id)
+            startActivity(intent)
+        }, { combo, isActive ->
+            // In the future this could update an active state flag in Combo
+            // and save to SecuenciaConfigManager
+        })
+        rvGestos.adapter = adapter
+
+        val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
+            0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
+        ) {
+            override fun onMove(r: RecyclerView, v: RecyclerView.ViewHolder, t: RecyclerView.ViewHolder) = false
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val position = viewHolder.adapterPosition
+                val deletedCombo = adapter.combos[position]
+
+                adapter.combos.removeAt(position)
+                adapter.notifyItemRemoved(position)
+                SecuenciaConfigManager.saveCombos(requireContext(), adapter.combos)
+
+                com.google.android.material.snackbar.Snackbar.make(
+                    view,
+                    "Gesto '${deletedCombo.name}' eliminado",
+                    com.google.android.material.snackbar.Snackbar.LENGTH_LONG
+                ).apply {
+                    setAnchorView(fabNuevoGesto)
+                    setAction("Deshacer") {
+                        adapter.combos.add(position, deletedCombo)
+                        adapter.notifyItemInserted(position)
+                        SecuenciaConfigManager.saveCombos(requireContext(), adapter.combos)
+                    }
+                    setActionTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.teal_primary))
+                    this.view.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#073F4C"))
+                    setTextColor(android.graphics.Color.WHITE)
+                    show()
+                }
+            }
+
+            override fun onChildDraw(
+                c: android.graphics.Canvas,
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                dX: Float,
+                dY: Float,
+                actionState: Int,
+                isCurrentlyActive: Boolean
+            ) {
+                if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE) {
+                    val itemView = viewHolder.itemView
+                    val paint = android.graphics.Paint().apply {
+                        color = androidx.core.content.ContextCompat.getColor(requireContext(), R.color.teal_primary)
+                    }
+                    val icon = androidx.core.content.ContextCompat.getDrawable(requireContext(), android.R.drawable.ic_menu_delete)
+
+                    if (dX > 0) {
+                        val rect = android.graphics.RectF(
+                            itemView.left.toFloat(), itemView.top.toFloat(),
+                            itemView.left + dX, itemView.bottom.toFloat()
+                        )
+                        c.drawRoundRect(rect, 16 * resources.displayMetrics.density, 16 * resources.displayMetrics.density, paint)
+                        icon?.let {
+                            val iconMargin = (itemView.height - it.intrinsicHeight) / 2
+                            val iconTop = itemView.top + iconMargin
+                            val iconBottom = iconTop + it.intrinsicHeight
+                            val iconLeft = itemView.left + iconMargin
+                            val iconRight = iconLeft + it.intrinsicWidth
+                            it.setBounds(iconLeft, iconTop, iconRight, iconBottom)
+                            it.setTint(android.graphics.Color.WHITE)
+                            it.draw(c)
+                        }
+                    } else if (dX < 0) {
+                        val rect = android.graphics.RectF(
+                            itemView.right + dX, itemView.top.toFloat(),
+                            itemView.right.toFloat(), itemView.bottom.toFloat()
+                        )
+                        c.drawRoundRect(rect, 16 * resources.displayMetrics.density, 16 * resources.displayMetrics.density, paint)
+                        icon?.let {
+                            val iconMargin = (itemView.height - it.intrinsicHeight) / 2
+                            val iconTop = itemView.top + iconMargin
+                            val iconBottom = iconTop + it.intrinsicHeight
+                            val iconRight = itemView.right - iconMargin
+                            val iconLeft = iconRight - it.intrinsicWidth
+                            it.setBounds(iconLeft, iconTop, iconRight, iconBottom)
+                            it.setTint(android.graphics.Color.WHITE)
+                            it.draw(c)
+                        }
+                    }
+                }
+                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
+            }
+        })
+        itemTouchHelper.attachToRecyclerView(rvGestos)
 
         return view
     }
 
-    private fun guardarAccionActual() {
-        if (!CameraSharedState.isServiceRunning) {
-            Snackbar.make(requireView(), "Activa el servicio para detectar un gesto", Snackbar.LENGTH_SHORT).show()
-            return
-        }
-
-        // Usamos currentGesture (nombre limpio del gesto), NO currentAction
-        // (que incluye el feedback de la lista completa de combos).
-        val accionActual = CameraSharedState.currentGesture
-
-        if (accionActual.isNullOrEmpty() || accionActual == "Ninguno") {
-            Snackbar.make(requireView(), "No se detectó ningún gesto todavía", Snackbar.LENGTH_SHORT).show()
-            return
-        }
-
-        // Crea un nuevo Combo con el gesto actual como nombre, igual que hace fabAddCombo
-        // en ComboListActivity, y lo guarda con SecuenciaConfigManager.
-        val nuevoCombo = Combo(
-            id = UUID.randomUUID().toString(),
-            name = "Combo: $accionActual"
-        )
-
-        val combosActuales = SecuenciaConfigManager.loadCombos(requireContext()).toMutableList()
-        combosActuales.add(nuevoCombo)
-        SecuenciaConfigManager.saveCombos(requireContext(), combosActuales)
-
-        Snackbar.make(requireView(), "Acción '$accionActual' guardada como combo", Snackbar.LENGTH_SHORT).show()
-
-        val intent = Intent(requireContext(), SecuenciaConfigActivity::class.java).apply {
-            putExtra("COMBO_ID", nuevoCombo.id)
-        }
-        startActivity(intent)
-    }
-
-    private fun showInfoDialog() {
-        val bottomSheet = BottomSheetDialog(requireContext())
-        val view = layoutInflater.inflate(R.layout.dialog_gestos_info, null)
-        bottomSheet.setContentView(view)
-
-        val rgCameraMode = view.findViewById<RadioGroup>(R.id.rgCameraMode)
-        val rbCamFrontal = view.findViewById<RadioButton>(R.id.rbCamFrontal)
-        val rbCamTrasera = view.findViewById<RadioButton>(R.id.rbCamTrasera)
-        val rbCamWifi = view.findViewById<RadioButton>(R.id.rbCamWifi)
-        val btnConfigGestos = view.findViewById<Button>(R.id.btnConfigGestos)
-        val btnHorario = view.findViewById<Button>(R.id.btnHorario)
-
-        btnHorario.text = "🕒 " + PrefsManager.getScheduleString(requireContext())
-
-        when (cameraMode) {
-            0 -> rbCamFrontal.isChecked = true
-            1 -> rbCamTrasera.isChecked = true
-            2 -> rbCamWifi.isChecked = true
-        }
-
-        rgCameraMode.setOnCheckedChangeListener { _, checkedId ->
-            cameraMode = when (checkedId) {
-                R.id.rbCamFrontal -> 0
-                R.id.rbCamTrasera -> 1
-                else -> 2
-            }
-            if (cameraMode == 2) {
-                checkEspCamera()
-            } else {
-                if (switchService.isChecked) {
-                    startCameraService()
-                }
-            }
-            bottomSheet.dismiss()
-        }
-
-        val switchLandmarks = view.findViewById<androidx.appcompat.widget.SwitchCompat>(R.id.switchShowLandmarks)
-        val switchAction = view.findViewById<androidx.appcompat.widget.SwitchCompat>(R.id.switchShowAction)
-
-        switchLandmarks.isChecked = PrefsManager.isShowLandmarks(requireContext())
-        switchAction.isChecked = PrefsManager.isShowAction(requireContext())
-
-        switchLandmarks.setOnCheckedChangeListener { _, isChecked ->
-            PrefsManager.setShowLandmarks(requireContext(), isChecked)
-        }
-
-        switchAction.setOnCheckedChangeListener { _, isChecked ->
-            PrefsManager.setShowAction(requireContext(), isChecked)
-        }
-
-        btnConfigGestos.setOnClickListener {
-            bottomSheet.dismiss()
-            val intent = Intent(requireContext(), ComboListActivity::class.java)
-            startActivity(intent)
-        }
-
-        btnHorario.setOnClickListener {
-            bottomSheet.dismiss()
-            val intent = Intent(requireContext(), ScheduleActivity::class.java)
-            startActivity(intent)
-        }
-
-        bottomSheet.show()
-    }
-
-    private fun checkAndStartCamera() {
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-            proceedStartCamera()
-        } else {
-            requestCameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-        }
-    }
-
-    private fun proceedStartCamera() {
-        if (cameraMode == 2 && ipCameraUrl.isEmpty()) {
-            checkEspCamera()
-        } else {
-            startCameraService()
-        }
-    }
-
-    private fun checkEspCamera() {
-        val prefs = requireContext().getSharedPreferences("EspConfigPrefs", Context.MODE_PRIVATE)
-        val savedIp = prefs.getString("saved_device_ip", "")
-
-        if (!savedIp.isNullOrEmpty()) {
-            ipCameraUrl = "http://$savedIp:81/stream"
-            switchService.isChecked = true
-            startCameraService()
-        } else {
-            showIpCameraDialog()
-        }
-    }
-
-
-
-    private fun showIpCameraDialog() {
-        val input = android.widget.EditText(requireContext())
-        input.hint = "http://192.168.1.100:81/stream"
-        input.setText(ipCameraUrl)
-
-        AlertDialog.Builder(requireContext())
-            .setTitle("URL de Cámara Wi-Fi")
-            .setView(input)
-            .setPositiveButton("Conectar") { _, _ ->
-                ipCameraUrl = input.text.toString()
-                switchService.isChecked = true
-                startCameraService()
-            }
-            .setNegativeButton("Cancelar") { _, _ ->
-                if (!CameraSharedState.isServiceRunning) {
-                    switchService.isChecked = false
-                }
-            }
-            .show()
-    }
-
-    private fun startCameraService() {
-        val intent = Intent(requireContext(), BackgroundCameraService::class.java).apply {
-            action = BackgroundCameraService.ACTION_START
-            putExtra(BackgroundCameraService.EXTRA_CAMERA_MODE, cameraMode)
-            putExtra(BackgroundCameraService.EXTRA_IP_URL, ipCameraUrl)
-        }
-        androidx.core.content.ContextCompat.startForegroundService(requireContext(), intent)
-    }
-
-    private fun stopCameraService() {
-        val intent = Intent(requireContext(), BackgroundCameraService::class.java).apply {
-            action = BackgroundCameraService.ACTION_STOP
-        }
-        requireContext().startService(intent)
-    }
-
-    private fun notifyServiceScheduleChanged() {
-        if (CameraSharedState.isServiceRunning) {
-            val intent = Intent(requireContext(), BackgroundCameraService::class.java).apply {
-                action = BackgroundCameraService.ACTION_UPDATE_SCHEDULE
-            }
-            requireContext().startService(intent)
-        }
-    }
-
     override fun onResume() {
         super.onResume()
-        switchService.setOnCheckedChangeListener(null)
-        switchService.isChecked = CameraSharedState.isServiceRunning
-        switchService.text = if (switchService.isChecked) "Encendido" else "Apagado"
-        switchService.setOnCheckedChangeListener { _, isChecked ->
-            switchService.text = if (isChecked) "Encendido" else "Apagado"
-            if (isChecked) {
-                checkAndStartCamera()
-            } else {
-                stopCameraService()
-            }
-        }
+        val combos = SecuenciaConfigManager.loadCombos(requireContext())
+        adapter.combos = combos.toMutableList()
+        adapter.notifyDataSetChanged()
+        
 
-        if (CameraSharedState.isServiceRunning) {
-            val intent = Intent(requireContext(), BackgroundCameraService::class.java).apply {
-                action = BackgroundCameraService.ACTION_RELOAD_COMBOS
-            }
-            requireContext().startService(intent)
-        }
-        uiHandler.post(updateRunnable)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        uiHandler.removeCallbacks(updateRunnable)
     }
 }
