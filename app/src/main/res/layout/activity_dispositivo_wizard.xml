@@ -2,7 +2,6 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mainWizardLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -54,92 +53,26 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <TextView
-        android:id="@+id/tvWizardDesc"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="1. Selecciona un dispositivo de la lista:"
-        android:textColor="#6F7E8E"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        android:layout_marginTop="16dp"
-        android:layout_marginHorizontal="24dp"
-        app:layout_constraintTop_toBottomOf="@id/cardBack"/>
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvDispositivosWizard"
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/viewPagerDispositivo"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginHorizontal="16dp"
-        app:layout_constraintTop_toBottomOf="@id/tvWizardDesc"
-        app:layout_constraintBottom_toTopOf="@id/layoutAcciones"/>
+        app:layout_constraintTop_toBottomOf="@id/cardBack"
+        app:layout_constraintBottom_toTopOf="@id/btnFinalizarWizard"
+        android:layout_marginBottom="16dp"/>
 
-    <LinearLayout
-        android:id="@+id/layoutAcciones"
+    <Button
+        android:id="@+id/btnFinalizarWizard"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="24dp"
-        android:background="#FFFFFF"
-        app:layout_constraintBottom_toBottomOf="parent">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="2. Selecciona la acción a ejecutar:"
-            android:textColor="#6F7E8E"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="12dp"/>
-
-        <RadioGroup
-            android:id="@+id/rgAcciones"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:weightSum="3"
-            android:layout_marginBottom="20dp">
-
-            <RadioButton
-                android:id="@+id/rbEncender"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Encender"
-                android:checked="true"
-                android:buttonTint="@color/teal_primary"
-                android:textColor="#073F4C"/>
-
-            <RadioButton
-                android:id="@+id/rbApagar"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Apagar"
-                android:buttonTint="@color/teal_primary"
-                android:textColor="#073F4C"/>
-
-            <RadioButton
-                android:id="@+id/rbAlternar"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Alternar"
-                android:buttonTint="@color/teal_primary"
-                android:textColor="#073F4C"/>
-        </RadioGroup>
-
-        <Button
-            android:id="@+id/btnFinalizarWizard"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:text="Confirmar Selección"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="@color/white"
-            app:backgroundTint="@color/teal_primary"
-            app:cornerRadius="16dp"/>
-    </LinearLayout>
+        android:layout_height="56dp"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginBottom="24dp"
+        android:text="Siguiente"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="@color/white"
+        app:backgroundTint="@color/teal_primary"
+        app:cornerRadius="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

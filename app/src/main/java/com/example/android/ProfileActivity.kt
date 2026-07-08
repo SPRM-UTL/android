@@ -1,22 +1,11 @@
 package com.example.android
+
 import android.app.Dialog
+import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.net.Uri
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import coil.load
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MultipartBody
-import okhttp3.RequestBody.Companion.asRequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.File
-import java.io.FileOutputStream
-import android.content.Context
-import android.content.Intent
 import android.os.Bundle
 import android.util.Patterns
 import android.view.View
@@ -26,8 +15,12 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.motion.widget.MotionLayout
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -38,11 +31,17 @@ import com.example.android.network.RetrofitClient
 import com.example.android.network.UpdateUserRequest
 import com.example.android.view.CustomDialog
 import com.example.android.view.Snackbars
-import com.example.android.view.cambiarColorStatusBar
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import coil.load
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.File
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -61,7 +60,6 @@ class ProfileActivity : AppCompatActivity() {
     private lateinit var tvHola: TextView
 
     private lateinit var vistaRaiz : View
-    private lateinit var btnLogout : Button
     private lateinit var mainProfile: MotionLayout
 
     private var userIdGuardado: Int = -1
@@ -99,6 +97,7 @@ class ProfileActivity : AppCompatActivity() {
         options.setCompressionQuality(90)
         options.setShowCropGrid(false)
         options.setToolbarTitle("Recortar foto")
+
         val colorPrimary = ContextCompat.getColor(this, R.color.teal_primary)
         val colorWhite = ContextCompat.getColor(this, R.color.white)
         val colorBackground = ContextCompat.getColor(this, R.color.background)
@@ -108,6 +107,9 @@ class ProfileActivity : AppCompatActivity() {
         options.setToolbarWidgetColor(colorWhite)
         options.setActiveControlsWidgetColor(colorPrimary)
         options.setRootViewBackgroundColor(colorBackground)
+
+        // Solución Safe Area: Forzar barra de herramientas y controles visibles sin superposición por insets
+        options.setHideBottomControls(false)
 
         val uCropIntent = com.yalantis.ucrop.UCrop.of(sourceUri, destinationUri)
             .withAspectRatio(1f, 1f)
@@ -124,7 +126,6 @@ class ProfileActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.navigationBarColor = android.graphics.Color.TRANSPARENT
 
-        // Replicado idéntico a Combos: Barra de navegación clara, barra de estado oscura con iconos blancos
         WindowInsetsControllerCompat(window, window.decorView).apply {
             isAppearanceLightNavigationBars = true
             isAppearanceLightStatusBars = false
@@ -134,7 +135,6 @@ class ProfileActivity : AppCompatActivity() {
 
         mainProfile = findViewById(R.id.mainProfile)
 
-        // Insets configurados exactamente con la misma solución dinámica de Combos
         ViewCompat.setOnApplyWindowInsetsListener(mainProfile) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
@@ -151,7 +151,6 @@ class ProfileActivity : AppCompatActivity() {
 
             v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom + ime.bottom)
 
-            // ESTO INYECTA EL ESPACIO PERFECTO ARRIBA DE LA FLECHA Y EL TÍTULO
             val cardBack = findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardBack)
             cardBack?.getChildAt(0)?.setPadding(0, systemBars.top, 0, 0)
             insets
@@ -236,9 +235,6 @@ class ProfileActivity : AppCompatActivity() {
     private fun cargarIconosPerfil() {
         findViewById<ImageButton>(R.id.btnBack)?.let {
             it.setImageResource(R.drawable.arrow_left)
-        }
-
-        findViewById<MaterialButton>(R.id.btnGuardarPerfil)?.let { botonGuardar ->
         }
 
         findViewById<MaterialButton>(R.id.logout)?.let { botonLogout ->

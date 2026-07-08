@@ -40,6 +40,7 @@ import java.util.*
 class EspConfigActivity : AppCompatActivity() {
 
     // --- Header / step indicator ---
+    private lateinit var cardBack: MaterialCardView
     private lateinit var stepDot1: FrameLayout
     private lateinit var stepDot2: FrameLayout
     private lateinit var stepDot3: FrameLayout
@@ -59,7 +60,7 @@ class EspConfigActivity : AppCompatActivity() {
 
     // --- Step 1: buscar dispositivo ---
     private lateinit var cardEstado: MaterialCardView
-    private lateinit var iconEstadoBg: FrameLayout
+    private lateinit var iconEstadoBg: FrameLayout // <-- DECLARADA AQUÍ CORRECTAMENTE
     private lateinit var ivEstadoConexion: ImageView
     private lateinit var tvEstadoConexion: TextView
     private lateinit var tvSubEstadoConexion: TextView
@@ -95,10 +96,9 @@ class EspConfigActivity : AppCompatActivity() {
     private lateinit var btnAtras: MaterialButton
     private lateinit var btnSiguiente: MaterialButton
 
-    private lateinit var btnBack: ImageView
-    private lateinit var ivHelp: ImageView
+    private lateinit var btnBack: ImageButton
 
-    private var vistaRaiz: View? = null
+    private lateinit var mainConfig: View
 
     // Paso actual del wizard: 1, 2 o 3
     private var pasoActual: Int = 1
@@ -203,21 +203,27 @@ class EspConfigActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.navigationBarColor = android.graphics.Color.TRANSPARENT
-        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = true
+
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightNavigationBars = true
+            isAppearanceLightStatusBars = false
+        }
 
         setContentView(R.layout.activity_esp_config)
-        vistaRaiz = findViewById(android.R.id.content)
+        mainConfig = findViewById(R.id.mainConfig)
 
-        ViewCompat.setOnApplyWindowInsetsListener(vistaRaiz!!) { view, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(mainConfig) { view, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
 
-            // Si el teclado está visible, usamos el bottom del IME para empujar las vistas hacia arriba automáticamente
             val bottomPadding = if (ime.bottom > 0) ime.bottom else bars.bottom
-            view.setPadding(bars.left, bars.top, bars.right, bottomPadding)
+            view.setPadding(bars.left, 0, bars.right, bottomPadding)
+
+            cardBack.getChildAt(0)?.setPadding(0, bars.top, 0, 0)
             insets
         }
 
@@ -269,11 +275,9 @@ class EspConfigActivity : AppCompatActivity() {
     }
 
     private fun inicializarVistas() {
-        // Header
+        cardBack = findViewById(R.id.cardBack)
         btnBack = findViewById(R.id.btnBack)
-        ivHelp = findViewById(R.id.ivHelp)
 
-        // Step indicator
         stepDot1 = findViewById(R.id.stepDot1)
         stepDot2 = findViewById(R.id.stepDot2)
         stepDot3 = findViewById(R.id.stepDot3)
@@ -283,15 +287,13 @@ class EspConfigActivity : AppCompatActivity() {
         stepLabel2 = findViewById(R.id.stepLabel2)
         stepLabel3 = findViewById(R.id.stepLabel3)
 
-        // Scrollview e hilos contenedores
         scrollContent = findViewById(R.id.scrollContent)
         stepContent1 = findViewById(R.id.stepContent1)
         stepContent2 = findViewById(R.id.stepContent2)
         stepContent3 = findViewById(R.id.stepContent3)
 
-        // Step 1
         cardEstado = findViewById(R.id.cardEstado)
-        iconEstadoBg = findViewById(R.id.iconEstadoBg)
+        iconEstadoBg = findViewById(R.id.iconEstadoBg) // Vinculada correctamente aquí
         ivEstadoConexion = findViewById(R.id.ivEstadoConexion)
         tvEstadoConexion = findViewById(R.id.tvEstadoConexion)
         tvSubEstadoConexion = findViewById(R.id.tvSubEstadoConexion)
@@ -307,31 +309,27 @@ class EspConfigActivity : AppCompatActivity() {
 
         listAdapter = DeviceAdapter(this, discoveredDevices)
 
-        // Step 2
         cardOptionWifi = findViewById(R.id.cardOptionWifi)
         cardOptionManual = findViewById(R.id.cardOptionManual)
         cardOptionQr = findViewById(R.id.cardOptionQr)
         etSsid = findViewById(R.id.etSsid)
         etPassword = findViewById(R.id.etPassword)
 
-        // Forzar desplazamiento automático del scroll al ganar foco en los inputs
         val focusScrollListener = View.OnFocusChangeListener { _, hasFocus ->
             if (hasFocus) {
                 handler.postDelayed({
                     scrollContent.smoothScrollTo(0, scrollContent.bottom)
-                }, 200) // Pequeño delay para esperar el despliegue de animación del teclado
+                }, 200)
             }
         }
         etSsid.onFocusChangeListener = focusScrollListener
         etPassword.onFocusChangeListener = focusScrollListener
 
-        // Step 3
         tvResumenDispositivo = findViewById(R.id.tvResumenDispositivo)
         cardSeleccionWifi = findViewById(R.id.cardSeleccionWifi)
         tvSelectedSsid = findViewById(R.id.tvSelectedSsid)
         btnEditarWifi = findViewById(R.id.btnEditarWifi)
 
-        // Bottom bar
         bottomActionBar = findViewById(R.id.bottomActionBar)
         btnAtras = findViewById(R.id.btnAtras)
         btnSiguiente = findViewById(R.id.btnSiguiente)
@@ -368,11 +366,12 @@ class EspConfigActivity : AppCompatActivity() {
     }
 
     private fun configurarListeners() {
-        btnBack.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
-
-        ivHelp.setOnClickListener {
-            val nombreTipo = if (tipoDispositivo.isNotBlank()) tipoDispositivo.lowercase() else "dispositivo ESP32"
-            mostrarSnackbar("Acerca tu teléfono a tu $nombreTipo y mantén el Bluetooth encendido durante todo el proceso.", false)
+        btnBack.setOnClickListener {
+            if (pasoActual > 1) {
+                mostrarPaso(pasoActual - 1)
+            } else {
+                onBackPressedDispatcher.onBackPressed()
+            }
         }
 
         btnBuscarDispositivos.setOnClickListener {
@@ -483,11 +482,13 @@ class EspConfigActivity : AppCompatActivity() {
                 }
                 activo -> {
                     dot.setBackgroundResource(R.drawable.bg_circle_step_active)
+                    numText.text = if (numView == R.id.stepNum1) "1" else if (numView == R.id.stepNum2) "2" else "3"
                     numText.setTextColor(android.graphics.Color.WHITE)
                     label.setTextColor(ContextCompat.getColor(this, R.color.teal_primary))
                 }
                 else -> {
                     dot.setBackgroundResource(R.drawable.bg_circle_step_inactive)
+                    numText.text = if (numView == R.id.stepNum1) "1" else if (numView == R.id.stepNum2) "2" else "3"
                     numText.setTextColor(android.graphics.Color.parseColor("#9E9E9E"))
                     label.setTextColor(android.graphics.Color.parseColor("#9E9E9E"))
                 }
@@ -847,7 +848,7 @@ class EspConfigActivity : AppCompatActivity() {
     }
 
     private fun mostrarSnackbar(mensaje: String, esError: Boolean) {
-        vistaRaiz?.let { view ->
+        mainConfig?.let { view ->
             val snackbar = Snackbar.make(view, mensaje, Snackbar.LENGTH_SHORT)
             if (::bottomActionBar.isInitialized) {
                 snackbar.setAnchorView(bottomActionBar)

@@ -17,7 +17,6 @@
         app:strokeWidth="0dp"
         app:layout_constraintTop_toTopOf="parent">
 
-        <!-- Clonado exactamente igual que en la pantalla de Combos -->
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
