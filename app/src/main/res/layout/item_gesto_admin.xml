@@ -1,65 +1,93 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/gestoCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="8dp"
+    android:layout_margin="8dp"
     app:cardBackgroundColor="@color/white"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="1dp"
-    app:strokeColor="#F0F3F7"
-    app:strokeWidth="1dp">
+    app:cardCornerRadius="32dp"
+    app:cardElevation="4dp"
+    app:strokeWidth="0dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="12dp">
+        android:padding="20dp">
 
-        <TextView
-            android:id="@+id/tvGestoIcon"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:text="👋"
-            android:gravity="center"
-            android:textSize="24sp"
-            android:background="@drawable/bg_circle_light_gray"
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/iconBg"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            app:cardBackgroundColor="#F0F3F7"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="0dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+            app:strokeWidth="0dp">
+
+            <TextView
+                android:id="@+id/tvGestoIcon"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="👋"
+                android:gravity="center"
+                android:textSize="24sp" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchGestoActive"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            app:layout_constraintBottom_toBottomOf="@id/iconBg"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/iconBg"
+            app:thumbTint="@color/white"
+            app:trackTint="@color/teal_primary" />
 
         <TextView
             android:id="@+id/tvGestoName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
+            android:layout_marginTop="28dp"
             android:text="Saludar"
-            android:textColor="#073F4C"
+            android:textColor="#17252A"
             android:textSize="16sp"
             android:textStyle="bold"
-            app:layout_constraintStart_toEndOf="@id/tvGestoIcon"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/switchGestoActive" />
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/iconBg" />
 
-        <TextView
-            android:id="@+id/tvGestoDevice"
+        <LinearLayout
+            android:id="@+id/llStatusContainer"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:text="Lámpara principal"
-            android:textColor="#6F7E8E"
-            android:textSize="12sp"
-            app:layout_constraintStart_toEndOf="@id/tvGestoIcon"
-            app:layout_constraintTop_toBottomOf="@id/tvGestoName"
-            app:layout_constraintEnd_toStartOf="@id/switchGestoActive" />
-
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switchGestoActive"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvGestoName">
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/statusDot"
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:layout_marginEnd="6dp"
+                app:cardBackgroundColor="#6F7EA8"
+                app:cardCornerRadius="4dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp" />
+
+            <TextView
+                android:id="@+id/tvGestoDevice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Lámpara principal"
+                android:textColor="#6F7EA8"
+                android:textSize="12sp" />
+        </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

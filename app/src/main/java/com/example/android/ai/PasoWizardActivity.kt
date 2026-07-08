@@ -1,10 +1,8 @@
-// Archivo: PasoWizardActivity.kt
 package com.example.android.ai
 
 import com.example.android.adapters.GestureDropdownAdapter
 import com.example.android.R
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
@@ -18,15 +16,13 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.viewpager2.widget.ViewPager2
 
 class PasoWizardActivity : AppCompatActivity() {
 
     private lateinit var btnFinishWizard: Button
     private lateinit var tvToolbarTitle: TextView
-    private lateinit var spinnerGesto: AutoCompleteTextView
-    private lateinit var spinnerMano: AutoCompleteTextView
-    private lateinit var tvFramesValue: TextView
-    private lateinit var seekBarFrames: SeekBar
+    private lateinit var viewPager: ViewPager2
 
     private var selectedPoseName: String = ""
     private var selectedHand: ManoObjetivo = ManoObjetivo.ANY
@@ -46,98 +42,74 @@ class PasoWizardActivity : AppCompatActivity() {
         }
         setContentView(R.layout.activity_step_wizard)
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.mainStepWizard)) { v, insets ->
+        val mainLayout = findViewById<View>(R.id.mainStepWizard)
+        ViewCompat.setOnApplyWindowInsetsListener(mainLayout) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-
             v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom + ime.bottom)
-
             val cardBack = findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardBack)
             cardBack?.getChildAt(0)?.setPadding(0, systemBars.top, 0, 0)
-
             insets
         }
 
         btnFinishWizard = findViewById(R.id.btnFinishWizard)
         tvToolbarTitle = findViewById(R.id.tvToolbarTitle)
-        spinnerGesto = findViewById(R.id.spinnerGesto)
-        spinnerMano = findViewById(R.id.spinnerMano)
-        tvFramesValue = findViewById(R.id.tvFramesValue)
-        seekBarFrames = findViewById(R.id.seekBarFrames)
-
-        findViewById<android.widget.ImageButton>(R.id.btnBack).setOnClickListener {
-            finish()
-        }
+        viewPager = findViewById(R.id.viewPagerWizard)
 
         val initialPose = intent.getStringExtra("INITIAL_POSE")
         if (initialPose != null) {
-            tvToolbarTitle.text = "Editar Gesto"
             selectedPoseName = initialPose
             val handStr = intent.getStringExtra("INITIAL_HAND") ?: ManoObjetivo.ANY.name
             selectedHand = ManoObjetivo.valueOf(handStr)
             selectedFrames = intent.getIntExtra("INITIAL_FRAMES", 15)
         } else {
-            tvToolbarTitle.text = "Añadir Gesto"
-            if (allPoses.isNotEmpty()) {
-                selectedPoseName = allPoses[0]
+            if (allPoses.isNotEmpty()) selectedPoseName = allPoses[0]
+        }
+
+        viewPager.isUserInputEnabled = false
+        viewPager.adapter = WizardPagerAdapter { position, itemView ->
+            when (position) {
+                0 -> setupGestoStep(itemView)
+                1 -> setupManoStep(itemView)
+                2 -> setupVelocidadStep(itemView)
             }
         }
 
-        setupSpinners()
-        setupSeekBar()
+        findViewById<android.widget.ImageButton>(R.id.btnBack).setOnClickListener {
+            handleBackNavigation()
+        }
+
+        updateToolbarAndButton(0)
 
         btnFinishWizard.setOnClickListener {
-            val resultIntent = Intent()
-            resultIntent.putExtra("POSE_NAME", selectedPoseName)
-            resultIntent.putExtra("TARGET_HAND", selectedHand.name)
-            resultIntent.putExtra("FRAMES", selectedFrames)
-
-            val extraType = intent.getStringExtra("EXTRA_TYPE")
-            if (extraType != null) {
-                resultIntent.putExtra("EXTRA_TYPE", extraType)
-            }
-
-            val editIndex = intent.getIntExtra("EDIT_INDEX", -1)
-            if (editIndex != -1) {
-                resultIntent.putExtra("EDIT_INDEX", editIndex)
-            }
-
-            setResult(Activity.RESULT_OK, resultIntent)
-            finish()
+            handleNextNavigation()
         }
     }
 
-    private fun setupSpinners() {
-        // ====== DROPDOWN 1: GESTO (AHORA USA EL MISMO ADAPTADOR) ======
-        val gestureAdapter = GestureDropdownAdapter(this, allPoses) { _ ->
-            // Retorna el icono base de la app para todos los gestos de la lista
-            R.drawable.ic_manordomo_sin_fondo
-        }
+    private fun setupGestoStep(view: View) {
+        val spinnerGesto = view.findViewById<AutoCompleteTextView>(R.id.spinnerGestoInner)
+        val gestureAdapter = GestureDropdownAdapter(this, allPoses) { R.drawable.ic_manordomo_sin_fondo }
         spinnerGesto.setAdapter(gestureAdapter)
         spinnerGesto.setText(selectedPoseName, false)
-        spinnerGesto.setOnItemClickListener { _, _, position, _ ->
-            selectedPoseName = allPoses[position]
+        spinnerGesto.setOnItemClickListener { _, _, pos, _ ->
+            selectedPoseName = allPoses[pos]
         }
+    }
 
-        // ====== DROPDOWN 2: MANO ======
+    private fun setupManoStep(view: View) {
+        val spinnerMano = view.findViewById<AutoCompleteTextView>(R.id.spinnerManoInner)
         val handAdapter = GestureDropdownAdapter(this, handOptions) { mano ->
-            when (mano) {
-                "Mano Izquierda" -> R.drawable.ic_manordomo_sin_fondo // Puedes cambiarlo por un vector específico
-                "Mano Derecha"   -> R.drawable.ic_manordomo_sin_fondo // Puedes cambiarlo por un vector específico
-                else -> null // Usa el icono por defecto de Manordomo
-            }
+            if (mano.contains("Cualquier")) null else R.drawable.ic_manordomo_sin_fondo
         }
         spinnerMano.setAdapter(handAdapter)
-
         val handIndex = when (selectedHand) {
             ManoObjetivo.ANY -> 0
             ManoObjetivo.LEFT -> 1
             ManoObjetivo.RIGHT -> 2
         }
         spinnerMano.setText(handOptions[handIndex], false)
-
-        spinnerMano.setOnItemClickListener { _, _, position, _ ->
-            selectedHand = when (position) {
+        spinnerMano.setOnItemClickListener { _, _, pos, _ ->
+            selectedHand = when (pos) {
                 1 -> ManoObjetivo.LEFT
                 2 -> ManoObjetivo.RIGHT
                 else -> ManoObjetivo.ANY
@@ -145,17 +117,75 @@ class PasoWizardActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupSeekBar() {
+    private fun setupVelocidadStep(view: View) {
+        val tvFramesValue = view.findViewById<TextView>(R.id.tvFramesValueInner)
+        val seekBarFrames = view.findViewById<SeekBar>(R.id.seekBarFramesInner)
+
         seekBarFrames.progress = selectedFrames - 3
         tvFramesValue.text = "$selectedFrames cuadros"
-
         seekBarFrames.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+            override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
                 selectedFrames = progress + 3
                 tvFramesValue.text = "$selectedFrames cuadros"
             }
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStartTrackingTouch(sb: SeekBar?) {}
+            override fun onStopTrackingTouch(sb: SeekBar?) {}
         })
+    }
+
+    private fun updateToolbarAndButton(pageIndex: Int) {
+        when (pageIndex) {
+            0 -> {
+                tvToolbarTitle.text = "Seleccionar Gesto (1/3)"
+                btnFinishWizard.text = "Siguiente"
+            }
+            1 -> {
+                tvToolbarTitle.text = "Mano a Usar (2/3)"
+                btnFinishWizard.text = "Siguiente"
+            }
+            2 -> {
+                tvToolbarTitle.text = "Velocidad de Reacción (3/3)"
+                btnFinishWizard.text = "Guardar Gesto"
+            }
+        }
+    }
+
+    private fun handleNextNavigation() {
+        val current = viewPager.currentItem
+        if (current < 2) {
+            viewPager.currentItem = current + 1
+            updateToolbarAndButton(current + 1)
+        } else {
+            val resultIntent = Intent().apply {
+                putExtra("POSE_NAME", selectedPoseName)
+                putExtra("TARGET_HAND", selectedHand.name)
+                putExtra("FRAMES", selectedFrames)
+                intent.getStringExtra("EXTRA_TYPE")?.let { putExtra("EXTRA_TYPE", it) }
+                val editIndex = intent.getIntExtra("EDIT_INDEX", -1)
+                if (editIndex != -1) putExtra("EDIT_INDEX", editIndex)
+            }
+            setResult(Activity.RESULT_OK, resultIntent)
+            finish()
+        }
+    }
+
+    private fun handleBackNavigation() {
+        val current = viewPager.currentItem
+        if (current > 0) {
+            viewPager.currentItem = current - 1
+            updateToolbarAndButton(current - 1)
+        } else {
+            finish()
+        }
+    }
+
+    override fun onBackPressed() {
+        val current = viewPager.currentItem
+        if (current > 0) {
+            viewPager.currentItem = current - 1
+            updateToolbarAndButton(current - 1)
+        } else {
+            super.onBackPressed()
+        }
     }
 }

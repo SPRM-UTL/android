@@ -4,197 +4,188 @@
     android:id="@+id/mainConfig"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FAFAFA">
+    android:background="#F8FFFF">
 
-    <!-- ============== HEADER ============== -->
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/headerConfig"
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardBack"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/teal_primary"
+        app:cardCornerRadius="0dp"
+        app:strokeWidth="0dp"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:paddingBottom="16dp">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="12dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/arrow_left"
+                android:layout_marginStart="12dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:tint="@color/white" />
+
+            <TextView
+                android:id="@+id/tvTituloConfig"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Configurar"
+                android:textColor="@color/white"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textAlignment="center"
+                android:layout_marginEnd="48dp"
+                app:layout_constraintStart_toEndOf="@id/btnBack"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <LinearLayout
+        android:id="@+id/stepIndicator"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="#FFFFFF"
+        android:elevation="2dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
         android:paddingHorizontal="20dp"
-        android:paddingTop="20dp"
-        android:paddingBottom="16dp"
-        app:layout_constraintTop_toTopOf="parent">
+        android:paddingVertical="14dp"
+        app:layout_constraintTop_toBottomOf="@id/cardBack">
 
-        <ImageView
-            android:id="@+id/btnBack"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Volver"
-            android:padding="8dp"
-            android:src="@drawable/arrow_left"
-            app:layout_constraintBottom_toBottomOf="@id/tvTituloConfig"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="@id/tvTituloConfig"
-            app:tint="#212121" />
-
-        <TextView
-            android:id="@+id/tvTituloConfig"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:text="Configurar cámara"
-            android:textColor="#212121"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            app:layout_constraintEnd_toStartOf="@id/ivHelp"
-            app:layout_constraintStart_toEndOf="@id/btnBack"
-            app:layout_constraintTop_toTopOf="parent" />
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
 
-        <ImageView
-            android:id="@+id/ivHelp"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Ayuda"
-            android:padding="8dp"
-            android:src="@drawable/info"
-            app:layout_constraintBottom_toBottomOf="@id/tvTituloConfig"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@id/tvTituloConfig"
-            app:tint="@color/teal_primary" />
-
-        <!-- ===== Step indicator (1-2-3) ===== -->
-        <LinearLayout
-            android:id="@+id/stepIndicator"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvTituloConfig">
-
-            <!-- Step 1 -->
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:orientation="vertical">
-
-                <FrameLayout
-                    android:id="@+id/stepDot1"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:background="@drawable/bg_circle_step_active">
-
-                    <TextView
-                        android:id="@+id/stepNum1"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:text="1"
-                        android:textColor="#FFFFFF"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
-                </FrameLayout>
+            <FrameLayout
+                android:id="@+id/stepDot1"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="@drawable/bg_circle_step_active">
 
                 <TextView
-                    android:id="@+id/stepLabel1"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="Buscar"
-                    android:textColor="@color/teal_primary"
-                    android:textSize="11sp"
+                    android:id="@+id/stepNum1"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="1"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
                     android:textStyle="bold" />
-            </LinearLayout>
+            </FrameLayout>
 
-            <View
-                android:id="@+id/stepLine1"
-                android:layout_width="0dp"
-                android:layout_height="2dp"
-                android:layout_marginBottom="19dp"
-                android:layout_weight="1"
-                android:background="#E0E0E0" />
-
-            <!-- Step 2 -->
-            <LinearLayout
-                android:layout_width="0dp"
+            <TextView
+                android:id="@+id/stepLabel1"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:orientation="vertical">
-
-                <FrameLayout
-                    android:id="@+id/stepDot2"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:background="@drawable/bg_circle_step_inactive">
-
-                    <TextView
-                        android:id="@+id/stepNum2"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:text="2"
-                        android:textColor="#9E9E9E"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
-                </FrameLayout>
-
-                <TextView
-                    android:id="@+id/stepLabel2"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="Wi-Fi"
-                    android:textColor="#9E9E9E"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <View
-                android:id="@+id/stepLine2"
-                android:layout_width="0dp"
-                android:layout_height="2dp"
-                android:layout_marginBottom="19dp"
-                android:layout_weight="1"
-                android:background="#E0E0E0" />
-
-            <!-- Step 3 -->
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:orientation="vertical">
-
-                <FrameLayout
-                    android:id="@+id/stepDot3"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:background="@drawable/bg_circle_step_inactive">
-
-                    <TextView
-                        android:id="@+id/stepNum3"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:text="3"
-                        android:textColor="#9E9E9E"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
-                </FrameLayout>
-
-                <TextView
-                    android:id="@+id/stepLabel3"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="Confirmar"
-                    android:textColor="#9E9E9E"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
+                android:layout_marginTop="6dp"
+                android:text="Buscar"
+                android:textColor="@color/teal_primary"
+                android:textSize="11sp"
+                android:textStyle="bold" />
         </LinearLayout>
-    </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- ============== CONTENT AREA ============== -->
+        <View
+            android:id="@+id/stepLine1"
+            android:layout_width="0dp"
+            android:layout_height="2dp"
+            android:layout_marginBottom="19dp"
+            android:layout_weight="1"
+            android:background="#E0E0E0" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <FrameLayout
+                android:id="@+id/stepDot2"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="@drawable/bg_circle_step_inactive">
+
+                <TextView
+                    android:id="@+id/stepNum2"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="2"
+                    android:textColor="#9E9E9E"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/stepLabel2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Wi-Fi"
+                android:textColor="#9E9E9E"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <View
+            android:id="@+id/stepLine2"
+            android:layout_width="0dp"
+            android:layout_height="2dp"
+            android:layout_marginBottom="19dp"
+            android:layout_weight="1"
+            android:background="#E0E0E0" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <FrameLayout
+                android:id="@+id/stepDot3"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="@drawable/bg_circle_step_inactive">
+
+                <TextView
+                    android:id="@+id/stepNum3"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="3"
+                    android:textColor="#9E9E9E"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/stepLabel3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Confirmar"
+                android:textColor="#9E9E9E"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
     <ScrollView
         android:id="@+id/scrollContent"
         android:layout_width="match_parent"
@@ -202,7 +193,7 @@
         android:clipToPadding="false"
         android:paddingBottom="24dp"
         app:layout_constraintBottom_toTopOf="@id/bottomActionBar"
-        app:layout_constraintTop_toBottomOf="@id/headerConfig">
+        app:layout_constraintTop_toBottomOf="@id/stepIndicator">
 
         <FrameLayout
             android:layout_width="match_parent"
@@ -210,7 +201,6 @@
             android:paddingHorizontal="20dp"
             android:paddingTop="24dp">
 
-            <!-- ====== STEP 1: BUSCAR DISPOSITIVO ====== -->
             <LinearLayout
                 android:id="@+id/stepContent1"
                 android:layout_width="match_parent"
@@ -233,11 +223,10 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:layout_marginBottom="20dp"
-                    android:text="Acerca tu teléfono a la cámara ESP32 y activa Bluetooth para detectarla."
+                    android:text="Acerca tu teléfono..."
                     android:textColor="#757575"
                     android:textSize="14sp" />
 
-                <!-- Estado conexión -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/cardEstado"
                     android:layout_width="match_parent"
@@ -290,14 +279,12 @@
                                 android:id="@+id/tvSubEstadoConexion"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Aún no se ha encontrado tu cámara."
+                                android:text="Aún no se ha encontrado."
                                 android:textColor="#757575"
                                 android:textSize="13sp" />
                         </LinearLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
-
-                <!-- La lista de dispositivos se mostrará en un BottomSheet -->
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnBuscarDispositivos"
@@ -310,10 +297,8 @@
                     app:cornerRadius="12dp"
                     app:icon="@drawable/search"
                     app:iconGravity="textStart" />
-
             </LinearLayout>
 
-            <!-- ====== STEP 2: CONFIGURAR WI-FI ====== -->
             <LinearLayout
                 android:id="@+id/stepContent2"
                 android:layout_width="match_parent"
@@ -325,7 +310,7 @@
                     android:id="@+id/tvStep2Title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Conecta tu cámara al Wi-Fi"
+                    android:text="Conecta tu al Wi-Fi"
                     android:textColor="#212121"
                     android:textSize="18sp"
                     android:textStyle="bold" />
@@ -336,45 +321,9 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:layout_marginBottom="16dp"
-                    android:text="Ingresa los datos de tu red Wi-Fi para que la cámara se conecte a internet."
+                    android:text="Ingresa los datos..."
                     android:textColor="#757575"
                     android:textSize="14sp" />
-
-                <!-- WARNING 2.4GHz -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="20dp"
-                    android:background="@drawable/bg_rounded_warning"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="14dp">
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@android:drawable/ic_dialog_alert"
-                        app:tint="#E65100" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:layout_weight="1"
-                        android:text="Solo se admiten redes Wi-Fi de 2.4 GHz. Las redes 5 GHz no son compatibles."
-                        android:textColor="#E65100"
-                        android:textSize="13sp" />
-                </LinearLayout>
-
-                <!-- Métodos de carga -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="10dp"
-                    android:text="Elige cómo ingresar tu red"
-                    android:textColor="#212121"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -390,7 +339,6 @@
                         android:layout_marginEnd="6dp"
                         android:clickable="true"
                         android:focusable="true"
-                        android:foreground="?attr/selectableItemBackground"
                         app:cardBackgroundColor="#F9FAFB"
                         app:cardCornerRadius="12dp"
                         app:strokeColor="#E0E0E0"
@@ -403,18 +351,15 @@
                             android:gravity="center"
                             android:orientation="vertical"
                             android:paddingVertical="16dp">
-
                             <ImageView
                                 android:layout_width="24dp"
                                 android:layout_height="24dp"
                                 android:src="@drawable/wifi"
                                 app:tint="@color/teal_primary" />
-
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="8dp"
-                                android:gravity="center"
                                 android:text="Red actual"
                                 android:textColor="#212121"
                                 android:textSize="12sp"
@@ -430,7 +375,6 @@
                         android:layout_marginHorizontal="6dp"
                         android:clickable="true"
                         android:focusable="true"
-                        android:foreground="?attr/selectableItemBackground"
                         app:cardBackgroundColor="#F9FAFB"
                         app:cardCornerRadius="12dp"
                         app:strokeColor="#E0E0E0"
@@ -443,18 +387,15 @@
                             android:gravity="center"
                             android:orientation="vertical"
                             android:paddingVertical="16dp">
-
                             <ImageView
                                 android:layout_width="24dp"
                                 android:layout_height="24dp"
                                 android:src="@drawable/pencil"
                                 app:tint="@color/teal_primary" />
-
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="8dp"
-                                android:gravity="center"
                                 android:text="Manual"
                                 android:textColor="#212121"
                                 android:textSize="12sp"
@@ -470,7 +411,6 @@
                         android:layout_marginStart="6dp"
                         android:clickable="true"
                         android:focusable="true"
-                        android:foreground="?attr/selectableItemBackground"
                         app:cardBackgroundColor="#F9FAFB"
                         app:cardCornerRadius="12dp"
                         app:strokeColor="#E0E0E0"
@@ -483,18 +423,15 @@
                             android:gravity="center"
                             android:orientation="vertical"
                             android:paddingVertical="16dp">
-
                             <ImageView
                                 android:layout_width="24dp"
                                 android:layout_height="24dp"
                                 android:src="@drawable/search"
                                 app:tint="@color/teal_primary" />
-
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="8dp"
-                                android:gravity="center"
                                 android:text="Código QR"
                                 android:textColor="#212121"
                                 android:textSize="12sp"
@@ -503,7 +440,6 @@
                     </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
 
-                <!-- Formulario de red (visible tras elegir un método o al editar) -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilSsid"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -511,15 +447,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
                     android:hint="Nombre de la red (SSID)"
-                    app:boxCornerRadiusBottomEnd="12dp"
-                    app:boxCornerRadiusBottomStart="12dp"
-                    app:boxCornerRadiusTopEnd="12dp"
-                    app:boxCornerRadiusTopStart="12dp"
-                    app:boxStrokeColor="@color/teal_primary"
-                    app:hintTextColor="@color/teal_primary"
-                    app:startIconDrawable="@drawable/wifi"
-                    app:startIconTint="#9E9E9E">
-
+                    app:boxStrokeColor="@color/teal_primary">
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etSsid"
                         android:layout_width="match_parent"
@@ -535,16 +463,8 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="20dp"
                     android:hint="Contraseña"
-                    app:boxCornerRadiusBottomEnd="12dp"
-                    app:boxCornerRadiusBottomStart="12dp"
-                    app:boxCornerRadiusTopEnd="12dp"
-                    app:boxCornerRadiusTopStart="12dp"
                     app:boxStrokeColor="@color/teal_primary"
-                    app:endIconMode="password_toggle"
-                    app:hintTextColor="@color/teal_primary"
-                    app:startIconDrawable="@android:drawable/ic_lock_lock"
-                    app:startIconTint="#9E9E9E">
-
+                    app:endIconMode="password_toggle">
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etPassword"
                         android:layout_width="match_parent"
@@ -552,10 +472,8 @@
                         android:inputType="textPassword"
                         android:maxLines="1" />
                 </com.google.android.material.textfield.TextInputLayout>
-
             </LinearLayout>
 
-            <!-- ====== STEP 3: CONFIRMAR Y ENVIAR ====== -->
             <LinearLayout
                 android:id="@+id/stepContent3"
                 android:layout_width="match_parent"
@@ -578,62 +496,22 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:layout_marginBottom="20dp"
-                    android:text="Revisa los datos antes de enviarlos a tu cámara."
+                    android:text="Revisa los datos..."
                     android:textColor="#757575"
                     android:textSize="14sp" />
 
-                <!-- Resumen dispositivo -->
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="match_parent"
+                <TextView
+                    android:id="@+id/tvTipoResumen"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    app:cardBackgroundColor="#F9FAFB"
-                    app:cardCornerRadius="12dp"
-                    app:strokeColor="#E0E0E0"
-                    app:strokeWidth="1dp"
-                    app:cardElevation="0dp">
+                    android:text="Tipo" />
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:padding="16dp">
+                <TextView
+                    android:id="@+id/tvResumenDispositivo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="—" />
 
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/search"
-                            app:tint="@color/teal_primary" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="16dp"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:id="@+id/tvTipoResumen"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Cámara"
-                                android:textColor="#757575"
-                                android:textSize="12sp" />
-
-                            <TextView
-                                android:id="@+id/tvResumenDispositivo"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="—"
-                                android:textColor="#212121"
-                                android:textSize="15sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Resumen Wi-Fi -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/cardSeleccionWifi"
                     android:layout_width="match_parent"
@@ -644,63 +522,30 @@
                     app:strokeColor="#E0E0E0"
                     app:strokeWidth="1dp"
                     app:cardElevation="0dp">
-
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
                         android:orientation="horizontal"
                         android:padding="16dp">
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/wifi"
-                            app:tint="@color/teal_primary" />
-
-                        <LinearLayout
+                        <TextView
+                            android:id="@+id/tvSelectedSsid"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:layout_marginStart="16dp"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Red Wi-Fi"
-                                android:textColor="#757575"
-                                android:textSize="12sp" />
-
-                            <TextView
-                                android:id="@+id/tvSelectedSsid"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Ninguna red seleccionada"
-                                android:textColor="#212121"
-                                android:textSize="15sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
+                            android:text="Ninguna" />
                         <TextView
                             android:id="@+id/btnEditarWifi"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            android:padding="6dp"
                             android:text="Editar"
-                            android:textColor="@color/teal_primary"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
+                            android:textColor="@color/teal_primary" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
-
             </LinearLayout>
 
         </FrameLayout>
     </ScrollView>
 
-    <!-- ============== BOTTOM ACTION BAR ============== -->
     <LinearLayout
         android:id="@+id/bottomActionBar"
         android:layout_width="match_parent"
@@ -737,7 +582,6 @@
             app:cornerRadius="12dp"
             app:icon="@drawable/arrow_right"
             app:iconGravity="textEnd" />
-
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

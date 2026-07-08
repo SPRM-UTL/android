@@ -11,24 +11,23 @@ import android.widget.TextView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.ConcatAdapter
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import com.example.android.ai.AIVisionActivity
 import com.example.android.ai.SecuenciaConfigActivity
 import com.example.android.ai.SecuenciaConfigManager
 import com.google.android.material.card.MaterialCardView
-import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import androidx.recyclerview.widget.ItemTouchHelper
 import com.example.android.ai.Combo
+import com.example.android.ui.AddGestoAdapter
 import java.util.UUID
 
 class GestosFragment : Fragment() {
 
     private lateinit var adapter: GestosAdminAdapter
     private lateinit var rvGestos: RecyclerView
-    
-
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_gestos, container, false)
@@ -36,7 +35,7 @@ class GestosFragment : Fragment() {
         val ivProfileGestos = view.findViewById<ImageView>(R.id.ivProfileGestos)
         val sharedPreferences = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
         val profileImageUrl = sharedPreferences.getString("profileImageUrl", null)
-        
+
         if (!profileImageUrl.isNullOrBlank()) {
             ivProfileGestos.load(profileImageUrl) {
                 placeholder(R.drawable.ic_manordomo_sin_fondo)
@@ -45,6 +44,12 @@ class GestosFragment : Fragment() {
             }
         } else {
             ivProfileGestos.setImageResource(R.drawable.ic_manordomo_sin_fondo)
+        }
+
+        // Configuración del click en el perfil para ir a "Mi Perfil"
+        view.findViewById<View>(R.id.profileCircle)?.setOnClickListener {
+            val intent = Intent(requireContext(), ProfileActivity::class.java)
+            startActivity(intent)
         }
 
         ViewCompat.setOnApplyWindowInsetsListener(view) { v, insets ->
@@ -72,13 +77,25 @@ class GestosFragment : Fragment() {
 
         val btnMonitorIA = view.findViewById<MaterialCardView>(R.id.btnMonitorIA)
         btnMonitorIA.setOnClickListener {
-            // Abrir la nueva actividad AI Vision
             val intent = Intent(requireContext(), AIVisionActivity::class.java)
             startActivity(intent)
         }
 
-        val fabNuevoGesto = view.findViewById<ExtendedFloatingActionButton>(R.id.fabNuevoGesto)
-        fabNuevoGesto.setOnClickListener {
+        // Configuración del RecyclerView usando el diseño de cuadrícula (Grid de 2 columnas)
+        rvGestos = view.findViewById(R.id.rvGestos)
+        rvGestos.layoutManager = GridLayoutManager(requireContext(), 2)
+
+        // Inicializamos el adaptador principal de la lista
+        adapter = GestosAdminAdapter(mutableListOf(), { combo ->
+            val intent = Intent(requireContext(), SecuenciaConfigActivity::class.java)
+            intent.putExtra("COMBO_ID", combo.id)
+            startActivity(intent)
+        }, { combo, isActive ->
+            // Manejo futuro de estado activo
+        })
+
+        // Creamos el adaptador de la tarjeta de agregar vinculando la lógica que antes tenía el FAB
+        val addGestoAdapter = AddGestoAdapter {
             val newCombo = Combo(id = UUID.randomUUID().toString(), name = "Nuevo Gesto")
             adapter.combos.add(newCombo)
             SecuenciaConfigManager.saveCombos(requireContext(), adapter.combos)
@@ -89,27 +106,23 @@ class GestosFragment : Fragment() {
             startActivity(intent)
         }
 
-
-
-        rvGestos = view.findViewById(R.id.rvGestos)
-        rvGestos.layoutManager = LinearLayoutManager(requireContext())
-        adapter = GestosAdminAdapter(mutableListOf(), { combo ->
-            val intent = Intent(requireContext(), SecuenciaConfigActivity::class.java)
-            intent.putExtra("COMBO_ID", combo.id)
-            startActivity(intent)
-        }, { combo, isActive ->
-            // In the future this could update an active state flag in Combo
-            // and save to SecuenciaConfigManager
-        })
-        rvGestos.adapter = adapter
+        // Unimos ambos adaptadores usando ConcatAdapter para que la tarjeta de agregar aparezca primero
+        rvGestos.adapter = ConcatAdapter(addGestoAdapter, adapter)
 
         val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
             0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
         ) {
             override fun onMove(r: RecyclerView, v: RecyclerView.ViewHolder, t: RecyclerView.ViewHolder) = false
 
+            override fun getSwipeDirs(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int {
+                // Protegemos la primera tarjeta (la de agregar) para que no sea deslizable ni eliminable
+                if (viewHolder.bindingAdapter is AddGestoAdapter) return 0
+                return super.getSwipeDirs(recyclerView, viewHolder)
+            }
+
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                val position = viewHolder.adapterPosition
+                // Obtenemos la posición real dentro de GestosAdminAdapter de forma segura
+                val position = viewHolder.bindingAdapterPosition
                 val deletedCombo = adapter.combos[position]
 
                 adapter.combos.removeAt(position)
@@ -121,7 +134,6 @@ class GestosFragment : Fragment() {
                     "Gesto '${deletedCombo.name}' eliminado",
                     com.google.android.material.snackbar.Snackbar.LENGTH_LONG
                 ).apply {
-                    setAnchorView(fabNuevoGesto)
                     setAction("Deshacer") {
                         adapter.combos.add(position, deletedCombo)
                         adapter.notifyItemInserted(position)
@@ -143,6 +155,9 @@ class GestosFragment : Fragment() {
                 actionState: Int,
                 isCurrentlyActive: Boolean
             ) {
+                // Evitamos pintar fondos de eliminación en el botón estático de agregar
+                if (viewHolder.bindingAdapter is AddGestoAdapter) return
+
                 if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE) {
                     val itemView = viewHolder.itemView
                     val paint = android.graphics.Paint().apply {
@@ -197,7 +212,5 @@ class GestosFragment : Fragment() {
         val combos = SecuenciaConfigManager.loadCombos(requireContext())
         adapter.combos = combos.toMutableList()
         adapter.notifyDataSetChanged()
-        
-
     }
 }
