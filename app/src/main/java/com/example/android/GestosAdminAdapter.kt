@@ -11,6 +11,7 @@ import com.example.android.ai.Combo
 class GestosAdminAdapter(
     var combos: MutableList<Combo>,
     private val onEditClick: (Combo) -> Unit,
+    private val onLongClick: (Combo) -> Unit, // <--- Callback para eliminación
     private val onToggleActive: (Combo, Boolean) -> Unit
 ) : RecyclerView.Adapter<GestosAdminAdapter.ViewHolder>() {
 
@@ -22,10 +23,23 @@ class GestosAdminAdapter(
 
         init {
             itemView.setOnClickListener {
-                onEditClick(combos[adapterPosition])
+                if (adapterPosition != RecyclerView.NO_POSITION) {
+                    onEditClick(combos[adapterPosition])
+                }
             }
+
+            // Evento de click largo para detonar el diálogo estilizado
+            itemView.setOnLongClickListener {
+                if (adapterPosition != RecyclerView.NO_POSITION) {
+                    onLongClick(combos[adapterPosition])
+                }
+                true
+            }
+
             switchGestoActive.setOnCheckedChangeListener { _, isChecked ->
-                onToggleActive(combos[adapterPosition], isChecked)
+                if (adapterPosition != RecyclerView.NO_POSITION) {
+                    onToggleActive(combos[adapterPosition], isChecked)
+                }
             }
         }
     }
@@ -39,8 +53,7 @@ class GestosAdminAdapter(
         val combo = combos[position]
         holder.tvGestoName.text = combo.name
         holder.tvGestoDevice.text = combo.accionVinculada ?: "Sin acción asignada"
-        
-        // Simple heuristic for icons based on some keywords or just use a default
+
         val iconStr = when {
             combo.name.contains("luz", ignoreCase = true) || combo.accionVinculada?.contains("luz", ignoreCase = true) == true -> "💡"
             combo.name.contains("música", ignoreCase = true) || combo.name.contains("music", ignoreCase = true) -> "🎵"
@@ -50,10 +63,7 @@ class GestosAdminAdapter(
             else -> "✨"
         }
         holder.tvGestoIcon.text = iconStr
-        
-        // Switch functionality - since Combo doesn't have an active flag right now,
-        // we could just leave it checked by default or simulate it.
-        // If we add an active flag to Combo in the future it will map directly.
+
         holder.switchGestoActive.setOnCheckedChangeListener(null)
         holder.switchGestoActive.isChecked = true
         holder.switchGestoActive.setOnCheckedChangeListener { _, isChecked ->
