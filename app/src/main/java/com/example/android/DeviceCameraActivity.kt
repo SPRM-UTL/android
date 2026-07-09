@@ -20,6 +20,7 @@ class DeviceCameraActivity : AppCompatActivity() {
     private lateinit var toolbarCamera: MaterialToolbar
 
     private var mjpegStreamReader: MjpegStreamReader? = null
+    private var remoteCameraStreamReader: com.example.android.network.RemoteCameraStreamReader? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,33 +37,55 @@ class DeviceCameraActivity : AppCompatActivity() {
         }
 
         val ip = intent.getStringExtra("EXTRA_IP") ?: ""
-        tvCameraIp.text = if (ip.isNotEmpty()) ip else "Desconocida"
+        val deviceKey = intent.getStringExtra("EXTRA_MAC") ?: "TEST-CAM-1" // Mock temporal si no viene
+        
+        tvCameraIp.text = if (ip.isNotEmpty()) ip else deviceKey
 
         btnFinalizar.setOnClickListener {
             finishAndGoHome()
         }
 
-        if (ip.isNotEmpty()) {
-            startCameraStream(ip)
+        if (ip.isNotEmpty() || deviceKey.isNotEmpty()) {
+            startCameraStream(ip, deviceKey)
         } else {
             progressVideo.isVisible = false
         }
     }
 
-    private fun startCameraStream(ip: String) {
-        val streamUrl = "http://$ip:81/stream"
-        mjpegStreamReader = MjpegStreamReader(streamUrl) { bitmap ->
-            runOnUiThread {
-                progressVideo.isVisible = false
-                viewFinder.setImageBitmap(bitmap)
+    private fun startCameraStream(ip: String, deviceKey: String) {
+        val usarRemoto = true // o basado en si hay conectividad LAN al IP local
+
+        if (usarRemoto && deviceKey.isNotEmpty()) {
+            remoteCameraStreamReader = com.example.android.network.RemoteCameraStreamReader(
+                wsBaseUrl = "wss://tu-backend.onrender.com", // O la variable de configuración global
+                deviceKey = deviceKey,
+                onFrameReceived = { bitmap -> 
+                    runOnUiThread { 
+                        progressVideo.isVisible = false
+                        viewFinder.setImageBitmap(bitmap) 
+                    } 
+                },
+                onError = { msg -> runOnUiThread { android.widget.Toast.makeText(this, msg, android.widget.Toast.LENGTH_SHORT).show() } }
+            )
+            remoteCameraStreamReader?.start()
+        } else if (ip.isNotEmpty()) {
+            val streamUrl = "http://$ip:81/stream"
+            mjpegStreamReader = MjpegStreamReader(streamUrl) { bitmap ->
+                runOnUiThread {
+                    progressVideo.isVisible = false
+                    viewFinder.setImageBitmap(bitmap)
+                }
             }
+            mjpegStreamReader?.start()
+        } else {
+            progressVideo.isVisible = false
         }
-        mjpegStreamReader?.start()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         mjpegStreamReader?.stop()
+        remoteCameraStreamReader?.stop()
     }
 
     private fun finishAndGoHome() {
