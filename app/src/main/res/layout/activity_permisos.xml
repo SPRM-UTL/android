@@ -12,43 +12,69 @@
         con ViewCompat.setOnApplyWindowInsetsListener sobre este root.
     -->
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/rootContent"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:paddingStart="24dp"
-        android:paddingEnd="24dp">
+        android:layout_height="match_parent">
 
-        <!-- ── ENCABEZADO ──────────────────────────────────────── -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Preparando el Sistema"
-            android:textColor="#20B0A0"
-            android:textSize="26sp"
-            android:textStyle="bold"
-            android:layout_marginTop="16dp" />
+        <View
+            android:id="@+id/headerBackground"
+            android:layout_width="match_parent"
+            android:layout_height="165dp"
+            android:background="@color/teal_primary"
+            app:layout_constraintTop_toTopOf="parent" />
 
-        <!-- Indicador de paso: "Paso 1 de 5" -->
-        <TextView
-            android:id="@+id/tvStepCounter"
-            android:layout_width="wrap_content"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/cardSuperior"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Paso 1 de 5"
-            android:textColor="#6F7EA8"
-            android:textSize="13sp"
-            android:layout_marginTop="4dp" />
+            android:layout_marginHorizontal="24dp"
+            android:layout_marginTop="20dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="6dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <TextView
+                android:id="@+id/tvWizardTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="12dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="Preparando el Sistema"
+                android:textColor="#FFFFFF"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/tvStepCounter"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="12dp"
+                android:text="Paso 1 de 5"
+                android:textColor="#AEE2DE"
+                android:textSize="14sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvWizardTitle" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
         <!-- Barra de progreso de pasos -->
         <LinearLayout
             android:id="@+id/stepDotsContainer"
             android:layout_width="match_parent"
             android:layout_height="6dp"
-            android:layout_marginTop="12dp"
-            android:layout_marginBottom="24dp"
+            android:layout_marginHorizontal="24dp"
+            android:layout_marginTop="24dp"
             android:orientation="horizontal"
-            android:weightSum="5">
+            android:weightSum="5"
+            app:layout_constraintTop_toBottomOf="@id/headerBackground">
 
             <View android:id="@+id/dot1"
                 android:layout_width="0dp"
@@ -86,10 +112,14 @@
             android:id="@+id/cardPermiso"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1"
+            android:layout_marginHorizontal="24dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="16dp"
             app:cardCornerRadius="20dp"
             app:cardElevation="4dp"
-            app:cardBackgroundColor="#FFFFFF">
+            app:cardBackgroundColor="#FFFFFF"
+            app:layout_constraintTop_toBottomOf="@id/stepDotsContainer"
+            app:layout_constraintBottom_toTopOf="@id/bottomNavContainer">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -104,7 +134,7 @@
                     android:layout_width="72dp"
                     android:layout_height="72dp"
                     android:src="@drawable/camera"
-                    app:tint="#03DAC5"
+                    app:tint="@color/teal_primary"
                     android:layout_marginBottom="24dp" />
 
                 <!-- Nombre del permiso -->
@@ -149,8 +179,8 @@
                     android:textSize="15sp"
                     android:textStyle="bold"
                     app:cornerRadius="12dp"
-                    app:backgroundTint="#03DAC5"
-                    android:textColor="#000000" />
+                    app:backgroundTint="@color/teal_primary"
+                    android:textColor="@color/white" />
 
                 <!-- Etiqueta cuando ya está concedido -->
                 <TextView
@@ -158,7 +188,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="✓ Permiso concedido"
-                    android:textColor="#03DAC5"
+                    android:textColor="@color/teal_primary"
                     android:textSize="14sp"
                     android:textStyle="bold"
                     android:layout_marginTop="12dp"
@@ -169,11 +199,14 @@
 
         <!-- ── BOTONES DE NAVEGACIÓN ──────────────────────────────── -->
         <LinearLayout
+            android:id="@+id/bottomNavContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
+            android:layout_marginHorizontal="24dp"
             android:layout_marginTop="20dp"
-            android:layout_marginBottom="16dp">
+            android:layout_marginBottom="16dp"
+            app:layout_constraintBottom_toBottomOf="parent">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnAnterior"
@@ -183,8 +216,8 @@
                 android:layout_weight="1"
                 android:layout_marginEnd="8dp"
                 android:text="Anterior"
-                android:textColor="#17252A"
-                app:strokeColor="#17252A"
+                android:textColor="@color/teal_primary"
+                app:strokeColor="@color/teal_primary"
                 app:cornerRadius="12dp"
                 android:visibility="invisible" />
 
@@ -197,10 +230,10 @@
                 android:textSize="15sp"
                 android:textStyle="bold"
                 app:cornerRadius="12dp"
-                app:backgroundTint="#03DAC5"
+                app:backgroundTint="@color/teal_primary"
                 android:textColor="@color/white" />
 
         </LinearLayout>
 
-    </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

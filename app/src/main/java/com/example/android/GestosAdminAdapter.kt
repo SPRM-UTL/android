@@ -11,15 +11,13 @@ import com.example.android.ai.Combo
 class GestosAdminAdapter(
     var combos: MutableList<Combo>,
     private val onEditClick: (Combo) -> Unit,
-    private val onLongClick: (Combo) -> Unit, // <--- Callback para eliminación
-    private val onToggleActive: (Combo, Boolean) -> Unit
+    private val onLongClick: (Combo) -> Unit // <--- Callback para eliminación
 ) : RecyclerView.Adapter<GestosAdminAdapter.ViewHolder>() {
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val tvGestoIcon: TextView = itemView.findViewById(R.id.tvGestoIcon)
+        val ivGestoIcon: android.widget.ImageView = itemView.findViewById(R.id.ivGestoIcon)
         val tvGestoName: TextView = itemView.findViewById(R.id.tvGestoName)
         val tvGestoDevice: TextView = itemView.findViewById(R.id.tvGestoDevice)
-        val switchGestoActive: SwitchCompat = itemView.findViewById(R.id.switchGestoActive)
 
         init {
             itemView.setOnClickListener {
@@ -35,12 +33,6 @@ class GestosAdminAdapter(
                 }
                 true
             }
-
-            switchGestoActive.setOnCheckedChangeListener { _, isChecked ->
-                if (adapterPosition != RecyclerView.NO_POSITION) {
-                    onToggleActive(combos[adapterPosition], isChecked)
-                }
-            }
         }
     }
 
@@ -54,20 +46,13 @@ class GestosAdminAdapter(
         holder.tvGestoName.text = combo.name
         holder.tvGestoDevice.text = combo.accionVinculada ?: "Sin acción asignada"
 
-        val iconStr = when {
-            combo.name.contains("luz", ignoreCase = true) || combo.accionVinculada?.contains("luz", ignoreCase = true) == true -> "💡"
-            combo.name.contains("música", ignoreCase = true) || combo.name.contains("music", ignoreCase = true) -> "🎵"
-            combo.name.contains("salud", ignoreCase = true) -> "👋"
-            combo.name.contains("tv", ignoreCase = true) -> "📺"
-            combo.name.contains("ventilador", ignoreCase = true) -> "🌀"
-            else -> "✨"
-        }
-        holder.tvGestoIcon.text = iconStr
-
-        holder.switchGestoActive.setOnCheckedChangeListener(null)
-        holder.switchGestoActive.isChecked = true
-        holder.switchGestoActive.setOnCheckedChangeListener { _, isChecked ->
-            onToggleActive(combo, isChecked)
+        val iconName = combo.icono ?: "lucide_star"
+        val context = holder.itemView.context
+        val resId = context.resources.getIdentifier(iconName, "drawable", context.packageName)
+        if (resId != 0) {
+            holder.ivGestoIcon.setImageResource(resId)
+        } else {
+            holder.ivGestoIcon.setImageResource(R.drawable.lucide_star)
         }
     }
 

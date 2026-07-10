@@ -191,7 +191,7 @@ class DeviceControlsActivity : AppCompatActivity() {
     private suspend fun validarConexionYConectar(dispositivo: Dispositivo) {
         try {
             val sharedPref = getSharedPreferences("SesionApp", MODE_PRIVATE)
-            val token = sharedPref.getString("token", "") ?: ""
+            val token = sharedPref.getString("apiToken", "") ?: ""
             
             // Consultamos los tipos al backend
             val response = RetrofitClient.deviceService.getTiposAparato("Bearer $token")

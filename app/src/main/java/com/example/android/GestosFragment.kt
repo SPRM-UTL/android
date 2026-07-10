@@ -94,9 +94,6 @@ class GestosFragment : Fragment() {
             },
             { combo ->
                 mostrarDialogoEliminarGesto(combo)
-            },
-            { combo, isActive ->
-                // Manejo futuro de estado activo
             }
         )
 

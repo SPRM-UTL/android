@@ -15,7 +15,8 @@ data class Combo(
     var accionVinculada: String? = null,
     var aparatoId: Int? = null,
     var accionEncendido: Boolean? = null,
-    var backendGestoId: Int? = null // ID del registro 'gesto' en el backend (null = aún no sincronizado)
+    var backendGestoId: Int? = null, // ID del registro 'gesto' en el backend (null = aún no sincronizado)
+    var icono: String? = "lucide_star"
 )
 
 object SecuenciaConfigManager {
@@ -46,6 +47,7 @@ object SecuenciaConfigManager {
             if (combo.aparatoId != null) comboObj.put("aparatoId", combo.aparatoId)
             if (combo.accionEncendido != null) comboObj.put("accionEncendido", combo.accionEncendido)
             if (combo.backendGestoId != null) comboObj.put("backendGestoId", combo.backendGestoId)
+            if (combo.icono != null) comboObj.put("icono", combo.icono)
 
             val pasosArray = JSONArray()
             for (step in combo.pasos) {
@@ -103,6 +105,9 @@ object SecuenciaConfigManager {
                 if (comboObj.has("backendGestoId")) {
                     combo.backendGestoId = comboObj.getInt("backendGestoId")
                 }
+                if (comboObj.has("icono")) {
+                    combo.icono = comboObj.getString("icono")
+                }
                 if (comboObj.has("pasos")) {
                     val pasosArray = comboObj.getJSONArray("pasos")
                     for (j in 0 until pasosArray.length()) {
@@ -158,7 +163,7 @@ object SecuenciaConfigManager {
 
     suspend fun pushComboToBackend(context: Context, combo: Combo): Boolean {
         val prefs = context.getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
-        val token = prefs.getString("token", "") ?: ""
+        val token = prefs.getString("apiToken", "") ?: ""
         if (token.isEmpty()) return false
 
         try {

@@ -272,6 +272,44 @@ class SecuenciaConfigActivity : AppCompatActivity() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
 
+        val ivComboIcon = findViewById<android.widget.ImageView>(R.id.ivComboIcon)
+        val btnEditIcon = findViewById<Button>(R.id.btnEditIcon)
+
+        val availableIcons = listOf(
+            "lucide_lightbulb", "lucide_tv", "lucide_music", "lucide_fan", "lucide_zap",
+            "lucide_home", "lucide_door_open", "lucide_door_closed", "lucide_lock", "lucide_unlock",
+            "lucide_thermometer", "lucide_snowflake", "lucide_sun", "lucide_moon", "lucide_coffee",
+            "lucide_gamepad_2", "lucide_wifi", "lucide_camera", "lucide_video", "lucide_shield",
+            "lucide_bell", "lucide_heart", "lucide_star", "lucide_settings", "lucide_play",
+            "lucide_pause", "lucide_volume_2", "lucide_volume_x", "lucide_wand_2", "lucide_power"
+        )
+
+        btnEditIcon.setOnClickListener {
+            val dialogView = layoutInflater.inflate(R.layout.dialog_icon_picker, null)
+            val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this, R.style.CustomAlertDialogTheme)
+                .setView(dialogView)
+                .show()
+
+            val rvIcons = dialogView.findViewById<RecyclerView>(R.id.rvIcons)
+            val etSearchIcon = dialogView.findViewById<EditText>(R.id.etSearchIcon)
+
+            rvIcons.layoutManager = androidx.recyclerview.widget.GridLayoutManager(this, 5)
+            val iconAdapter = com.example.android.ui.IconPickerAdapter(availableIcons) { selectedIcon ->
+                comboActual.icono = selectedIcon
+                updateHeaders()
+                dialog.dismiss()
+            }
+            rvIcons.adapter = iconAdapter
+
+            etSearchIcon.addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                    iconAdapter.filter(s?.toString() ?: "")
+                }
+                override fun afterTextChanged(s: Editable?) {}
+            })
+        }
+
         fabAdd.setOnClickListener {
             launchWizard("STEP")
         }
@@ -337,6 +375,17 @@ class SecuenciaConfigActivity : AppCompatActivity() {
     }
 
     private fun updateHeaders() {
+        val ivComboIcon = findViewById<android.widget.ImageView>(R.id.ivComboIcon)
+        if (ivComboIcon != null) {
+            val iconName = comboActual.icono ?: "lucide_star"
+            val resId = resources.getIdentifier(iconName, "drawable", packageName)
+            if (resId != 0) {
+                ivComboIcon.setImageResource(resId)
+            } else {
+                ivComboIcon.setImageResource(R.drawable.lucide_star)
+            }
+        }
+
         if (comboActual.activador != null) {
             tvActivatorDesc.text = "${comboActual.activador?.nombreGesto} (${comboActual.activador?.manoObjetivo})"
             tvActivatorDesc.setTextColor(android.graphics.Color.parseColor("#073F4C"))
@@ -412,7 +461,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                 activity = this@SecuenciaConfigActivity,
                 showLoading = true,
                 loadingTitle = "Guardando",
-                loadingMessage = "Sincronizando combo...",
+                loadingMessage = "Sincronizando gesto...",
                 apiCall = {
                     val token = getSharedPreferences("SesionApp", Context.MODE_PRIVATE).getString("apiToken", "") ?: ""
                     val bearer = "Bearer $token"
@@ -433,17 +482,17 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                         comboActual.backendGestoId = guardado.id
                         todosCombos[comboIndex] = comboActual
                         SecuenciaConfigManager.saveCombos(this@SecuenciaConfigActivity, todosCombos)
-                        lifecycleScope.launch {
+                        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
                             db.gestoDao().insertGesto(guardado)
                         }
                     }
-                    Toast.makeText(this@SecuenciaConfigActivity, "Combo guardado y sincronizado", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@SecuenciaConfigActivity, "Gesto guardado y sincronizado", Toast.LENGTH_SHORT).show()
                     finish()
                 },
                 onError = { errorMsg ->
                     Toast.makeText(
                         this@SecuenciaConfigActivity,
-                        "Combo guardado localmente, pero falló la sincronización: $errorMsg",
+                        "Gesto guardado localmente, pero falló la sincronización: $errorMsg",
                         Toast.LENGTH_LONG
                     ).show()
                     finish()

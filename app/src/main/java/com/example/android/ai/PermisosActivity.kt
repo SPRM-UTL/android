@@ -85,18 +85,35 @@ class PermisosActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor      = android.graphics.Color.TRANSPARENT
         window.navigationBarColor  = android.graphics.Color.TRANSPARENT
+        androidx.core.view.WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
 
         setContentView(R.layout.activity_permisos)
 
         // Aplica insets (status bar arriba, nav bar abajo) al contenedor raíz
-        val rootContent = findViewById<LinearLayout>(R.id.rootContent)
+        val rootContent = findViewById<View>(R.id.rootContent)
         ViewCompat.setOnApplyWindowInsetsListener(rootContent) { v, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            
+            val cardSuperior = v.findViewById<View>(R.id.cardSuperior)
+            cardSuperior?.setPadding(
+                cardSuperior.paddingLeft,
+                bars.top + (4 * resources.displayMetrics.density).toInt(),
+                cardSuperior.paddingRight,
+                cardSuperior.paddingBottom
+            )
+
+            val headerBg = v.findViewById<View>(R.id.headerBackground)
+            if (headerBg != null) {
+                val bgParams = headerBg.layoutParams
+                bgParams.height = bars.top + (165 * resources.displayMetrics.density).toInt()
+                headerBg.layoutParams = bgParams
+            }
+
             v.setPadding(
                 v.paddingLeft,
-                bars.top + 8,   // margen extra sobre el título
+                0,
                 v.paddingRight,
-                bars.bottom + 8
+                bars.bottom + (8 * resources.displayMetrics.density).toInt()
             )
             insets
         }
@@ -221,20 +238,38 @@ class PermisosActivity : AppCompatActivity() {
                 },
                 solicitar = {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        // Intenta abrir directamente la página de Manordomo en ajustes
-                        val intentDirecto = Intent(
-                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                            Uri.parse("package:$packageName")
-                        )
-                        try {
-                            startActivity(intentDirecto)
-                        } catch (e: Exception) {
-                            // Fallback: abre la lista general de "Mostrar sobre otras apps"
-                            // (ocurre en algunos fabricantes o versiones personalizadas de Android)
-                            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION))
+                        val isXiaomi = Build.MANUFACTURER.equals("Xiaomi", ignoreCase = true) || 
+                                       Build.MANUFACTURER.equals("POCO", ignoreCase = true) ||
+                                       Build.MANUFACTURER.equals("Redmi", ignoreCase = true)
+                                       
+                        if (isXiaomi) {
+                            try {
+                                val intent = Intent("miui.intent.action.APP_PERM_EDITOR")
+                                intent.setClassName("com.miui.securitycenter", "com.miui.permcenter.permissions.PermissionsEditorActivity")
+                                intent.putExtra("extra_pkgname", packageName)
+                                startActivity(intent)
+                            } catch (e: Exception) {
+                                try {
+                                    val intent = Intent("miui.intent.action.APP_PERM_EDITOR")
+                                    intent.setClassName("com.miui.securitycenter", "com.miui.permcenter.permissions.AppPermissionsEditorActivity")
+                                    intent.putExtra("extra_pkgname", packageName)
+                                    startActivity(intent)
+                                } catch (e2: Exception) {
+                                    startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
+                                }
+                            }
+                        } else {
+                            try {
+                                val intentDirecto = Intent(
+                                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                    Uri.parse("package:$packageName")
+                                )
+                                startActivity(intentDirecto)
+                            } catch (e: Exception) {
+                                startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
+                            }
                         }
                     }
-                    // El resultado real llega en onResume cuando el usuario vuelve
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
                         Settings.canDrawOverlays(this)
                     else true
@@ -256,9 +291,13 @@ class PermisosActivity : AppCompatActivity() {
                 },
                 solicitar = {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
-                        intent.data = Uri.parse("package:$packageName")
-                        startActivity(intent)
+                        try {
+                            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+                            intent.data = Uri.parse("package:$packageName")
+                            startActivity(intent)
+                        } catch (e: Exception) {
+                            startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
+                        }
                     }
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                         val pm = getSystemService(Context.POWER_SERVICE) as PowerManager

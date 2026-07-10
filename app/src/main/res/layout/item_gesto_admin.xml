@@ -26,25 +26,15 @@
             app:layout_constraintTop_toTopOf="parent"
             app:strokeWidth="0dp">
 
-            <TextView
-                android:id="@+id/tvGestoIcon"
+            <ImageView
+                android:id="@+id/ivGestoIcon"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:text="👋"
-                android:gravity="center"
-                android:textSize="24sp" />
+                android:padding="12dp"
+                android:src="@drawable/lucide_star"
+                app:tint="#073F4C" />
         </com.google.android.material.card.MaterialCardView>
 
-        <com.google.android.material.switchmaterial.SwitchMaterial
-            android:id="@+id/switchGestoActive"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:checked="true"
-            app:layout_constraintBottom_toBottomOf="@id/iconBg"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@id/iconBg"
-            app:thumbTint="@color/white"
-            app:trackTint="@color/teal_primary" />
 
         <TextView
             android:id="@+id/tvGestoName"

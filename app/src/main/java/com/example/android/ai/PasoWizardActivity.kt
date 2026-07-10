@@ -87,34 +87,42 @@ class PasoWizardActivity : AppCompatActivity() {
     }
 
     private fun setupGestoStep(view: View) {
-        val spinnerGesto = view.findViewById<AutoCompleteTextView>(R.id.spinnerGestoInner)
-        val gestureAdapter = GestureDropdownAdapter(this, allPoses) { R.drawable.ic_manordomo_sin_fondo }
-        spinnerGesto.setAdapter(gestureAdapter)
-        spinnerGesto.setText(selectedPoseName, false)
-        spinnerGesto.setOnItemClickListener { _, _, pos, _ ->
-            selectedPoseName = allPoses[pos]
-        }
+        val rvGesto = view.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvGestoInner)
+        val adapter = com.example.android.adapters.WizardSelectionAdapter(
+            items = allPoses,
+            iconProvider = { R.drawable.ic_manordomo_sin_fondo },
+            selectedItem = selectedPoseName,
+            onItemClick = { selectedItem ->
+                selectedPoseName = selectedItem
+            }
+        )
+        rvGesto.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
+        rvGesto.adapter = adapter
     }
 
     private fun setupManoStep(view: View) {
-        val spinnerMano = view.findViewById<AutoCompleteTextView>(R.id.spinnerManoInner)
-        val handAdapter = GestureDropdownAdapter(this, handOptions) { mano ->
-            if (mano.contains("Cualquier")) null else R.drawable.ic_manordomo_sin_fondo
-        }
-        spinnerMano.setAdapter(handAdapter)
+        val rvMano = view.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvManoInner)
         val handIndex = when (selectedHand) {
             ManoObjetivo.ANY -> 0
             ManoObjetivo.LEFT -> 1
             ManoObjetivo.RIGHT -> 2
         }
-        spinnerMano.setText(handOptions[handIndex], false)
-        spinnerMano.setOnItemClickListener { _, _, pos, _ ->
-            selectedHand = when (pos) {
-                1 -> ManoObjetivo.LEFT
-                2 -> ManoObjetivo.RIGHT
-                else -> ManoObjetivo.ANY
+        val currentHandStr = handOptions[handIndex]
+        
+        val adapter = com.example.android.adapters.WizardSelectionAdapter(
+            items = handOptions,
+            iconProvider = { mano -> if (mano.contains("Cualquier")) null else R.drawable.ic_manordomo_sin_fondo },
+            selectedItem = currentHandStr,
+            onItemClick = { selectedItem ->
+                selectedHand = when (handOptions.indexOf(selectedItem)) {
+                    1 -> ManoObjetivo.LEFT
+                    2 -> ManoObjetivo.RIGHT
+                    else -> ManoObjetivo.ANY
+                }
             }
-        }
+        )
+        rvMano.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
+        rvMano.adapter = adapter
     }
 
     private fun setupVelocidadStep(view: View) {

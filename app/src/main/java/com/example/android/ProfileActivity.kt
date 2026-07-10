@@ -57,7 +57,7 @@ class ProfileActivity : AppCompatActivity() {
     private lateinit var txtInputContrasena: TextInputLayout
     private lateinit var txtInputConfirmar: TextInputLayout
     private lateinit var btnGuardarPerfil: MaterialButton
-    private lateinit var tvHola: TextView
+    private lateinit var tvNombrePerfil: TextView
 
     private lateinit var vistaRaiz : View
     private lateinit var mainProfile: MotionLayout
@@ -191,7 +191,7 @@ class ProfileActivity : AppCompatActivity() {
         txtInputConfirmar = findViewById(R.id.txtInputConfirmar)
 
         btnGuardarPerfil = findViewById(R.id.btnGuardarPerfil)
-        tvHola = findViewById(R.id.tvHola)
+        tvNombrePerfil = findViewById(R.id.tvNombrePerfil)
         ivProfile = findViewById(R.id.ivProfile)
         btnCambiarFoto = findViewById(R.id.btnCambiarFoto)
 
@@ -324,7 +324,7 @@ class ProfileActivity : AppCompatActivity() {
                     etCorreoPerfil.setText(datosUsuario.correo)
 
                     val primerNombre = datosUsuario.nombre?.split(" ")?.firstOrNull() ?: ""
-                    tvHola.text = "¡Hola, $primerNombre! \uD83D\uDC4B"
+                    tvNombrePerfil.text = "¡Hola, $primerNombre! \uD83D\uDC4B"
 
                     if (!datosUsuario.rutaImagen.isNullOrEmpty()) {
                         cargarImagenPerfil(datosUsuario.rutaImagen)
@@ -574,7 +574,6 @@ class ProfileActivity : AppCompatActivity() {
 
         if (!imageUrl.isNullOrEmpty()) {
             ivProfile.load(imageUrl) {
-                crossfade(true)
                 placeholder(R.drawable.user_filled)
                 error(R.drawable.user_filled)
             }

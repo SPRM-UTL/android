@@ -37,8 +37,9 @@ fun BottomBarWithFab(
     modifier: Modifier = Modifier
 ) {
     val density = LocalDensity.current
-    val activeColor = colorResource(id = R.color.teal_primary)
-    val inactiveColor = Color.Gray
+    val primaryColor = colorResource(id = R.color.teal_primary)
+    val activeTabColor = primaryColor
+    val inactiveTabColor = Color.Gray
 
     val fabSize = 54.dp
     val notchRadius = with(density) { 32.dp.toPx() }
@@ -111,7 +112,7 @@ fun BottomBarWithFab(
                         .fillMaxHeight()
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
-                            indication = ripple(bounded = true),
+                            indication = ripple(bounded = true, color = primaryColor),
                             onClick = {
                                 val currentTime = System.currentTimeMillis()
                                 if (currentTime - lastClickTime > debounceTime) {
@@ -124,14 +125,14 @@ fun BottomBarWithFab(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_lucide_house),
+                            imageVector = Icons.Outlined.Home,
                             contentDescription = "Inicio",
-                            tint = if (currentScreen == "home") activeColor else inactiveColor,
+                            tint = if (currentScreen == "home") activeTabColor else inactiveTabColor,
                             modifier = Modifier.size(28.dp)
                         )
                         Text(
                             text = "Inicio",
-                            color = if (currentScreen == "home") activeColor else inactiveColor,
+                            color = if (currentScreen == "home") activeTabColor else inactiveTabColor,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -146,7 +147,7 @@ fun BottomBarWithFab(
                         .fillMaxHeight()
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
-                            indication = ripple(bounded = true),
+                            indication = ripple(bounded = true, color = primaryColor),
                             onClick = {
                                 val currentTime = System.currentTimeMillis()
                                 if (currentTime - lastClickTime > debounceTime) {
@@ -159,14 +160,14 @@ fun BottomBarWithFab(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_lucide_hand),
+                            imageVector = Icons.Outlined.BackHand,
                             contentDescription = "Gestos",
-                            tint = if (currentScreen == "gestos") activeColor else inactiveColor,
+                            tint = if (currentScreen == "gestos") activeTabColor else inactiveTabColor,
                             modifier = Modifier.size(28.dp)
                         )
                         Text(
                             text = "Gestos",
-                            color = if (currentScreen == "gestos") activeColor else inactiveColor,
+                            color = if (currentScreen == "gestos") activeTabColor else inactiveTabColor,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -187,7 +188,7 @@ fun BottomBarWithFab(
                 .align(Alignment.BottomCenter)
                 .offset(y = (-31).dp)
                 .size(fabSize),
-            containerColor = activeColor,
+            containerColor = primaryColor,
             contentColor = Color.White,
             shape = CircleShape,
             elevation = FloatingActionButtonDefaults.elevation(

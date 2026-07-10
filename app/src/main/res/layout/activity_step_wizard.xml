@@ -12,6 +12,7 @@
         android:layout_height="wrap_content"
         android:backgroundTint="@color/teal_primary"
         app:cardCornerRadius="0dp"
+        app:cardElevation="8dp"
         app:strokeWidth="0dp"
         app:layout_constraintTop_toTopOf="parent">
 

@@ -289,11 +289,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-            // FIX: usa la referencia cacheada y llama transitionToEnd() directamente
+            // FIX: usa la referencia cacheada y llama transitionToState directamente
             // sin condición de estado, evitando que la animación quede bloqueada al cancelar
             manteniendoSplash = false
             motionLayout.post {
-                motionLayout.transitionToEnd()
+                motionLayout.transitionToState(R.id.end)
             }
         }
 
@@ -350,7 +350,7 @@ class MainActivity : AppCompatActivity() {
         // Sin token → sesión expirada, debe usar contraseña
         if (token.isEmpty() || userId == -1) {
             manteniendoSplash = false
-            motionLayout.transitionToEnd()   // ← usa referencia cacheada
+            motionLayout.transitionToState(R.id.end)   // ← usa referencia cacheada
             Snackbars.error(
                 findViewById(android.R.id.content),
                 "Sesión expirada. Ingresa con tu contraseña.",
@@ -371,7 +371,7 @@ class MainActivity : AppCompatActivity() {
 
                 } else {
                     manteniendoSplash = false
-                    motionLayout.transitionToEnd()   // ← usa referencia cacheada
+                    motionLayout.transitionToState(R.id.end)   // ← usa referencia cacheada
 
                     // Token inválido (401 / 403) → limpiar y pedir contraseña
                     sharedPref.edit()
@@ -388,7 +388,7 @@ class MainActivity : AppCompatActivity() {
 
             } catch (_: Exception) {
                 manteniendoSplash = false
-                motionLayout.transitionToEnd()   // ← usa referencia cacheada
+                motionLayout.transitionToState(R.id.end)   // ← usa referencia cacheada
 
                 Snackbars.error(
                     findViewById(android.R.id.content),
@@ -466,8 +466,8 @@ class MainActivity : AppCompatActivity() {
 
                 // FIX: usa referencia cacheada en lugar de buscar el view otra vez
                 motionLayout.post {
-                    if (motionLayout.currentState == R.id.start) {
-                        motionLayout.transitionToEnd()
+                    if (motionLayout.currentState == R.id.start || motionLayout.currentState == -1) {
+                        motionLayout.transitionToState(R.id.end)
                     }
                 }
             }
@@ -563,8 +563,8 @@ class MainActivity : AppCompatActivity() {
             // inicializado (se llama antes de setContentView), así que se
             // mantiene el findViewById puntual solo en este listener
             findViewById<MotionLayout>(R.id.motionLayout)?.let { ml ->
-                if (ml.currentState == R.id.start) {
-                    ml.transitionToEnd()
+                if (ml.currentState == R.id.start || ml.currentState == -1) {
+                    ml.transitionToState(R.id.end)
                 }
             }
         }
@@ -611,7 +611,7 @@ class MainActivity : AppCompatActivity() {
 
         // FIX: usa referencia cacheada
         motionLayout.post {
-            motionLayout.transitionToEnd()
+            motionLayout.transitionToState(R.id.end)
         }
 
         lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {

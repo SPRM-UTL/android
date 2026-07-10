@@ -10,6 +10,16 @@ $icons = @(
     @{ Name="bar-chart-2"; Out="ic_consumption_total.xml" }
 )
 
+$extraIcons = @(
+    "lightbulb", "tv", "music", "fan", "zap", "home", "door-open", "door-closed", "lock", "unlock",
+    "thermometer", "snowflake", "sun", "moon", "coffee", "gamepad-2", "wifi", "camera", "video",
+    "shield", "bell", "heart", "star", "settings", "play", "pause", "volume-2", "volume-x", "wand-2", "power"
+)
+
+foreach ($n in $extraIcons) {
+    $icons += @{ Name=$n; Out="lucide_$n.xml" }
+}
+
 foreach ($icon in $icons) {
     $url = "https://unpkg.com/lucide-static@latest/icons/$($icon.Name).svg"
     $svgFile = "$($icon.Name).svg"
