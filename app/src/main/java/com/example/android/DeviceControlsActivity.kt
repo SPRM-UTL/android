@@ -120,6 +120,17 @@ class DeviceControlsActivity : AppCompatActivity() {
             }
             currentDevice?.let { dev ->
                 DeviceActionManager.ejecutarAccion(this, dev, DeviceActionManager.ACTION_POWER, isChecked)
+                
+                // Enviar también el comando al backend para que lo replique por WebSocket, tal como hace HomeFragment
+                lifecycleScope.launch {
+                    try {
+                        withContext(Dispatchers.IO) {
+                            RetrofitClient.deviceService.toggleAparato(dev.id, isChecked)
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
             }
         }
 

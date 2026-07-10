@@ -1,5 +1,6 @@
 package com.example.android
 
+import android.graphics.Color
 import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
@@ -264,9 +265,11 @@ class HomeFragment : Fragment() {
     }
 
     private fun mostrarDialogoEliminar(dispositivo: com.example.android.db.Dispositivo) {
-        MaterialAlertDialogBuilder(requireContext())
+        if (!isAdded || context == null) return
+
+        MaterialAlertDialogBuilder(requireContext(), R.style.CustomAlertDialogTheme)
             .setTitle("Eliminar dispositivo")
-            .setMessage("¿Estás seguro de que deseas eliminar '${dispositivo.nombre}' de tu cuenta? Esta acción no se puede deshacer.")
+            .setMessage("¿Estás seguro de que deseas eliminar '${dispositivo.nombre}'? Esta acción desvinculará el hardware permanentemente.")
             .setPositiveButton("Eliminar") { dialog, _ ->
                 eliminarDispositivoDeApi(dispositivo)
                 dialog.dismiss()

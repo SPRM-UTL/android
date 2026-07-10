@@ -11,7 +11,6 @@
         <item name="android:windowLightNavigationBar">true</item>
         <item name="colorError">@color/red</item>
 
-        <!-- CORRECCIÓN: Evita el fondo forzado oscuro en elementos de superficie flotante -->
         <item name="colorSurface">@android:color/white</item>
         <item name="android:forceDarkAllowed">false</item>
     </style>
@@ -27,10 +26,8 @@
 
     <style name="BottomSheetTopRounded">
         <item name="cornerFamily">rounded</item>
-
         <item name="cornerSizeTopLeft">28dp</item>
         <item name="cornerSizeTopRight">28dp</item>
-
         <item name="cornerSizeBottomLeft">0dp</item>
         <item name="cornerSizeBottomRight">0dp</item>
     </style>
@@ -96,16 +93,61 @@
         <item name="android:textColor">@color/red</item>
     </style>
 
-    <!-- INTERCEPCIÓN DEL POPUP: Fuerza el fondo blanco puro sobre los menús de Material 3 -->
     <style name="Theme.ExposedDropdownMenuOverlay" parent="">
         <item name="colorSurface">@android:color/white</item>
         <item name="colorOnSurface">@color/black</item>
         <item name="elevationOverlayEnabled">false</item>
     </style>
 
-    <!-- TextAppearance para items del dropdown (Gesto y Mano) -->
     <style name="TextAppearance.DropdownItem" parent="TextAppearance.Material3.BodyMedium">
         <item name="android:textColor">@color/teal_primary</item>
+        <item name="android:textStyle">normal</item>
+    </style>
+
+    <style name="CustomAlertDialogTheme" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="colorPrimary">@color/teal_primary</item>
+        <item name="elevationOverlayEnabled">false</item>
+        <item name="elevationOverlayColor">@android:color/transparent</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="materialAlertDialogTheme">@style/CustomAlertDialogStyle</item>
+    </style>
+
+    <style name="CustomAlertDialogStyle" parent="MaterialAlertDialog.Material3">
+        <item name="android:background">@android:color/white</item>
+        <item name="backgroundTint">@android:color/white</item>
+        <item name="colorSurface">@android:color/white</item>
+
+        <item name="android:textColorPrimary">#073F4C</item>
+        <item name="android:textColorSecondary">#6F7E8E</item>
+
+        <item name="shapeAppearance">@style/ShapeAppearance.Material3.MediumComponent</item>
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.Material3.MediumComponent</item>
+
+        <item name="materialAlertDialogTitleTextStyle">@style/CustomAlertDialogTitleText</item>
+        <item name="materialAlertDialogBodyTextStyle">@style/CustomAlertDialogBodyText</item>
+
+        <item name="buttonBarPositiveButtonStyle">@style/DialogBotonEliminar</item>
+        <item name="buttonBarNegativeButtonStyle">@style/DialogBotonCancelar</item>
+    </style>
+
+    <style name="CustomAlertDialogTitleText" parent="MaterialAlertDialog.Material3.Title.Text">
+        <item name="android:textColor">#073F4C</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">20sp</item>
+    </style>
+
+    <style name="CustomAlertDialogBodyText" parent="MaterialAlertDialog.Material3.Body.Text">
+        <item name="android:textColor">#6F7E8E</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <style name="DialogBotonEliminar" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textColor">@color/red</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="DialogBotonCancelar" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textColor">@color/btn_dialog_selector</item>
         <item name="android:textStyle">normal</item>
     </style>
 
