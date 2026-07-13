@@ -5,6 +5,7 @@ import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
+import android.widget.ImageButton
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -40,19 +41,18 @@ class DeviceControlsActivity : AppCompatActivity() {
 
     // Vistas
     private lateinit var tvControlDeviceName: TextView
-    private lateinit var ivDeviceIcon: ImageView
-    private lateinit var btnBackControls: ImageView
-    
+    private lateinit var btnBackControls: ImageButton
+
     private lateinit var tvPowerState: TextView
     private lateinit var switchPower: SwitchMaterial
-    
+
     private lateinit var cardVolumeControl: MaterialCardView
     private lateinit var sliderVolume: Slider
     private lateinit var tvVolumeValue: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+
         enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor = Color.TRANSPARENT
@@ -63,7 +63,7 @@ class DeviceControlsActivity : AppCompatActivity() {
         }
 
         setContentView(R.layout.activity_device_controls)
-        
+
         db = AppDatabase.getDatabase(this)
         deviceId = intent.getIntExtra("EXTRA_DEVICE_ID", -1)
 
@@ -80,12 +80,11 @@ class DeviceControlsActivity : AppCompatActivity() {
 
     private fun inicializarVistas() {
         tvControlDeviceName = findViewById(R.id.tvControlDeviceName)
-        ivDeviceIcon = findViewById(R.id.ivDeviceIcon)
         btnBackControls = findViewById(R.id.btnBackControls)
-        
+
         tvPowerState = findViewById(R.id.tvPowerState)
         switchPower = findViewById(R.id.switchPower)
-        
+
         cardVolumeControl = findViewById(R.id.cardVolumeControl)
         sliderVolume = findViewById(R.id.sliderVolume)
         tvVolumeValue = findViewById(R.id.tvVolumeValue)
@@ -93,11 +92,14 @@ class DeviceControlsActivity : AppCompatActivity() {
 
     private fun configurarInsets() {
         val root = findViewById<View>(R.id.mainDeviceControls)
-        val header = findViewById<View>(R.id.headerControls)
-        
+        val cardBack = findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardBack)
+
         ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            header.setPadding(header.paddingLeft, systemBars.top + 16, header.paddingRight, 16)
+
+            // Aplica el padding superior al ConstraintLayout interno de la tarjeta
+            cardBack?.getChildAt(0)?.setPadding(0, systemBars.top, 0, 0)
+
             root.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom)
             insets
         }
@@ -120,8 +122,7 @@ class DeviceControlsActivity : AppCompatActivity() {
             }
             currentDevice?.let { dev ->
                 DeviceActionManager.ejecutarAccion(this, dev, DeviceActionManager.ACTION_POWER, isChecked)
-                
-                // Enviar también el comando al backend para que lo replique por WebSocket, tal como hace HomeFragment
+
                 lifecycleScope.launch {
                     try {
                         withContext(Dispatchers.IO) {
@@ -147,11 +148,10 @@ class DeviceControlsActivity : AppCompatActivity() {
             currentDevice = db.dispositivoDao().getDispositivoById(deviceId)
             currentDevice?.let { dispositivo ->
                 tvControlDeviceName.text = dispositivo.nombre ?: "Dispositivo"
-                
-                // Configuración dinámica por tipo
+
                 val tipo = (dispositivo.tipo ?: "")
                 val tipoLower = tipo.lowercase()
-                
+
                 if (tipoLower.contains("bocina") || tipoLower.contains("audio") || tipoLower.contains("speaker") || tipoLower.contains("audífono") || tipoLower.contains("audifono")) {
                     cardVolumeControl.visibility = View.VISIBLE
                     actualizarSliderDesdeSistema()
@@ -169,8 +169,7 @@ class DeviceControlsActivity : AppCompatActivity() {
         val maxVol = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
         val currVol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
         val percent = (currVol.toFloat() / maxVol) * 100f
-        
-        // Asignar el valor sin disparar el listener de forma destructiva
+
         sliderVolume.value = percent
         tvVolumeValue.text = "${percent.toInt()}%"
     }
@@ -178,7 +177,6 @@ class DeviceControlsActivity : AppCompatActivity() {
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
             val handled = super.onKeyDown(keyCode, event)
-            // Esperamos un instante a que el sistema aplique el cambio de volumen
             sliderVolume.postDelayed({
                 actualizarSliderDesdeSistema()
             }, 100)
@@ -192,13 +190,12 @@ class DeviceControlsActivity : AppCompatActivity() {
         try {
             val sharedPref = getSharedPreferences("SesionApp", MODE_PRIVATE)
             val token = sharedPref.getString("apiToken", "") ?: ""
-            
-            // Consultamos los tipos al backend
+
             val response = RetrofitClient.deviceService.getTiposAparato("Bearer $token")
             if (response.isSuccessful && response.body()?.success == true) {
                 val tipos = response.body()?.data ?: emptyList()
                 val tipoObj = tipos.find { it.nombreTipo == dispositivo.tipo }
-                
+
                 if (tipoObj?.soportaBluetooth == true) {
                     val mac = dispositivo.macBluetooth
                     if (!mac.isNullOrEmpty()) {
