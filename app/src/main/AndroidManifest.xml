@@ -67,9 +67,10 @@
             android:exported="false" />
 
         <activity
-            android:name="com.yalantis.ucrop.UCropActivity"
+            android:name=".CustomUCropActivity"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+            android:theme="@style/Theme.UCrop.Custom"
+            android:exported="false" />
 
         <activity
             android:name=".ai.PermisosActivity"

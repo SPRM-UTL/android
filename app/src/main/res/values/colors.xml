@@ -8,4 +8,10 @@
     <color name="black">#000000</color>
     <color name="red">#E53935</color>
     <color name="background">#F8FFFF</color>
+    
+    <!-- UCrop Bottom Menu Customization -->
+    <color name="ucrop_color_widget_background">@color/teal_primary</color>
+    <color name="ucrop_color_widget_text">@color/white</color>
+    <color name="ucrop_color_widget">#B3FFFFFF</color>
+    <color name="ucrop_color_widget_active">@color/white</color>
 </resources>

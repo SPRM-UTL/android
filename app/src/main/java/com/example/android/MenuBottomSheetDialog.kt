@@ -43,18 +43,7 @@ class MenuBottomSheetDialog(
         super.onViewCreated(view, savedInstanceState)
 
         val ivProfileSheet = view.findViewById<ImageView>(R.id.ivProfileSheet)
-        val sharedPref = appContext.getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
-        val profileImageUrl = sharedPref.getString("profileImageUrl", null)
-        
-        if (!profileImageUrl.isNullOrBlank()) {
-            ivProfileSheet.load(profileImageUrl) {
-                placeholder(R.drawable.ic_manordomo_sin_fondo)
-                error(R.drawable.ic_manordomo_sin_fondo)
-                crossfade(true)
-            }
-        } else {
-            ivProfileSheet.setImageResource(R.drawable.ic_manordomo_sin_fondo)
-        }
+        cargarFotoPerfil(ivProfileSheet)
 
         view.findViewById<ImageButton>(R.id.btnClose)
             .setOnClickListener {
@@ -83,6 +72,21 @@ class MenuBottomSheetDialog(
                 // dismiss() is removed here because if we dismiss, the lifecycleScope gets cancelled
                 // and the API call hangs, leaving the loading dialog stuck.
             }
+    }
+
+    private fun cargarFotoPerfil(imageView: ImageView) {
+        val sharedPref = appContext.getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+        val profileImageUrl = sharedPref.getString("profileImageUrl", null)
+
+        if (!profileImageUrl.isNullOrBlank()) {
+            imageView.load(profileImageUrl) {
+                placeholder(R.drawable.ic_manordomo_sin_fondo)
+                error(R.drawable.ic_manordomo_sin_fondo)
+                crossfade(true)
+            }
+        } else {
+            imageView.setImageResource(R.drawable.ic_manordomo_sin_fondo)
+        }
     }
 
     private fun logout() {

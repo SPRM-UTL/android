@@ -29,23 +29,13 @@ class GestosFragment : Fragment() {
 
     private lateinit var adapter: GestosAdminAdapter
     private lateinit var rvGestos: RecyclerView
+    private lateinit var ivProfileGestos: ImageView
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_gestos, container, false)
 
-        val ivProfileGestos = view.findViewById<ImageView>(R.id.ivProfileGestos)
-        val sharedPreferences = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
-        val profileImageUrl = sharedPreferences.getString("profileImageUrl", null)
-
-        if (!profileImageUrl.isNullOrBlank()) {
-            ivProfileGestos.load(profileImageUrl) {
-                placeholder(R.drawable.ic_manordomo_sin_fondo)
-                error(R.drawable.ic_manordomo_sin_fondo)
-                crossfade(true)
-            }
-        } else {
-            ivProfileGestos.setImageResource(R.drawable.ic_manordomo_sin_fondo)
-        }
+        ivProfileGestos = view.findViewById(R.id.ivProfileGestos)
+        cargarFotoPerfil()
 
         view.findViewById<View>(R.id.profileCircle)?.setOnClickListener {
             val intent = Intent(requireContext(), ProfileActivity::class.java)
@@ -140,8 +130,24 @@ class GestosFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        cargarFotoPerfil()
         val combos = SecuenciaConfigManager.loadCombos(requireContext())
         adapter.combos = combos.toMutableList()
         adapter.notifyDataSetChanged()
+    }
+
+    private fun cargarFotoPerfil() {
+        val sharedPreferences = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+        val profileImageUrl = sharedPreferences.getString("profileImageUrl", null)
+
+        if (!profileImageUrl.isNullOrBlank()) {
+            ivProfileGestos.load(profileImageUrl) {
+                placeholder(R.drawable.ic_manordomo_sin_fondo)
+                error(R.drawable.ic_manordomo_sin_fondo)
+                crossfade(true)
+            }
+        } else {
+            ivProfileGestos.setImageResource(R.drawable.ic_manordomo_sin_fondo)
+        }
     }
 }

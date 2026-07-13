@@ -150,5 +150,31 @@
         <item name="android:textColor">@color/btn_dialog_selector</item>
         <item name="android:textStyle">normal</item>
     </style>
+    <style name="Theme.UCrop.Custom" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Colores personalizados -->
+        <item name="colorPrimary">@color/teal_primary</item>
+        <item name="colorPrimaryDark">@color/teal_medium</item>
+        <item name="colorAccent">@color/teal_primary</item>
+        
+        <!-- Fondo -->
+        <item name="android:windowBackground">@color/background</item>
+        
+        <!-- Para edge-to-edge en Android 10+ -->
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:navigationBarColor">@android:color/white</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        
+        <!-- Force dark mode off para evitar problemas con UCrop -->
+        <item name="android:forceDarkAllowed">false</item>
+        
+        <!-- Hacer el toolbar transparente -->
+        <item name="android:actionBarStyle">@style/Widget.UCrop.ActionBar.Transparent</item>
+    </style>
+
+    <style name="Widget.UCrop.ActionBar.Transparent" parent="Widget.AppCompat.Light.ActionBar.Solid.Inverse">
+        <item name="android:background">@android:color/transparent</item>
+        <item name="android:elevation">0dp</item>
+    </style>
 
 </resources>

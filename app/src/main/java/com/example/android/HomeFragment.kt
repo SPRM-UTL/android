@@ -100,6 +100,22 @@ class HomeFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         iniciarPollingEstadoRed()
+        cargarFotoPerfil()
+    }
+
+    private fun cargarFotoPerfil() {
+        val sharedPreferences = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+        val profileImageUrl = sharedPreferences.getString("profileImageUrl", null)
+
+        if (!profileImageUrl.isNullOrBlank()) {
+            ivProfile.load(profileImageUrl) {
+                placeholder(R.drawable.ic_manordomo_sin_fondo)
+                error(R.drawable.ic_manordomo_sin_fondo)
+                crossfade(true)
+            }
+        } else {
+            ivProfile.setImageResource(R.drawable.ic_manordomo_sin_fondo)
+        }
     }
 
     override fun onPause() {
@@ -327,16 +343,7 @@ class HomeFragment : Fragment() {
             tvUsuario.text = nombreUsuario
         }
         
-        val profileImageUrl = sharedPreferences.getString("profileImageUrl", null)
-        if (!profileImageUrl.isNullOrBlank()) {
-            ivProfile.load(profileImageUrl) {
-                placeholder(R.drawable.ic_manordomo_sin_fondo)
-                error(R.drawable.ic_manordomo_sin_fondo)
-                crossfade(true)
-            }
-        } else {
-            ivProfile.setImageResource(R.drawable.ic_manordomo_sin_fondo)
-        }
+        // La foto de perfil se carga ahora en onResume()
         
         configurarAnimacionInicial()
         mostrarMensajeBienvenida()

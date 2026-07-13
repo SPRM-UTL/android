@@ -83,41 +83,55 @@ class ProfileActivity : AppCompatActivity() {
         if (result.resultCode == RESULT_OK && result.data != null) {
             val resultUri = com.yalantis.ucrop.UCrop.getOutput(result.data!!)
             resultUri?.let { subirImagenPerfil(it) }
+            overridePendingTransition(R.anim.fade_in, R.anim.slide_down)
         } else if (result.resultCode == com.yalantis.ucrop.UCrop.RESULT_ERROR && result.data != null) {
             val error = com.yalantis.ucrop.UCrop.getError(result.data!!)
             Snackbars.error(vistaRaiz, "Error al recortar: ${error?.message}", Snackbar.LENGTH_SHORT).show()
+            overridePendingTransition(R.anim.fade_in, R.anim.slide_down)
         }
     }
 
     private fun launchUCrop(sourceUri: Uri) {
         val destinationUri = Uri.fromFile(File(cacheDir, "perfil_${System.currentTimeMillis()}.jpg"))
 
-        val options = com.yalantis.ucrop.UCrop.Options()
-        options.setCircleDimmedLayer(true)
-        options.setCompressionQuality(90)
-        options.setShowCropGrid(false)
-        options.setToolbarTitle("Recortar foto")
-
+        // Colores
         val colorPrimary = ContextCompat.getColor(this, R.color.teal_primary)
         val colorWhite = ContextCompat.getColor(this, R.color.white)
         val colorBackground = ContextCompat.getColor(this, R.color.background)
 
-        options.setStatusBarColor(colorPrimary)
-        options.setToolbarColor(colorPrimary)
-        options.setToolbarWidgetColor(colorWhite)
-        options.setActiveControlsWidgetColor(colorPrimary)
-        options.setRootViewBackgroundColor(colorBackground)
+        // Opciones de UCrop
+        val options = com.yalantis.ucrop.UCrop.Options().apply {
+            setCircleDimmedLayer(true) // Forma circular
+            setCompressionQuality(90)
+            setShowCropGrid(false)
+            setToolbarTitle("Recortar foto")
+            
+            // Colores para el toolbar teal
+            setStatusBarColor(colorPrimary)
+            setToolbarColor(colorPrimary)
+            setToolbarWidgetColor(colorWhite)
+            setActiveControlsWidgetColor(colorWhite)
+            setRootViewBackgroundColor(colorBackground)
+            
+            // Ocultar controles inferiores para evitar solapamiento
+            setHideBottomControls(false)
+            
+            // Mejoras visuales
+            setMaxBitmapSize(2048)
+        }
 
-        // Solución Safe Area: Forzar barra de herramientas y controles visibles sin superposición por insets
-        options.setHideBottomControls(false)
-
+        // Crear intent
         val uCropIntent = com.yalantis.ucrop.UCrop.of(sourceUri, destinationUri)
-            .withAspectRatio(1f, 1f)
+            .withAspectRatio(1f, 1f) // Cuadrado para perfil
             .withMaxResultSize(512, 512)
             .withOptions(options)
-            .getIntent(this)
+            .getIntent(this@ProfileActivity)
+            
+        uCropIntent.setClass(this@ProfileActivity, CustomUCropActivity::class.java)
 
+        // Lanzar con animación
         uCropLauncher.launch(uCropIntent)
+        overridePendingTransition(R.anim.slide_up, R.anim.fade_out)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
