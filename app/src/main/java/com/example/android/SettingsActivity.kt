@@ -112,6 +112,10 @@ class SettingsActivity : AppCompatActivity() {
             }
 
         }
+
+        findViewById<View>(R.id.btnVoiceConfig).setOnClickListener {
+            startActivity(android.content.Intent(this, com.example.android.voice.VoiceConfigActivity::class.java))
+        }
     }
 
 

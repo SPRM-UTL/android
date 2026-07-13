@@ -32,14 +32,12 @@ import kotlinx.coroutines.launch
 
 class SecuenciaConfigActivity : AppCompatActivity() {
 
-    private lateinit var rvSteps: RecyclerView
-    private lateinit var etComboName: EditText
+    private lateinit var tvComboNameDesc: TextView
+    private lateinit var tvStepsDesc: TextView
     private lateinit var tvActivatorDesc: TextView
-    private lateinit var btnEditActivator: Button
+    private lateinit var tvVoiceCommandDesc: TextView
     private lateinit var tvAccionDesc: TextView
-    private lateinit var btnEditAccion: Button
     private lateinit var btnSave: Button
-    private lateinit var fabAdd: FloatingActionButton
 
     private lateinit var adapter: SecuenciaAdapter
     private lateinit var db: AppDatabase
@@ -68,12 +66,14 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                 "STEP" -> {
                     adapter.pasos.add(newStep)
                     adapter.notifyItemInserted(adapter.pasos.size - 1)
+                    updateHeaders()
                 }
                 "EDIT_STEP" -> {
                     val editIndex = data.getIntExtra("EDIT_INDEX", -1)
                     if (editIndex != -1) {
                         adapter.pasos[editIndex] = newStep
                         adapter.notifyItemChanged(editIndex)
+                        updateHeaders()
                     }
                 }
             }
@@ -141,14 +141,12 @@ class SecuenciaConfigActivity : AppCompatActivity() {
         findViewById<android.widget.ImageButton>(R.id.btnBack).setOnClickListener {
             finish()
         }
-        rvSteps = findViewById(R.id.recyclerView)
-        etComboName = findViewById(R.id.etComboName)
+        tvComboNameDesc = findViewById(R.id.tvComboNameDesc)
+        tvStepsDesc = findViewById(R.id.tvStepsDesc)
         tvActivatorDesc = findViewById(R.id.tvActivatorDesc)
-        btnEditActivator = findViewById(R.id.btnEditActivator)
+        tvVoiceCommandDesc = findViewById(R.id.tvVoiceCommandDesc)
         tvAccionDesc = findViewById(R.id.tvAccionDesc)
-        btnEditAccion = findViewById(R.id.btnEditAccion)
         btnSave = findViewById(R.id.btnSave)
-        fabAdd = findViewById(R.id.fabAdd)
 
         if (!loadCurrentConfig()) {
             return
@@ -172,6 +170,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                 val deletedStep = adapter.pasos[position]
 
                 adapter.removeItem(position)
+                updateHeaders()
 
                 com.google.android.material.snackbar.Snackbar.make(
                     findViewById(R.id.mainSequenceConfig),
@@ -182,6 +181,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                         adapter.pasos.add(position, deletedStep)
                         adapter.notifyItemInserted(position)
                         adapter.notifyItemRangeChanged(0, adapter.pasos.size)
+                        updateHeaders()
                     }
                     setActionTextColor(androidx.core.content.ContextCompat.getColor(this@SecuenciaConfigActivity, R.color.teal_primary))
                     this.view.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#073F4C"))
@@ -258,22 +258,55 @@ class SecuenciaConfigActivity : AppCompatActivity() {
             intent.putExtra("INITIAL_FRAMES", step.cuadrosRequeridos)
 
             wizardLauncher.launch(intent)
+            wizardLauncher.launch(intent)
         })
-        rvSteps.layoutManager = LinearLayoutManager(this)
-        rvSteps.adapter = adapter
-        itemTouchHelper.attachToRecyclerView(rvSteps)
 
-        etComboName.setText(comboActual.name)
-        etComboName.addTextChangedListener(object : TextWatcher {
-            override fun afterTextChanged(s: Editable?) {
-                comboActual.name = s?.toString()?.takeIf { it.isNotBlank() } ?: "Combo Sin Nombre"
+        findViewById<View>(R.id.cardComboName).setOnClickListener {
+            val bottomSheetView = layoutInflater.inflate(R.layout.bottom_sheet_combo_name, null)
+            val bottomSheetDialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+            bottomSheetDialog.setContentView(bottomSheetView)
+
+            val etBottomSheetComboName = bottomSheetView.findViewById<EditText>(R.id.etBottomSheetComboName)
+            val btnSaveComboName = bottomSheetView.findViewById<Button>(R.id.btnSaveComboName)
+
+            etBottomSheetComboName.setText(comboActual.name)
+
+            btnSaveComboName.setOnClickListener {
+                val name = etBottomSheetComboName.text.toString().trim()
+                comboActual.name = name.takeIf { it.isNotBlank() } ?: "Combo Sin Nombre"
+                updateHeaders()
+                bottomSheetDialog.dismiss()
             }
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-        })
+
+            bottomSheetDialog.setOnShowListener {
+                etBottomSheetComboName.requestFocus()
+                etBottomSheetComboName.post {
+                    val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+                    imm.showSoftInput(etBottomSheetComboName, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+                }
+            }
+            bottomSheetDialog.show()
+        }
+
+        findViewById<View>(R.id.cardStepsSummary).setOnClickListener {
+            val bottomSheetView = layoutInflater.inflate(R.layout.bottom_sheet_steps, null)
+            val bottomSheetDialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+            bottomSheetDialog.setContentView(bottomSheetView)
+
+            val rvBottomSheetSteps = bottomSheetView.findViewById<RecyclerView>(R.id.rvStepsBottomSheet)
+            rvBottomSheetSteps.layoutManager = LinearLayoutManager(this)
+            rvBottomSheetSteps.adapter = adapter
+            itemTouchHelper.attachToRecyclerView(rvBottomSheetSteps)
+
+            bottomSheetView.findViewById<View>(R.id.fabAddStep).setOnClickListener {
+                launchWizard("STEP")
+            }
+
+            bottomSheetDialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+            bottomSheetDialog.show()
+        }
 
         val ivComboIcon = findViewById<android.widget.ImageView>(R.id.ivComboIcon)
-        val btnEditIcon = findViewById<Button>(R.id.btnEditIcon)
 
         val availableIcons = listOf(
             "lucide_lightbulb", "lucide_tv", "lucide_music", "lucide_fan", "lucide_zap",
@@ -284,11 +317,11 @@ class SecuenciaConfigActivity : AppCompatActivity() {
             "lucide_pause", "lucide_volume_2", "lucide_volume_x", "lucide_wand_2", "lucide_power"
         )
 
-        btnEditIcon.setOnClickListener {
+        findViewById<View>(R.id.cardIcon).setOnClickListener {
             val dialogView = layoutInflater.inflate(R.layout.dialog_icon_picker, null)
-            val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this, R.style.CustomAlertDialogTheme)
-                .setView(dialogView)
-                .show()
+            val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+            dialog.setContentView(dialogView)
+            dialog.show()
 
             val rvIcons = dialogView.findViewById<RecyclerView>(R.id.rvIcons)
             val etSearchIcon = dialogView.findViewById<EditText>(R.id.etSearchIcon)
@@ -310,21 +343,39 @@ class SecuenciaConfigActivity : AppCompatActivity() {
             })
         }
 
-        fabAdd.setOnClickListener {
-            launchWizard("STEP")
-        }
+        findViewById<View>(R.id.cardVoiceCommand).setOnClickListener {
+            val bottomSheetView = layoutInflater.inflate(R.layout.bottom_sheet_voice_command, null)
+            val bottomSheetDialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+            bottomSheetDialog.setContentView(bottomSheetView)
 
-        btnEditActivator.setOnClickListener {
-            if (comboActual.activador != null) {
-                comboActual.activador = null
+            val etBottomSheetVoice = bottomSheetView.findViewById<EditText>(R.id.etBottomSheetVoiceCommand)
+            val btnSaveVoice = bottomSheetView.findViewById<Button>(R.id.btnSaveVoiceCommand)
+
+            etBottomSheetVoice.setText(comboActual.fraseVozActivadora)
+
+            btnSaveVoice.setOnClickListener {
+                val command = etBottomSheetVoice.text.toString().trim()
+                comboActual.fraseVozActivadora = command.takeIf { it.isNotBlank() }
                 updateHeaders()
-            } else {
-                launchWizard("ACTIVATOR", null)
+                bottomSheetDialog.dismiss()
             }
+
+            bottomSheetDialog.setOnShowListener {
+                etBottomSheetVoice.requestFocus()
+                etBottomSheetVoice.post {
+                    val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+                    imm.showSoftInput(etBottomSheetVoice, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+                }
+            }
+
+            bottomSheetDialog.show()
         }
 
         findViewById<View>(R.id.cardActivator).setOnClickListener {
             if (comboActual.activador != null) {
+                // If it already has an activator, maybe we want to edit or delete it
+                // For simplicity, we just launch the wizard to replace it.
+                // You could also show a dialog to let the user delete it, but wizard is fine.
                 launchWizard("ACTIVATOR", comboActual.activador)
             } else {
                 launchWizard("ACTIVATOR", null)
@@ -332,10 +383,6 @@ class SecuenciaConfigActivity : AppCompatActivity() {
         }
 
         // Eventos modificados para abrir la nueva actividad Wizard en lugar del diálogo antiguo
-        btnEditAccion.setOnClickListener {
-            showActionSelectionDialog()
-        }
-
         findViewById<View>(R.id.cardAccionVinculada).setOnClickListener {
             showActionSelectionDialog()
         }
@@ -358,6 +405,8 @@ class SecuenciaConfigActivity : AppCompatActivity() {
         wizardLauncher.launch(intent)
     }
 
+
+
     private fun loadCurrentConfig(): Boolean {
         val comboId = intent.getStringExtra("COMBO_ID")
         todosCombos = SecuenciaConfigManager.loadCombos(this).toMutableList()
@@ -375,6 +424,9 @@ class SecuenciaConfigActivity : AppCompatActivity() {
     }
 
     private fun updateHeaders() {
+        tvComboNameDesc.text = comboActual.name.ifBlank { "Sin Nombre" }
+        tvStepsDesc.text = "${comboActual.pasos.size} paso(s) configurado(s)"
+
         val ivComboIcon = findViewById<android.widget.ImageView>(R.id.ivComboIcon)
         if (ivComboIcon != null) {
             val iconName = comboActual.icono ?: "lucide_star"
@@ -389,23 +441,25 @@ class SecuenciaConfigActivity : AppCompatActivity() {
         if (comboActual.activador != null) {
             tvActivatorDesc.text = "${comboActual.activador?.nombreGesto} (${comboActual.activador?.manoObjetivo})"
             tvActivatorDesc.setTextColor(android.graphics.Color.parseColor("#073F4C"))
-            btnEditActivator.text = "Quitar"
-            btnEditActivator.setTextColor(android.graphics.Color.parseColor("#E53935"))
         } else {
             tvActivatorDesc.text = "Ninguno"
             tvActivatorDesc.setTextColor(android.graphics.Color.parseColor("#A0AAB5"))
-            btnEditActivator.text = "Añadir"
-            btnEditActivator.setTextColor(android.graphics.Color.parseColor("#3aafa9"))
+        }
+
+        if (!comboActual.fraseVozActivadora.isNullOrBlank()) {
+            tvVoiceCommandDesc.text = comboActual.fraseVozActivadora
+            tvVoiceCommandDesc.setTextColor(android.graphics.Color.parseColor("#073F4C"))
+        } else {
+            tvVoiceCommandDesc.text = "Ninguno"
+            tvVoiceCommandDesc.setTextColor(android.graphics.Color.parseColor("#A0AAB5"))
         }
 
         if (comboActual.accionVinculada != null) {
             tvAccionDesc.text = comboActual.accionVinculada
             tvAccionDesc.setTextColor(android.graphics.Color.parseColor("#073F4C"))
-            btnEditAccion.text = "Cambiar"
         } else {
             tvAccionDesc.text = "Ninguna"
             tvAccionDesc.setTextColor(android.graphics.Color.parseColor("#A0AAB5"))
-            btnEditAccion.text = "Seleccionar"
         }
     }
 
@@ -454,7 +508,8 @@ class SecuenciaConfigActivity : AppCompatActivity() {
             nivelConfianzaMinimo = 0.5,
             tipoDisparadorNombre = tipoDisparador,
             aparatoId = comboActual.aparatoId,
-            pasos = pasosList
+            pasos = pasosList,
+            fraseVozActivadora = comboActual.fraseVozActivadora
         )
         lifecycleScope.launch {
             ApiHandler.safeApiCall(

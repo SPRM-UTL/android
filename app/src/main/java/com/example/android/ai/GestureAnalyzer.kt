@@ -1,4 +1,4 @@
-﻿package com.example.android.ai
+package com.example.android.ai
 import com.example.android.R
 
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarkerResult
@@ -55,7 +55,9 @@ class GestureAnalyzer {
             // Sentadilla: cadera baja (valor y aumenta en la pantalla) y se acerca a las rodillas
             // Aumentamos tolerancia a 0.08 para requerir sentadilla más profunda (refinamiento)
             if (abs(avgHipY - avgKneeY) < 0.08f) {
-                action = "Sentadillas"
+                if (GestureAnalyzerConfig.isGestureActive("Sentadillas")) {
+                    action = "Sentadillas"
+                }
             }
 
             // 2. Decir sí / no con la cabeza
@@ -69,9 +71,13 @@ class GestureAnalyzer {
 
             // Aumentamos los umbrales para requerir movimiento intencional (refinamiento)
             if (xVariance > 0.08f && yVariance < 0.04f) {
-                action = "Decir no con la cabeza"
+                if (GestureAnalyzerConfig.isGestureActive("Decir no con la cabeza")) {
+                    action = "Decir no con la cabeza"
+                }
             } else if (yVariance > 0.08f && xVariance < 0.04f) {
-                action = "Decir si con la cabeza"
+                if (GestureAnalyzerConfig.isGestureActive("Decir si con la cabeza")) {
+                    action = "Decir si con la cabeza"
+                }
             }
 
             // 3. Aplaudir (Distancia entre muñecas)
@@ -79,7 +85,9 @@ class GestureAnalyzer {
             val rightWrist = poseLandmarks[16]
             val wristsDistance = hypot((leftWrist.x() - rightWrist.x()).toDouble(), (leftWrist.y() - rightWrist.y()).toDouble())
             if (wristsDistance < 0.1) {
-                action = "Aplaudir"
+                if (GestureAnalyzerConfig.isGestureActive("Aplaudir")) {
+                    action = "Aplaudir"
+                }
             }
         }
 
@@ -98,19 +106,24 @@ class GestureAnalyzer {
                 val isFrente = HandMetrics.isPalmFacingCamera(hand, handedness)
                 val vistaText = if (isFrente) "Frente" else "Espalda"
 
-                val nombreGesto = "${pose.name.replace("_", " ")} [$vistaText]"
+                val baseName = pose.name.replace("_", " ")
+                
+                // Aplicar el filtro de la configuración del usuario
+                if (GestureAnalyzerConfig.isGestureActive(baseName)) {
+                    val nombreGesto = "$baseName [$vistaText]"
 
-                // Si la cámara es frontal (espejo), la "Izquierda" de la imagen es la "Derecha" real del usuario.
-                val realHandedness = if (isFrontCamera) {
-                    if (handedness == "Left") "Right" else "Left"
-                } else {
-                    handedness
-                }
+                    // Si la cámara es frontal (espejo), la "Izquierda" de la imagen es la "Derecha" real del usuario.
+                    val realHandedness = if (isFrontCamera) {
+                        if (handedness == "Left") "Right" else "Left"
+                    } else {
+                        handedness
+                    }
 
-                if (realHandedness == "Right") {
-                    rightPose = nombreGesto
-                } else if (realHandedness == "Left") {
-                    leftPose = nombreGesto
+                    if (realHandedness == "Right") {
+                        rightPose = nombreGesto
+                    } else if (realHandedness == "Left") {
+                        leftPose = nombreGesto
+                    }
                 }
             }
         }

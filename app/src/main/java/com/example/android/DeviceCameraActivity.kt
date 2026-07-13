@@ -10,6 +10,16 @@ import androidx.core.view.isVisible
 import com.example.android.network.MjpegStreamReader
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.example.android.voice.VoiceCommandListener
+import com.example.android.voice.VoiceCommandMatcher
+import com.example.android.actions.GestureActionExecutor
+import kotlinx.coroutines.launch
+import androidx.lifecycle.lifecycleScope
+import android.widget.Toast
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 
 class DeviceCameraActivity : AppCompatActivity() {
 
@@ -18,8 +28,10 @@ class DeviceCameraActivity : AppCompatActivity() {
     private lateinit var progressVideo: ProgressBar
     private lateinit var btnFinalizar: MaterialButton
     private lateinit var toolbarCamera: MaterialToolbar
+    private lateinit var fabVoice: FloatingActionButton
 
     private var mjpegStreamReader: MjpegStreamReader? = null
+    private var voiceListener: VoiceCommandListener? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,6 +59,44 @@ class DeviceCameraActivity : AppCompatActivity() {
         } else {
             progressVideo.isVisible = false
         }
+
+        fabVoice = findViewById(R.id.fabVoice)
+        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+        val vozHabilitada = prefs.getBoolean("CONTROL_VOZ_ACTIVADO", false)
+
+        if (vozHabilitada) {
+            fabVoice.isVisible = true
+            configurarVoz()
+        }
+    }
+
+    private fun configurarVoz() {
+        voiceListener = VoiceCommandListener(
+            context = this,
+            onResultado = { texto ->
+                Toast.makeText(this, "Escuchado: $texto", Toast.LENGTH_SHORT).show()
+                lifecycleScope.launch {
+                    val gestoEncontrado = VoiceCommandMatcher.encontrarGesto(this@DeviceCameraActivity, texto)
+                    if (gestoEncontrado != null) {
+                        GestureActionExecutor.executeVoiceAction(this@DeviceCameraActivity, gestoEncontrado)
+                    } else {
+                        Toast.makeText(this@DeviceCameraActivity, "Comando no reconocido", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            },
+            onError = { error ->
+                Toast.makeText(this, "Error de voz: $error", Toast.LENGTH_SHORT).show()
+            }
+        )
+
+        fabVoice.setOnClickListener {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                voiceListener?.iniciarEscucha()
+                Toast.makeText(this, "Escuchando comando de voz...", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Falta permiso de micrófono", Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     private fun startCameraStream(ip: String) {
@@ -63,6 +113,7 @@ class DeviceCameraActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         mjpegStreamReader?.stop()
+        voiceListener?.detener()
     }
 
     private fun finishAndGoHome() {

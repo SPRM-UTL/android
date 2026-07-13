@@ -131,6 +131,18 @@
                 app:backgroundTint="@color/teal_primary"
                 app:cornerRadius="8dp" />
 
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/fabVoice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginTop="16dp"
+                android:layout_marginEnd="16dp"
+                android:src="@android:drawable/ic_btn_speak_now"
+                app:backgroundTint="@color/teal_primary"
+                app:tint="@android:color/white"
+                android:visibility="gone" />
+
         </LinearLayout>
     </ScrollView>
 

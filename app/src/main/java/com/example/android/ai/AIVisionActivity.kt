@@ -71,6 +71,21 @@ class AIVisionActivity : AppCompatActivity() {
         if (openTab in 0..1) {
             viewPager.currentItem = openTab
         }
+
+        // Cargar configuración de gestos en memoria para el analizador
+        loadGestureConfig()
+    }
+
+    private fun loadGestureConfig() {
+        val sharedPref = getSharedPreferences("ai_gestures_config", android.content.Context.MODE_PRIVATE)
+        val allEntries = sharedPref.all
+        val activeGestures = mutableMapOf<String, Boolean>()
+        for ((key, value) in allEntries) {
+            if (value is Boolean) {
+                activeGestures[key] = value
+            }
+        }
+        GestureAnalyzerConfig.updateConfig(activeGestures)
     }
 
     private inner class AIVisionPagerAdapter(activity: AppCompatActivity) : FragmentStateAdapter(activity) {

@@ -5,6 +5,7 @@ import android.util.Log
 import com.example.android.ai.Combo
 import com.example.android.db.AppDatabase
 import com.example.android.network.RetrofitClient
+import com.example.android.voice.TtsManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -30,6 +31,11 @@ object GestureActionExecutor {
 
                 val estadoConfirmado = response.body()?.estadoEncendido ?: encendido
                 actualizarEstadoLocal(context, aparatoId, estadoConfirmado)
+                
+                val nombreDispositivo = obtenerNombreDispositivo(context, aparatoId)
+                val mensaje = if (estadoConfirmado) "Encendí $nombreDispositivo" else "Apagué $nombreDispositivo"
+                TtsManager.anunciar(mensaje)
+
                 Log.i(TAG, "Combo '${combo.name}' → aparato $aparatoId ${if (estadoConfirmado) "ON" else "OFF"}")
                 true
             } catch (e: Exception) {
@@ -61,6 +67,45 @@ object GestureActionExecutor {
             db.dispositivoDao().insertDispositivo(dispositivo.copy(estadoEncendido = encendido))
         } catch (e: Exception) {
             Log.w(TAG, "No se pudo actualizar estado local del dispositivo $aparatoId", e)
+        }
+    }
+
+    private suspend fun obtenerNombreDispositivo(context: Context, aparatoId: Int): String {
+        return try {
+            val db = AppDatabase.getDatabase(context)
+            db.dispositivoDao().getDispositivoById(aparatoId)?.nombre ?: "el dispositivo"
+        } catch (e: Exception) {
+            "el dispositivo"
+        }
+    }
+
+    suspend fun executeVoiceAction(context: Context, gesto: com.example.android.db.Gesto): Boolean {
+        val aparatoId = gesto.aparatoId
+        if (aparatoId == null || aparatoId <= 0) {
+            Log.w(TAG, "Gesto de voz '${gesto.nombre}' sin dispositivo vinculado.")
+            return false
+        }
+
+        val encendido = resolveTargetState(aparatoId, null)
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = RetrofitClient.deviceService.toggleAparato(aparatoId, encendido, gesto.id)
+                if (!response.isSuccessful) {
+                    Log.w(TAG, "Toggle por voz falló (${response.code()}) para aparato $aparatoId")
+                    return@withContext false
+                }
+                val estadoConfirmado = response.body()?.estadoEncendido ?: encendido
+                actualizarEstadoLocal(context, aparatoId, estadoConfirmado)
+
+                val nombreDispositivo = obtenerNombreDispositivo(context, aparatoId)
+                val mensaje = if (estadoConfirmado) "Encendí $nombreDispositivo" else "Apagué $nombreDispositivo"
+                TtsManager.anunciar(mensaje)
+
+                true
+            } catch (e: Exception) {
+                Log.e(TAG, "Error ejecutando acción por voz '${gesto.nombre}'", e)
+                false
+            }
         }
     }
 }

@@ -16,7 +16,8 @@ data class Combo(
     var aparatoId: Int? = null,
     var accionEncendido: Boolean? = null,
     var backendGestoId: Int? = null, // ID del registro 'gesto' en el backend (null = aún no sincronizado)
-    var icono: String? = "lucide_star"
+    var icono: String? = "lucide_star",
+    var fraseVozActivadora: String? = null
 )
 
 object SecuenciaConfigManager {
@@ -48,6 +49,7 @@ object SecuenciaConfigManager {
             if (combo.accionEncendido != null) comboObj.put("accionEncendido", combo.accionEncendido)
             if (combo.backendGestoId != null) comboObj.put("backendGestoId", combo.backendGestoId)
             if (combo.icono != null) comboObj.put("icono", combo.icono)
+            if (!combo.fraseVozActivadora.isNullOrBlank()) comboObj.put("fraseVozActivadora", combo.fraseVozActivadora)
 
             val pasosArray = JSONArray()
             for (step in combo.pasos) {
@@ -108,6 +110,9 @@ object SecuenciaConfigManager {
                 if (comboObj.has("icono")) {
                     combo.icono = comboObj.getString("icono")
                 }
+                if (comboObj.has("fraseVozActivadora")) {
+                    combo.fraseVozActivadora = comboObj.getString("fraseVozActivadora")
+                }
                 if (comboObj.has("pasos")) {
                     val pasosArray = comboObj.getJSONArray("pasos")
                     for (j in 0 until pasosArray.length()) {
@@ -155,9 +160,10 @@ object SecuenciaConfigManager {
             nombre = combo.name,
             identificadorIa = 0,
             nivelConfianzaMinimo = 0.5,
-            tipoDisparadorNombre = "COMBO",
+            tipoDisparadorNombre = if (combo.fraseVozActivadora != null && combo.activador == null && combo.pasos.isEmpty()) "VOZ" else "COMBO",
             aparatoId = combo.aparatoId,
-            pasos = pasosList
+            pasos = pasosList,
+            fraseVozActivadora = combo.fraseVozActivadora
         )
     }
 

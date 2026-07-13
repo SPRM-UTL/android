@@ -26,4 +26,10 @@ interface GestureApiService {
 
     @DELETE("api/Dim_Gestos/{id}")
     suspend fun deleteGesto(@Header("Authorization") token: String, @Path("id") id: Int): Response<ResponseBody>
+
+    @GET("api/catalogo_gestos")
+    suspend fun getCatalogoGestos(@Header("Authorization") token: String): Response<List<com.example.android.db.CatalogoGesto>>
+
+    @POST("api/catalogo_gestos/config")
+    suspend fun saveCatalogoGestosConfig(@Header("Authorization") token: String, @Body config: List<com.example.android.db.GuardarConfiguracionGestosDto>): Response<ResponseBody>
 }

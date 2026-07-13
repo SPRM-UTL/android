@@ -12,6 +12,9 @@ interface GestoDao {
     @Query("SELECT * FROM gestos")
     fun getAllGestos(): Flow<List<Gesto>>
 
+    @Query("SELECT * FROM gestos WHERE fraseVozActivadora IS NOT NULL AND fraseVozActivadora != ''")
+    suspend fun getGestosConFraseVoz(): List<Gesto>
+
     @Query("SELECT * FROM gestos WHERE aparatoId = :aparatoId")
     fun getGestosByDispositivo(aparatoId: Int): Flow<List<Gesto>>
 

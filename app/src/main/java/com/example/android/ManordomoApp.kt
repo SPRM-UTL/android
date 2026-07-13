@@ -17,5 +17,7 @@ class ManordomoApp : Application() {
         } else {
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
         }
+
+        com.example.android.voice.TtsManager.inicializar(this)
     }
 }

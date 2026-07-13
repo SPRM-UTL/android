@@ -15,7 +15,6 @@ import retrofit2.http.Part
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
-
 data class ApiResponse<T>(
     val success: Boolean,
     val status: Int,
@@ -146,7 +145,33 @@ interface AuthApiService {
     suspend fun uploadProfileImage(@Header("Authorization") token: String,
                                    @Part imagen: MultipartBody.Part,
                                    @Part("usuarioId") usuarioId: RequestBody): Response<ProfileImageUploadResponse>
+
+    @GET("api/UsuariosApi/{id}/voz-config")
+    suspend fun getVozConfig(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int
+    ): Response<UsuarioVozConfigDto>
+
+    @PUT("api/UsuariosApi/{id}/voz-config")
+    suspend fun updateVozConfig(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int,
+        @Body config: UsuarioVozConfigDto
+    ): Response<ResponseBody>
 }
+
+data class UsuarioVozConfigDto(
+    @com.google.gson.annotations.SerializedName("controlVozActivado")
+    val controlVozActivado: Boolean,
+    @com.google.gson.annotations.SerializedName("confirmacionHabladaActivada")
+    val confirmacionHabladaActivada: Boolean,
+    @com.google.gson.annotations.SerializedName("vozTipoSeleccionado")
+    val vozTipoSeleccionado: String?,
+    @com.google.gson.annotations.SerializedName("vozVelocidad")
+    val vozVelocidad: Float?,
+    @com.google.gson.annotations.SerializedName("vozIdioma")
+    val vozIdioma: String?
+)
 
 
 
