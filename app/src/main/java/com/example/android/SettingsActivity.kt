@@ -1,6 +1,10 @@
 package com.example.android
 
+import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageButton
@@ -8,13 +12,12 @@ import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricManager
-import androidx.compose.material3.Snackbar
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.example.android.view.Snackbars
-import com.example.android.view.cambiarColorStatusBar
 import com.google.android.material.switchmaterial.SwitchMaterial
 
 class SettingsActivity : AppCompatActivity() {
@@ -32,9 +35,10 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        window.navigationBarColor = Color.TRANSPARENT
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = true
 
         setContentView(R.layout.activity_settings)
@@ -45,7 +49,7 @@ class SettingsActivity : AppCompatActivity() {
         ViewCompat.setOnApplyWindowInsetsListener(mainSettings) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-            
+
             v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom + ime.bottom)
             val cardBack = findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardBack)
             cardBack?.getChildAt(0)?.setPadding(0, systemBars.top, 0, 0)
@@ -55,68 +59,100 @@ class SettingsActivity : AppCompatActivity() {
         findViewById<ImageButton>(R.id.btnBack).setOnClickListener {
             finish()
         }
+
         inicializarVistas()
+        configurarEstilosDinamicosSwitches()
         configurarOpciones()
     }
 
     private fun inicializarVistas(){
-        vistaRaiz          = findViewById(android.R.id.content)
+        vistaRaiz = findViewById(android.R.id.content)
         sharedPref = getSharedPreferences("SesionApp", MODE_PRIVATE)
 
-        swNotif = findViewById<SwitchMaterial>(R.id.switchNotifications)
-        swDark = findViewById<SwitchMaterial>(R.id.switchDarkMode)
-        swBio = findViewById<SwitchMaterial>(R.id.switchBiometric)
-        containerBio = findViewById<View>(R.id.containerBiometric)
+        swNotif = findViewById(R.id.switchNotifications)
+        swDark = findViewById(R.id.switchDarkMode)
+        swBio = findViewById(R.id.switchBiometric)
+        containerBio = findViewById(R.id.containerBiometric)
 
         biometricManager = BiometricManager.from(this)
         val authenticators = BiometricManager.Authenticators.BIOMETRIC_STRONG or
-                            BiometricManager.Authenticators.BIOMETRIC_WEAK
+                BiometricManager.Authenticators.BIOMETRIC_WEAK
 
         biometriaDisponible = biometricManager.canAuthenticate(authenticators) == BiometricManager.BIOMETRIC_SUCCESS
-
     }
 
-    private fun configurarOpciones() {
+    private fun configurarEstilosDinamicosSwitches() {
+        val tealPrimary = ContextCompat.getColor(this, R.color.teal_primary)
+        val grisInactivo = Color.parseColor("#757575")
+        val trackActivo = Color.parseColor("#80008080")
+        val trackInactivo = Color.parseColor("#E0E0E0")
 
-        if (biometriaDisponible) {
-            containerBio.visibility = View.VISIBLE
-            val bioHabilitada = sharedPref.getBoolean("biometricEnabled", true)
-            swBio.isChecked = bioHabilitada
-        } else {
-            containerBio.visibility = View.GONE
-            swBio.isChecked = false
-            swBio.isEnabled = false
+        val thumbStates = ColorStateList(
+            arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf(-android.R.attr.state_checked)),
+            intArrayOf(tealPrimary, grisInactivo)
+        )
+
+        val trackStates = ColorStateList(
+            arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf(-android.R.attr.state_checked)),
+            intArrayOf(trackActivo, trackInactivo)
+        )
+
+        val switches = listOf(swNotif, swDark, swBio)
+        switches.forEach { switch ->
+            switch.thumbTintList = thumbStates
+            switch.trackTintList = trackStates
         }
 
         swNotif.setOnCheckedChangeListener { _, isChecked ->
+            swNotif.text = if (isChecked) "Notificaciones: Activadas" else "Notificaciones: Desactivadas"
             val msg = if (isChecked) "Notificaciones activadas" else "Notificaciones desactivadas"
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
         }
 
-        swDark.setOnCheckedChangeListener { _, _ ->
-            Toast.makeText(this, "Modo oscuro próximamente", Toast.LENGTH_SHORT).show()
-            swDark.isChecked = false
+        // Corrección del Modo Oscuro (Próximamente) sin alterar estados ficticios
+        swDark.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                Toast.makeText(this, "Modo oscuro próximamente", Toast.LENGTH_SHORT).show()
+                swDark.post {
+                    swDark.isChecked = false
+                }
+            }
+            swDark.text = "Modo Oscuro (Próximamente)"
         }
 
         swBio.setOnCheckedChangeListener { _, isChecked ->
+            swBio.text = if (isChecked) "Entrada Biométrica: Activada" else "Entrada Biométrica: Desactivada"
             sharedPref.edit().putBoolean("biometricEnabled", isChecked).apply()
             val msg = if (isChecked) "Biometría habilitada" else "Biometría inhabilitada"
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun configurarOpciones() {
+        if (biometriaDisponible) {
+            containerBio.visibility = View.VISIBLE
+            val bioHabilitada = sharedPref.getBoolean("biometricEnabled", true)
+            swBio.isChecked = bioHabilitada
+            swBio.text = if (bioHabilitada) "Entrada Biométrica: Activada" else "Entrada Biométrica: Desactivada"
+        } else {
+            containerBio.visibility = View.GONE
+            swBio.isChecked = false
+            swBio.isEnabled = false
+            swBio.text = "Entrada Biométrica: No compatible"
+        }
+
+        swNotif.text = if (swNotif.isChecked) "Notificaciones: Activadas" else "Notificaciones: Desactivadas"
+
+        // Inicialización segura del Modo Oscuro
+        swDark.text = "Modo Oscuro (Próximamente)"
+        swDark.isChecked = false
 
         findViewById<View>(R.id.btnAbout).setOnClickListener {
-            if(!biometriaDisponible){
-                Snackbars.error(vistaRaiz,"No es compatible tu dispositivo")
-            }else{
-                Toast.makeText(this, "Manordomo v1.0.2 - Sistema de Control Domótico", Toast.LENGTH_LONG).show()
-            }
-
+            Toast.makeText(this, "Manordomo v1.0.2 - Sistema de Control Domótico", Toast.LENGTH_LONG).show()
         }
 
         findViewById<View>(R.id.btnVoiceConfig).setOnClickListener {
-            startActivity(android.content.Intent(this, com.example.android.voice.VoiceConfigActivity::class.java))
+            startActivity(Intent(this, com.example.android.voice.VoiceConfigActivity::class.java))
         }
     }
-
-
 }

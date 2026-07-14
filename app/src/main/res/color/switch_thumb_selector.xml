@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Estado Activo: Color Teal Primary -->
+    <item android:color="@color/teal_primary" android:state_checked="true" />
+    <!-- Estado Inactivo: Gris Claro -->
+    <item android:color="#757575" android:state_checked="false" />
+</selector>
