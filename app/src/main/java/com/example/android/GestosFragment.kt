@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
@@ -15,12 +16,12 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import com.example.android.ai.AIVisionActivity
-import com.example.android.ai.Combo
 import com.example.android.ai.SecuenciaConfigActivity
 import com.example.android.ai.SecuenciaConfigManager
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import com.example.android.ai.Combo
 import com.example.android.ui.AddGestoAdapter
 import java.util.UUID
 

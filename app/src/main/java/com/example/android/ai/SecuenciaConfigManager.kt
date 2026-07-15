@@ -1,13 +1,24 @@
 package com.example.android.ai
-
 import com.example.android.R
+
 import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
+
 import java.util.UUID
 
-// 🌟 CORREGIDO: Se eliminó la data class Combo que estaba duplicada aquí.
-// Ahora el compilador usará automáticamente la clase definida en 'Combo.kt'.
+data class Combo(
+    var id: String = UUID.randomUUID().toString(),
+    var name: String = "Nuevo Combo",
+    var activador: PasoSecuencia? = null,
+    var pasos: MutableList<PasoSecuencia> = mutableListOf(),
+    var accionVinculada: String? = null,
+    var aparatoId: Int? = null,
+    var accionEncendido: Boolean? = null,
+    var backendGestoId: Int? = null, // ID del registro 'gesto' en el backend (null = aún no sincronizado)
+    var icono: String? = "lucide_star",
+    var fraseVozActivadora: String? = null
+)
 
 object SecuenciaConfigManager {
     private const val PREFS_NAME_BASE = "sequence_prefs_v2"
@@ -142,7 +153,7 @@ object SecuenciaConfigManager {
         combo.pasos.forEach { paso ->
             pasosList.add(com.example.android.db.GestoPaso(orden = order++, esActivador = false, nombreGesto = paso.nombreGesto, manoObjetivo = paso.manoObjetivo.name, cuadrosRequeridos = paso.cuadrosRequeridos))
         }
-
+        
         return com.example.android.db.Gesto(
             id = combo.backendGestoId ?: 0,
             bkId = 0,
@@ -151,7 +162,6 @@ object SecuenciaConfigManager {
             nivelConfianzaMinimo = 0.5,
             tipoDisparadorNombre = if (combo.fraseVozActivadora != null && combo.activador == null && combo.pasos.isEmpty()) "VOZ" else "COMBO",
             aparatoId = combo.aparatoId,
-            icono = combo.icono, // 🌟 AÑADIDO: Mapea el ícono dinámico aquí también
             pasos = pasosList,
             fraseVozActivadora = combo.fraseVozActivadora
         )
@@ -165,7 +175,7 @@ object SecuenciaConfigManager {
         try {
             val gesto = comboToGesto(combo)
             val service = com.example.android.network.RetrofitClient.gestureService
-
+            
             if (combo.backendGestoId == null || combo.backendGestoId == 0) {
                 // Create
                 val response = service.createGesto("Bearer $token", gesto)

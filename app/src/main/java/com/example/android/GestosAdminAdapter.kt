@@ -4,13 +4,14 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.appcompat.widget.SwitchCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.android.ai.Combo
 
 class GestosAdminAdapter(
     var combos: MutableList<Combo>,
     private val onEditClick: (Combo) -> Unit,
-    private val onLongClick: (Combo) -> Unit
+    private val onLongClick: (Combo) -> Unit // <--- Callback para eliminación
 ) : RecyclerView.Adapter<GestosAdminAdapter.ViewHolder>() {
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -25,6 +26,7 @@ class GestosAdminAdapter(
                 }
             }
 
+            // Evento de click largo para detonar el diálogo estilizado
             itemView.setOnLongClickListener {
                 if (adapterPosition != RecyclerView.NO_POSITION) {
                     onLongClick(combos[adapterPosition])
@@ -42,11 +44,8 @@ class GestosAdminAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val combo = combos[position]
         holder.tvGestoName.text = combo.name
-
-        // 👇 SOLUCIONADO: Mapeado a 'accionVinculada' en español para que coincida con tu Activity
         holder.tvGestoDevice.text = combo.accionVinculada ?: "Sin acción asignada"
 
-        // 👇 SOLUCIONADO: Mapeado a 'icono' en español
         val iconName = combo.icono ?: "lucide_star"
         val context = holder.itemView.context
         val resId = context.resources.getIdentifier(iconName, "drawable", context.packageName)
