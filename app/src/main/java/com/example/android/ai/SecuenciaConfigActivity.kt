@@ -46,7 +46,6 @@ class SecuenciaConfigActivity : AppCompatActivity() {
     private lateinit var comboActual: Combo
     private var comboIndex: Int = -1
 
-    // Launcher existente para Pasos/Activadores con bloqueo estricto de duplicados
     private val wizardLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val data = result.data ?: return@registerForActivityResult
@@ -60,21 +59,19 @@ class SecuenciaConfigActivity : AppCompatActivity() {
 
             when (extraType) {
                 "ACTIVATOR" -> {
-                    // BLOQUEO: Verificar si el gesto que se quiere poner como activador ya está en la lista de pasos
                     val yaExisteEnPasos = adapter.pasos.any { it.nombreGesto.equals(nombreGesto, ignoreCase = true) }
                     if (yaExisteEnPasos) {
                         mostrarAdvertenciaDuplicado(
                             "Gesto Duplicado",
                             "El gesto '$nombreGesto' ya está registrado como un paso en la secuencia de este combo. No se puede usar como activador."
                         )
-                        return@registerForActivityResult // Salir inmediatamente sin guardar nada
+                        return@registerForActivityResult
                     }
 
                     comboActual.activador = newStep
                     updateHeaders()
                 }
                 "STEP" -> {
-                    // BLOQUEO: Verificar si el gesto es igual al activador o si ya existe en los pasos
                     val esIgualAlActivador = comboActual.activador?.nombreGesto.equals(nombreGesto, ignoreCase = true)
                     val yaExisteEnPasos = adapter.pasos.any { it.nombreGesto.equals(nombreGesto, ignoreCase = true) }
 
@@ -83,13 +80,13 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                             "Gesto Duplicado",
                             "Este gesto ya está configurado como el Gesto Activador de este combo y no se puede duplicar."
                         )
-                        return@registerForActivityResult // Detener flujo
+                        return@registerForActivityResult
                     } else if (yaExisteEnPasos) {
                         mostrarAdvertenciaDuplicado(
                             "Paso Duplicado",
                             "El gesto '$nombreGesto' ya forma parte de los pasos de tu secuencia."
                         )
-                        return@registerForActivityResult // Detener flujo
+                        return@registerForActivityResult
                     }
 
                     adapter.pasos.add(newStep)
@@ -99,7 +96,6 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                 "EDIT_STEP" -> {
                     val editIndex = data.getIntExtra("EDIT_INDEX", -1)
                     if (editIndex != -1) {
-                        // Opcional: También podrías validar duplicados al editar, omitiendo el index actual
                         val esIgualAlActivador = comboActual.activador?.nombreGesto.equals(nombreGesto, ignoreCase = true)
                         val yaExisteEnOtrosPasos = adapter.pasos.filterIndexed { idx, _ -> idx != editIndex }
                             .any { it.nombreGesto.equals(nombreGesto, ignoreCase = true) }
@@ -109,7 +105,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                                 "Gesto Duplicado",
                                 "No puedes cambiar el paso al gesto '$nombreGesto' porque ya está en uso en este combo."
                             )
-                            return@registerForActivityResult // Detener flujo sin guardar la edición
+                            return@registerForActivityResult
                         }
 
                         adapter.pasos[editIndex] = newStep
@@ -121,22 +117,19 @@ class SecuenciaConfigActivity : AppCompatActivity() {
         }
     }
 
-    // === LAUNCHER PARA EL WIZARD DE VINCULAR DISPOSITIVO CON BLOQUEO ESTRICTO ===
     private val dispositivoWizardLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val data = result.data ?: return@registerForActivityResult
 
             val dispositivoId = data.getIntExtra("DISPOSITIVO_ID", -1)
             val nombreDispositivo = data.getStringExtra("DISPOSITIVO_NOMBRE") ?: "Dispositivo"
-            val accionTipo = data.getIntExtra("ACCION_TIPO", -1) // 0 = Encender, 1 = Apagar, 2 = Alternar, -1 = Quitar/Ninguna
+            val accionTipo = data.getIntExtra("ACCION_TIPO", -1)
 
             if (dispositivoId == -1 || accionTipo == -1) {
-                // Si el usuario seleccionó "Quitar acción" dentro de su Wizard, permitimos limpiar la selección
                 comboActual.aparatoId = null
                 comboActual.accionEncendido = null
                 comboActual.accionVinculada = null
             } else {
-                // BLOQUEO: Buscar si otro combo diferente ya tiene este mismo aparatoId asignado
                 val comboDuplicado = todosCombos.find { it.id != comboActual.id && it.aparatoId == dispositivoId }
 
                 if (comboDuplicado != null) {
@@ -144,18 +137,16 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                         "Dispositivo en Uso",
                         "El dispositivo '$nombreDispositivo' ya está vinculado al combo '${comboDuplicado.name}'. Asigna un dispositivo diferente."
                     )
-                    return@registerForActivityResult // Detener flujo: NO guarda el aparatoId ni actualiza nada
+                    return@registerForActivityResult
                 }
 
-                // Si pasa la validación con éxito, se asigna
                 Toast.makeText(this, "Dispositivo '$nombreDispositivo' asignado con éxito", Toast.LENGTH_SHORT).show()
 
-                // Asignar los valores devueltos por el Wizard
                 comboActual.aparatoId = dispositivoId
                 comboActual.accionEncendido = when (accionTipo) {
                     0 -> true
                     1 -> false
-                    else -> null // Alternar estado
+                    else -> null
                 }
                 val verbo = when (accionTipo) {
                     0 -> "Encender"
@@ -360,8 +351,6 @@ class SecuenciaConfigActivity : AppCompatActivity() {
             bottomSheetDialog.show()
         }
 
-        val ivComboIcon = findViewById<android.widget.ImageView>(R.id.ivComboIcon)
-
         val availableIcons = listOf(
             "lucide_lightbulb", "lucide_tv", "lucide_music", "lucide_fan", "lucide_zap",
             "lucide_home", "lucide_door_open", "lucide_door_closed", "lucide_lock", "lucide_unlock",
@@ -437,14 +426,9 @@ class SecuenciaConfigActivity : AppCompatActivity() {
             showActionSelectionDialog()
         }
 
-        // ==========================================================
-        // BOTÓN GUARDAR CON FILTROS DE DUPLICADOS INTEGRADOS
-        // ==========================================================
         btnSave.setOnClickListener {
-            // 1. Obtener todos los nombres de gestos en la secuencia
             val nombresPasos = comboActual.pasos.map { it.nombreGesto.trim().lowercase() }
 
-            // 2. VALIDACIÓN A: Verificar duplicados dentro de la secuencia de pasos
             val pasosDuplicados = nombresPasos.groupBy { it }.filter { it.value.size > 1 }.keys
             if (pasosDuplicados.isNotEmpty()) {
                 val gestoRepetidoOriginal = comboActual.pasos.find {
@@ -455,10 +439,9 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                     "Secuencia con Duplicados",
                     "El gesto '$gestoRepetidoOriginal' está repetido en la secuencia de este combo. Cada paso de la secuencia debe ser único."
                 )
-                return@setOnClickListener // Detener flujo de guardado
+                return@setOnClickListener
             }
 
-            // 3. VALIDACIÓN B: Verificar si el gesto activador se repite dentro de los pasos
             val activadorNombre = comboActual.activador?.nombreGesto?.trim()?.lowercase()
             if (activadorNombre != null && nombresPasos.contains(activadorNombre)) {
                 val activadorOriginal = comboActual.activador?.nombreGesto ?: "Activador"
@@ -466,10 +449,9 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                     "Gesto Duplicado",
                     "El Gesto Activador '$activadorOriginal' no puede ser parte de los pasos de la secuencia. Remuévelo de la lista de pasos."
                 )
-                return@setOnClickListener // Detener flujo de guardado
+                return@setOnClickListener
             }
 
-            // Si todas las condiciones de unicidad se cumplen con éxito, se guardan los cambios
             SecuenciaConfigManager.saveCombos(this, todosCombos)
             notificarRecargaCombos()
             sincronizarGestoConServidor()
@@ -558,7 +540,6 @@ class SecuenciaConfigActivity : AppCompatActivity() {
         startService(intent)
     }
 
-    // === FUNCIÓN AUXILIAR: Muestra un Alert Dialog elegante de advertencia ===
     private fun mostrarAdvertenciaDuplicado(titulo: String, mensaje: String) {
         com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle(titulo)
@@ -569,10 +550,6 @@ class SecuenciaConfigActivity : AppCompatActivity() {
             .setIcon(android.R.drawable.ic_dialog_alert)
             .show()
     }
-
-    // ==========================================================
-    // SINCRONIZACIÓN CON BACKEND
-    // ==========================================================
 
     private fun sincronizarGestoConServidor() {
         val nombreRepresentativo = comboActual.activador?.nombreGesto
@@ -598,6 +575,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
             nivelConfianzaMinimo = 0.5,
             tipoDisparadorNombre = tipoDisparador,
             aparatoId = comboActual.aparatoId,
+            icono = comboActual.icono, // 🌟 Integrado correctamente aquí
             pasos = pasosList,
             fraseVozActivadora = comboActual.fraseVozActivadora
         )

@@ -1,10 +1,9 @@
 package com.example.android.ai
-import com.example.android.R
 
+import com.example.android.R
 import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
-
 import java.util.UUID
 
 data class Combo(
@@ -15,7 +14,7 @@ data class Combo(
     var accionVinculada: String? = null,
     var aparatoId: Int? = null,
     var accionEncendido: Boolean? = null,
-    var backendGestoId: Int? = null, // ID del registro 'gesto' en el backend (null = aún no sincronizado)
+    var backendGestoId: Int? = null,
     var icono: String? = "lucide_star",
     var fraseVozActivadora: String? = null
 )
@@ -153,7 +152,7 @@ object SecuenciaConfigManager {
         combo.pasos.forEach { paso ->
             pasosList.add(com.example.android.db.GestoPaso(orden = order++, esActivador = false, nombreGesto = paso.nombreGesto, manoObjetivo = paso.manoObjetivo.name, cuadrosRequeridos = paso.cuadrosRequeridos))
         }
-        
+
         return com.example.android.db.Gesto(
             id = combo.backendGestoId ?: 0,
             bkId = 0,
@@ -162,6 +161,7 @@ object SecuenciaConfigManager {
             nivelConfianzaMinimo = 0.5,
             tipoDisparadorNombre = if (combo.fraseVozActivadora != null && combo.activador == null && combo.pasos.isEmpty()) "VOZ" else "COMBO",
             aparatoId = combo.aparatoId,
+            icono = combo.icono, // 🌟 Corregido aquí
             pasos = pasosList,
             fraseVozActivadora = combo.fraseVozActivadora
         )
@@ -175,9 +175,8 @@ object SecuenciaConfigManager {
         try {
             val gesto = comboToGesto(combo)
             val service = com.example.android.network.RetrofitClient.gestureService
-            
+
             if (combo.backendGestoId == null || combo.backendGestoId == 0) {
-                // Create
                 val response = service.createGesto("Bearer $token", gesto)
                 if (response.isSuccessful) {
                     val createdGesto = response.body()?.data
@@ -187,7 +186,6 @@ object SecuenciaConfigManager {
                     }
                 }
             } else {
-                // Update
                 val response = service.updateGesto("Bearer $token", combo.backendGestoId!!, gesto)
                 return response.isSuccessful
             }
