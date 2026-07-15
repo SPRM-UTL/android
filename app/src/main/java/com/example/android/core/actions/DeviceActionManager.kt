@@ -3,9 +3,9 @@ package com.example.android.core.actions
 import android.content.Context
 import android.media.AudioManager
 import android.util.Log
-import com.example.android.core.db.Dispositivo
-import com.example.android.core.network.BluetoothController
-import com.example.android.core.network.RetrofitClient
+import com.example.android.core.db.models.Dispositivo
+import com.example.android.core.network.bluetooth.BluetoothController
+import com.example.android.core.network.client.RetrofitClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

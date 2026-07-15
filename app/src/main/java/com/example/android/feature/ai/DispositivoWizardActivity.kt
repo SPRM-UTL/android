@@ -1,5 +1,5 @@
 package com.example.android.feature.ai
-import com.example.android.core.db.AppDatabase
+import com.example.android.core.db.init.AppDatabase
 
 import android.app.Activity
 import android.content.Intent
@@ -24,7 +24,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.example.android.R
-import com.example.android.core.db.Dispositivo
+import com.example.android.core.db.models.Dispositivo
 import kotlinx.coroutines.launch
 
 class DispositivoWizardActivity : AppCompatActivity() {

@@ -1,10 +1,10 @@
 package com.example.android.feature.ai
-import com.example.android.core.network.RetrofitClient
-import com.example.android.core.network.ApiResponse
-import com.example.android.core.network.ApiHandler
-import com.example.android.core.db.GestoPaso
-import com.example.android.core.db.Dispositivo
-import com.example.android.core.db.AppDatabase
+import com.example.android.core.network.client.RetrofitClient
+import com.example.android.core.network.client.ApiResponse
+import com.example.android.core.network.api.ApiHandler
+import com.example.android.core.db.models.GestoPaso
+import com.example.android.core.db.models.Dispositivo
+import com.example.android.core.db.init.AppDatabase
 import com.example.android.core.ui.adapters.IconPickerAdapter
 
 import com.example.android.R
@@ -30,8 +30,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.android.core.db.Gesto
-import com.example.android.core.db.GestoDetalle
+import com.example.android.core.db.models.Gesto
+import com.example.android.core.db.models.GestoDetalle
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.launch
 
@@ -501,17 +501,17 @@ class SecuenciaConfigActivity : AppCompatActivity() {
         val nombreValido = comboActual.name.ifBlank { nombreRepresentativo }
         val tipoDisparador = if (comboActual.activador != null) "COMBO_SECUENCIA" else "COMBO_LIBRE"
 
-        val pasosList = mutableListOf<com.example.android.core.db.GestoPaso>()
+        val pasosList = mutableListOf<com.example.android.core.db.models.GestoPaso>()
         var order = 1
         var cuadrosTotales = 0
 
         if (comboActual.activador != null) {
             cuadrosTotales += comboActual.activador!!.cuadrosRequeridos
-            pasosList.add(com.example.android.core.db.GestoPaso(orden = order++, esActivador = true, nombreGesto = comboActual.activador!!.nombreGesto, manoObjetivo = comboActual.activador!!.manoObjetivo.name, cuadrosRequeridos = comboActual.activador!!.cuadrosRequeridos))
+            pasosList.add(com.example.android.core.db.models.GestoPaso(orden = order++, esActivador = true, nombreGesto = comboActual.activador!!.nombreGesto, manoObjetivo = comboActual.activador!!.manoObjetivo.name, cuadrosRequeridos = comboActual.activador!!.cuadrosRequeridos))
         }
         comboActual.pasos.forEach { paso ->
             cuadrosTotales += paso.cuadrosRequeridos
-            pasosList.add(com.example.android.core.db.GestoPaso(orden = order++, esActivador = false, nombreGesto = paso.nombreGesto, manoObjetivo = paso.manoObjetivo.name, cuadrosRequeridos = paso.cuadrosRequeridos))
+            pasosList.add(com.example.android.core.db.models.GestoPaso(orden = order++, esActivador = false, nombreGesto = paso.nombreGesto, manoObjetivo = paso.manoObjetivo.name, cuadrosRequeridos = paso.cuadrosRequeridos))
         }
 
         // 👇 CÁLCULO DINÁMICO PARA GESTO DETALLE
@@ -551,7 +551,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                     } else {
                         val updateResp = RetrofitClient.gestureService.updateGesto(bearer, gesto.id, gesto)
                         if (updateResp.isSuccessful) {
-                            retrofit2.Response.success(com.example.android.core.network.ApiResponse(true, 200, gesto))
+                            retrofit2.Response.success(com.example.android.core.network.client.ApiResponse(true, 200, gesto))
                         } else {
                             retrofit2.Response.error(updateResp.code(), updateResp.errorBody()!!)
                         }

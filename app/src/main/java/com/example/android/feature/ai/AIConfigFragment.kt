@@ -1,5 +1,5 @@
 package com.example.android.feature.ai
-import com.example.android.core.network.RetrofitClient
+import com.example.android.core.network.client.RetrofitClient
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -12,8 +12,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.android.R
-import com.example.android.core.db.CatalogoGesto
-import com.example.android.core.db.GuardarConfiguracionGestosDto
+import com.example.android.core.db.models.CatalogoGesto
+import com.example.android.core.db.models.GuardarConfiguracionGestosDto
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

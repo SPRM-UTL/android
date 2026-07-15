@@ -5,7 +5,7 @@ import com.example.android.feature.home.HomeTutorialHelper
 import com.example.android.core.ui.adapters.AddDeviceAdapter
 import com.example.android.feature.ai.SecuenciaConfigManager
 import com.example.android.feature.ai.AIVisionActivity
-import com.example.android.core.db.Dispositivo
+import com.example.android.core.db.models.Dispositivo
 
 import com.example.android.R
 
@@ -33,10 +33,10 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.android.core.db.AppDatabase
-import com.example.android.core.network.ApiHandler
-import com.example.android.core.network.BluetoothController
-import com.example.android.core.network.RetrofitClient
+import com.example.android.core.db.init.AppDatabase
+import com.example.android.core.network.api.ApiHandler
+import com.example.android.core.network.bluetooth.BluetoothController
+import com.example.android.core.network.client.RetrofitClient
 import com.example.android.core.view.Snackbars
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -285,7 +285,7 @@ class HomeFragment : Fragment() {
         )
     }
 
-    private fun eliminarDispositivoDeApi(dispositivo: com.example.android.core.db.Dispositivo) {
+    private fun eliminarDispositivoDeApi(dispositivo: com.example.android.core.db.models.Dispositivo) {
         val sharedPreferences = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
         val token = sharedPreferences.getString("apiToken", null) ?: return
 
@@ -316,7 +316,7 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private suspend fun eliminarDispositivoLocal(dispositivo: com.example.android.core.db.Dispositivo) {
+    private suspend fun eliminarDispositivoLocal(dispositivo: com.example.android.core.db.models.Dispositivo) {
         withContext(Dispatchers.IO) {
             db.dispositivoDao().deleteDispositivoById(dispositivo.id)
         }

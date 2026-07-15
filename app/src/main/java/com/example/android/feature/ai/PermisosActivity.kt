@@ -2,7 +2,7 @@ package com.example.android.feature.ai
 import com.example.android.feature.home.HomeActivity
 import com.example.android.feature.auth.InitialSetupActivity
 import com.example.android.core.view.CustomDialog
-import com.example.android.core.network.RetrofitClient
+import com.example.android.core.network.client.RetrofitClient
 
 import com.example.android.R
 

@@ -1,7 +1,7 @@
 package com.example.android.feature.ai
-import com.example.android.core.network.RetrofitClient
-import com.example.android.core.db.GestoPaso
-import com.example.android.core.db.Gesto
+import com.example.android.core.network.client.RetrofitClient
+import com.example.android.core.db.models.GestoPaso
+import com.example.android.core.db.models.Gesto
 import com.example.android.R
 
 import android.content.Context
@@ -147,17 +147,17 @@ object SecuenciaConfigManager {
         )
     }
 
-    private fun comboToGesto(combo: Combo): com.example.android.core.db.Gesto {
-        val pasosList = mutableListOf<com.example.android.core.db.GestoPaso>()
+    private fun comboToGesto(combo: Combo): com.example.android.core.db.models.Gesto {
+        val pasosList = mutableListOf<com.example.android.core.db.models.GestoPaso>()
         var order = 1
         if (combo.activador != null) {
-            pasosList.add(com.example.android.core.db.GestoPaso(orden = order++, esActivador = true, nombreGesto = combo.activador!!.nombreGesto, manoObjetivo = combo.activador!!.manoObjetivo.name, cuadrosRequeridos = combo.activador!!.cuadrosRequeridos))
+            pasosList.add(com.example.android.core.db.models.GestoPaso(orden = order++, esActivador = true, nombreGesto = combo.activador!!.nombreGesto, manoObjetivo = combo.activador!!.manoObjetivo.name, cuadrosRequeridos = combo.activador!!.cuadrosRequeridos))
         }
         combo.pasos.forEach { paso ->
-            pasosList.add(com.example.android.core.db.GestoPaso(orden = order++, esActivador = false, nombreGesto = paso.nombreGesto, manoObjetivo = paso.manoObjetivo.name, cuadrosRequeridos = paso.cuadrosRequeridos))
+            pasosList.add(com.example.android.core.db.models.GestoPaso(orden = order++, esActivador = false, nombreGesto = paso.nombreGesto, manoObjetivo = paso.manoObjetivo.name, cuadrosRequeridos = paso.cuadrosRequeridos))
         }
         
-        return com.example.android.core.db.Gesto(
+        return com.example.android.core.db.models.Gesto(
             id = combo.backendGestoId ?: 0,
             bkId = 0,
             nombre = combo.name,

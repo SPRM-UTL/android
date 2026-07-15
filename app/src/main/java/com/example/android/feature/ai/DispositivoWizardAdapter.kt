@@ -11,7 +11,7 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.android.R
-import com.example.android.core.db.Dispositivo
+import com.example.android.core.db.models.Dispositivo
 
 class DispositivoWizardAdapter(
     private val items: List<Dispositivo>,

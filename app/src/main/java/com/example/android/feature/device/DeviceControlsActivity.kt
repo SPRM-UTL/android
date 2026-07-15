@@ -17,11 +17,11 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
-import com.example.android.core.db.AppDatabase
-import com.example.android.core.db.Dispositivo
+import com.example.android.core.db.init.AppDatabase
+import com.example.android.core.db.models.Dispositivo
 import com.example.android.core.actions.DeviceActionManager
-import com.example.android.core.network.BluetoothController
-import com.example.android.core.network.RetrofitClient
+import com.example.android.core.network.bluetooth.BluetoothController
+import com.example.android.core.network.client.RetrofitClient
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.slider.Slider
 import com.google.android.material.switchmaterial.SwitchMaterial

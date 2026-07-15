@@ -1,5 +1,5 @@
 package com.example.android.feature.network_config
-import com.example.android.core.db.Dispositivo
+import com.example.android.core.db.models.Dispositivo
 
 import com.example.android.R
 
@@ -25,8 +25,8 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
-import com.example.android.core.network.BluetoothController
-import com.example.android.core.network.BluetoothScanManager
+import com.example.android.core.network.bluetooth.BluetoothController
+import com.example.android.core.network.bluetooth.BluetoothScanManager
 import com.example.android.core.view.Snackbars
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import kotlinx.coroutines.Dispatchers

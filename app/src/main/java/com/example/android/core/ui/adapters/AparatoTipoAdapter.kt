@@ -8,7 +8,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.example.android.core.db.AparatoTipo
+import com.example.android.core.db.models.AparatoTipo
 
 class AparatoTipoAdapter(
     private var tipos: List<AparatoTipo>,

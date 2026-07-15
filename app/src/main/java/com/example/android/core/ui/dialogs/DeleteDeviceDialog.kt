@@ -2,7 +2,7 @@ package com.example.android.core.ui.dialogs
 
 import androidx.fragment.app.Fragment
 import com.example.android.R
-import com.example.android.core.db.Dispositivo
+import com.example.android.core.db.models.Dispositivo
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class DeleteDeviceDialog(

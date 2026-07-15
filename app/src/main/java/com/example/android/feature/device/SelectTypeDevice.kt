@@ -1,6 +1,6 @@
 package com.example.android.feature.device
-import com.example.android.core.db.Dispositivo
-import com.example.android.core.db.AparatoTipo
+import com.example.android.core.db.models.Dispositivo
+import com.example.android.core.db.models.AparatoTipo
 
 import com.example.android.R
 
@@ -20,8 +20,8 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.android.core.network.ApiHandler
-import com.example.android.core.network.RetrofitClient
+import com.example.android.core.network.api.ApiHandler
+import com.example.android.core.network.client.RetrofitClient
 import kotlinx.coroutines.launch
 import android.text.Editable
 import android.text.TextWatcher
@@ -35,7 +35,7 @@ class SelectTypeDevice : AppCompatActivity() {
     private lateinit var adapter: AparatoTipoAdapter
     private lateinit var recyclerView: RecyclerView
 
-    private var allTipos: List<com.example.android.core.db.AparatoTipo> = emptyList()
+    private var allTipos: List<com.example.android.core.db.models.AparatoTipo> = emptyList()
     private var isExpanded = false
     private var filterState = 0
 
@@ -167,7 +167,7 @@ class SelectTypeDevice : AppCompatActivity() {
         cargarTiposDispositivos()
     }
 
-    private fun lanzarEspConfig(tipo: com.example.android.core.db.AparatoTipo, metodoVinculacion: String) {
+    private fun lanzarEspConfig(tipo: com.example.android.core.db.models.AparatoTipo, metodoVinculacion: String) {
         val intent = Intent(this, EspConfigActivity::class.java).apply {
             putExtra(EspConfigActivity.EXTRA_TIPO_DISPOSITIVO, tipo.nombreTipo)
             putExtra(EspConfigActivity.EXTRA_ICONO_DISPOSITIVO, tipo.icono)
@@ -177,7 +177,7 @@ class SelectTypeDevice : AppCompatActivity() {
         espConfigLauncher.launch(intent)
     }
 
-    private fun lanzarActivityWifi(tipo: com.example.android.core.db.AparatoTipo) {
+    private fun lanzarActivityWifi(tipo: com.example.android.core.db.models.AparatoTipo) {
         val intent = Intent(this, AddDeviceWifiActivity::class.java)
         if (!tipo.esAsistente) {
             intent.putExtra(AddDeviceWifiActivity.EXTRA_FILTRO_TIPO, tipo.nombreTipo)
@@ -187,7 +187,7 @@ class SelectTypeDevice : AppCompatActivity() {
         wifiConfigLauncher.launch(intent)
     }
 
-    private fun lanzarActivityBluetooth(tipo: com.example.android.core.db.AparatoTipo?) {
+    private fun lanzarActivityBluetooth(tipo: com.example.android.core.db.models.AparatoTipo?) {
         val intent = Intent(this, AddDeviceBluetoothActivity::class.java)
         if (tipo != null) {
             intent.putExtra(AddDeviceBluetoothActivity.EXTRA_FILTRO_TIPO, tipo.nombreTipo)
@@ -197,7 +197,7 @@ class SelectTypeDevice : AppCompatActivity() {
         bluetoothConfigLauncher.launch(intent)
     }
 
-    private fun mostrarBottomSheetEleccion(tipo: com.example.android.core.db.AparatoTipo) {
+    private fun mostrarBottomSheetEleccion(tipo: com.example.android.core.db.models.AparatoTipo) {
         val bottomSheet = BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.bottom_sheet_connection_type, null)
 
@@ -222,7 +222,7 @@ class SelectTypeDevice : AppCompatActivity() {
         bottomSheet.show()
     }
 
-    private fun mostrarBottomSheetVinculacion(tipo: com.example.android.core.db.AparatoTipo) {
+    private fun mostrarBottomSheetVinculacion(tipo: com.example.android.core.db.models.AparatoTipo) {
         val bottomSheet = BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.bottom_sheet_pairing_type, null)
 

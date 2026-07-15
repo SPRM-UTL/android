@@ -1,6 +1,6 @@
 package com.example.android.feature.device
 import com.example.android.core.ui.adapters.BluetoothDeviceAdapter
-import com.example.android.core.db.AparatoTipo
+import com.example.android.core.db.models.AparatoTipo
 
 import com.example.android.R
 
@@ -27,12 +27,12 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.android.core.network.BluetoothScanManager
-import com.example.android.core.network.ResultadoDispositivoBt
-import com.example.android.core.db.AppDatabase
-import com.example.android.core.db.Dispositivo
-import com.example.android.core.network.ApiHandler
-import com.example.android.core.network.RetrofitClient
+import com.example.android.core.network.bluetooth.BluetoothScanManager
+import com.example.android.core.network.bluetooth.ResultadoDispositivoBt
+import com.example.android.core.db.init.AppDatabase
+import com.example.android.core.db.models.Dispositivo
+import com.example.android.core.network.api.ApiHandler
+import com.example.android.core.network.client.RetrofitClient
 import android.graphics.drawable.ColorDrawable
 import android.graphics.Color
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -63,7 +63,7 @@ class AddDeviceBluetoothActivity : AppCompatActivity() {
     private var currentDispositivoAProvisionar: ResultadoDispositivoBt? = null
 
     private lateinit var db: AppDatabase
-    private var tiposDisponibles: List<com.example.android.core.db.AparatoTipo> = emptyList()
+    private var tiposDisponibles: List<com.example.android.core.db.models.AparatoTipo> = emptyList()
     private var filtroTipo: String? = null
     private var filtroIcono: String? = null
     private var filtroPalabras: String? = null

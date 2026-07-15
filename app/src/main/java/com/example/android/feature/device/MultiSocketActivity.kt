@@ -1,5 +1,5 @@
 package com.example.android.feature.device
-import com.example.android.core.network.AparatoEstadoResponse
+import com.example.android.core.network.api.AparatoEstadoResponse
 
 import com.example.android.R
 
@@ -19,9 +19,9 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
-import com.example.android.core.db.AppDatabase
-import com.example.android.core.db.Dispositivo
-import com.example.android.core.network.RetrofitClient
+import com.example.android.core.db.init.AppDatabase
+import com.example.android.core.db.models.Dispositivo
+import com.example.android.core.network.client.RetrofitClient
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.switchmaterial.SwitchMaterial
 import kotlinx.coroutines.Dispatchers
@@ -208,7 +208,7 @@ class MultiSocketActivity : AppCompatActivity() {
         }
     }
 
-    private fun actualizarUIConEstado(estado: com.example.android.core.network.AparatoEstadoResponse) {
+    private fun actualizarUIConEstado(estado: com.example.android.core.network.api.AparatoEstadoResponse) {
         isLoadingState = true
 
         switchPower1.isChecked = estado.estadoEncendido == true

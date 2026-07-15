@@ -1,6 +1,6 @@
 package com.example.android.feature.ai
 
-import com.example.android.core.db.Gesto
+import com.example.android.core.db.models.Gesto
 
 class GestoTracker(val gesto: Gesto, private val onGestoDetected: (Gesto) -> Unit) {
     var framesHeld = 0

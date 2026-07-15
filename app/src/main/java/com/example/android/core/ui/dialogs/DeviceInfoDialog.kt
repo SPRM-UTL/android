@@ -17,8 +17,8 @@ import com.example.android.feature.device.EditDeviceFragment
 import com.example.android.feature.device.MultiSocketActivity
 import com.example.android.R
 import com.example.android.feature.device.DeviceConsumptionFragment
-import com.example.android.core.db.Dispositivo
-import com.example.android.core.network.RetrofitClient
+import com.example.android.core.db.models.Dispositivo
+import com.example.android.core.network.client.RetrofitClient
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.launch

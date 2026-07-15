@@ -1,6 +1,6 @@
 package com.example.android.core.ui.adapters
 import com.example.android.core.ui.adapters.BluetoothDeviceAdapter
-import com.example.android.core.network.ResultadoDispositivoBt
+import com.example.android.core.network.bluetooth.ResultadoDispositivoBt
 
 import android.view.LayoutInflater
 import android.view.View

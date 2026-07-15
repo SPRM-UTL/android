@@ -1,7 +1,7 @@
 package com.example.android.feature.ai
 import com.example.android.core.ui.adapters.WizardSelectionAdapter
 import com.example.android.core.ui.adapters.GestureDropdownAdapter
-import com.example.android.core.db.Gesto
+import com.example.android.core.db.models.Gesto
 
 
 import com.example.android.R

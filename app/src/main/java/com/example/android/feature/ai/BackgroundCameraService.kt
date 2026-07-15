@@ -1,6 +1,6 @@
 package com.example.android.feature.ai
 import com.example.android.feature.home.HomeActivity
-import com.example.android.core.db.Gesto
+import com.example.android.core.db.models.Gesto
 import com.example.android.core.actions.GestureActionExecutor
 import com.example.android.R
 
@@ -34,7 +34,7 @@ import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import com.example.android.core.network.MjpegStreamReader
+import com.example.android.core.network.stream.MjpegStreamReader
 
 class BackgroundCameraService : LifecycleService() {
 

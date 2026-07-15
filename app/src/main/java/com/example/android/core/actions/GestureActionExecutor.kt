@@ -1,11 +1,11 @@
 package com.example.android.core.actions
-import com.example.android.core.db.Gesto
+import com.example.android.core.db.models.Gesto
 
 import android.content.Context
 import android.util.Log
 import com.example.android.feature.ai.Combo
-import com.example.android.core.db.AppDatabase
-import com.example.android.core.network.RetrofitClient
+import com.example.android.core.db.init.AppDatabase
+import com.example.android.core.network.client.RetrofitClient
 import com.example.android.core.voice.TtsManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -80,7 +80,7 @@ object GestureActionExecutor {
         }
     }
 
-    suspend fun executeVoiceAction(context: Context, gesto: com.example.android.core.db.Gesto): Boolean {
+    suspend fun executeVoiceAction(context: Context, gesto: com.example.android.core.db.models.Gesto): Boolean {
         val aparatoId = gesto.aparatoId
         if (aparatoId == null || aparatoId <= 0) {
             Log.w(TAG, "Gesto de voz '${gesto.nombre}' sin dispositivo vinculado.")

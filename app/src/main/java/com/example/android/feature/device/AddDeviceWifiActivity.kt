@@ -1,7 +1,7 @@
 package com.example.android.feature.device
 import com.example.android.core.ui.adapters.WifiDeviceAdapter
-import com.example.android.core.network.ConfiguracionRedRequest
-import com.example.android.core.db.AparatoTipo
+import com.example.android.core.network.client.ConfiguracionRedRequest
+import com.example.android.core.db.models.AparatoTipo
 
 import com.example.android.R
 
@@ -28,13 +28,13 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.android.core.network.DeviceConnectionManager
-import com.example.android.core.network.SocketClient
-import com.example.android.core.network.WifiScanManager
-import com.example.android.core.db.AppDatabase
-import com.example.android.core.db.Dispositivo
-import com.example.android.core.network.ApiHandler
-import com.example.android.core.network.RetrofitClient
+import com.example.android.core.network.wifi.DeviceConnectionManager
+import com.example.android.core.network.client.SocketClient
+import com.example.android.core.network.wifi.WifiScanManager
+import com.example.android.core.db.init.AppDatabase
+import com.example.android.core.db.models.Dispositivo
+import com.example.android.core.network.api.ApiHandler
+import com.example.android.core.network.client.RetrofitClient
 import android.graphics.drawable.ColorDrawable
 import android.widget.ArrayAdapter
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -76,7 +76,7 @@ class AddDeviceWifiActivity : AppCompatActivity() {
     private var currentDispositivoAProvisionar: ScanResult? = null
 
     private lateinit var db: AppDatabase
-    private var tiposDisponibles: List<com.example.android.core.db.AparatoTipo> = emptyList()
+    private var tiposDisponibles: List<com.example.android.core.db.models.AparatoTipo> = emptyList()
     private var filtroTipo: String? = null
     private var filtroIcono: String? = null
     private var filtroPalabras: String? = null
@@ -739,7 +739,7 @@ class AddDeviceWifiActivity : AppCompatActivity() {
             activity = this@AddDeviceWifiActivity,
             showLoading = false,
             apiCall = {
-                val config = com.example.android.core.network.ConfiguracionRedRequest(
+                val config = com.example.android.core.network.client.ConfiguracionRedRequest(
                     ipAddress = ip,
                     macAddress = mac,
                     hostName = null,

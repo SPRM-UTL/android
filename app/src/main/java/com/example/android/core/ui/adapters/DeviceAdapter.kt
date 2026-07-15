@@ -1,7 +1,7 @@
 package com.example.android.core.ui.adapters
 import com.example.android.core.ui.adapters.DeviceAdapter
-import com.example.android.core.network.BluetoothController
-import com.example.android.core.db.Dispositivo
+import com.example.android.core.network.bluetooth.BluetoothController
+import com.example.android.core.db.models.Dispositivo
 
 import android.view.LayoutInflater
 import android.view.View
@@ -77,8 +77,8 @@ class DeviceAdapter(
                     !dispositivo.ipAddress.isNullOrBlank()
                 }
                 "BLUETOOTH" -> {
-                    com.example.android.core.network.BluetoothController.isConnected &&
-                    com.example.android.core.network.BluetoothController.connectedMac.equals(dispositivo.macBluetooth, ignoreCase = true)
+                    com.example.android.core.network.bluetooth.BluetoothController.isConnected &&
+                    com.example.android.core.network.bluetooth.BluetoothController.connectedMac.equals(dispositivo.macBluetooth, ignoreCase = true)
                 }
                 else -> {
                     connectedMacs.any {

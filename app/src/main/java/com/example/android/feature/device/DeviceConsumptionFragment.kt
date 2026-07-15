@@ -16,8 +16,8 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.android.core.network.AparatoConsumoPuntoResponse
-import com.example.android.core.network.RetrofitClient
+import com.example.android.core.network.api.AparatoConsumoPuntoResponse
+import com.example.android.core.network.client.RetrofitClient
 import com.github.mikephil.charting.charts.BarChart
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.BarData

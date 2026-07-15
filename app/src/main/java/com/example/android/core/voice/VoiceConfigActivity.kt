@@ -19,8 +19,8 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.android.R
-import com.example.android.core.network.RetrofitClient
-import com.example.android.core.network.UsuarioVozConfigDto
+import com.example.android.core.network.client.RetrofitClient
+import com.example.android.core.network.client.UsuarioVozConfigDto
 import com.example.android.core.view.CustomDialog
 import com.example.android.core.view.Snackbars
 import com.google.android.material.button.MaterialButton

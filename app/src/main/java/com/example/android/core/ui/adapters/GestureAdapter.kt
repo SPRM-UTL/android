@@ -1,7 +1,7 @@
 package com.example.android.core.ui.adapters
 import com.example.android.core.ui.adapters.GestureAdapter
-import com.example.android.core.db.Gesto
-import com.example.android.core.db.Dispositivo
+import com.example.android.core.db.models.Gesto
+import com.example.android.core.db.models.Dispositivo
 
 import android.view.LayoutInflater
 import android.view.View

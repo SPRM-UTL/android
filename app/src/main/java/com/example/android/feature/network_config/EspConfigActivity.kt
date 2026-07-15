@@ -24,11 +24,11 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
-import com.example.android.core.db.AppDatabase
-import com.example.android.core.db.Dispositivo
-import com.example.android.core.network.ApiHandler
-import com.example.android.core.network.ConfiguracionRedRequest
-import com.example.android.core.network.RetrofitClient
+import com.example.android.core.db.init.AppDatabase
+import com.example.android.core.db.models.Dispositivo
+import com.example.android.core.network.api.ApiHandler
+import com.example.android.core.network.client.ConfiguracionRedRequest
+import com.example.android.core.network.client.RetrofitClient
 import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock

@@ -25,9 +25,9 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
-import com.example.android.core.db.AppDatabase
-import com.example.android.core.network.LoginRequest
-import com.example.android.core.network.RetrofitClient
+import com.example.android.core.db.init.AppDatabase
+import com.example.android.core.network.client.LoginRequest
+import com.example.android.core.network.client.RetrofitClient
 import com.example.android.core.view.CustomDialog
 import com.example.android.core.view.Snackbars
 import com.google.android.material.button.MaterialButton

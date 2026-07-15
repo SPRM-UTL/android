@@ -16,9 +16,9 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
-import com.example.android.core.network.ApiHandler
-import com.example.android.core.network.RegisterRequest
-import com.example.android.core.network.RetrofitClient
+import com.example.android.core.network.api.ApiHandler
+import com.example.android.core.network.client.RegisterRequest
+import com.example.android.core.network.client.RetrofitClient
 import com.example.android.core.view.CustomDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText

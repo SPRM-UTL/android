@@ -7,7 +7,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.android.R
-import com.example.android.core.db.CatalogoGesto
+import com.example.android.core.db.models.CatalogoGesto
 import com.google.android.material.materialswitch.MaterialSwitch
 
 class CatalogoGestoAdapter(

@@ -14,11 +14,11 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import com.example.android.core.db.AppDatabase
-import com.example.android.core.db.Dispositivo
-import com.example.android.core.db.Habitacion
-import com.example.android.core.network.ApiHandler
-import com.example.android.core.network.RetrofitClient
+import com.example.android.core.db.init.AppDatabase
+import com.example.android.core.db.models.Dispositivo
+import com.example.android.core.db.models.Habitacion
+import com.example.android.core.network.api.ApiHandler
+import com.example.android.core.network.client.RetrofitClient
 import com.example.android.core.view.Snackbars
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.MaterialAutoCompleteTextView

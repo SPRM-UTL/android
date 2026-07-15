@@ -1,10 +1,10 @@
 package com.example.android.feature.device
 import com.example.android.core.ui.adapters.DeviceAdapter
 import com.example.android.core.ui.adapters.BluetoothDeviceAdapter
-import com.example.android.core.network.SocketClient
-import com.example.android.core.network.ApiResponse
-import com.example.android.core.network.EstadoLocalRequest
-import com.example.android.core.network.BluetoothController
+import com.example.android.core.network.client.SocketClient
+import com.example.android.core.network.client.ApiResponse
+import com.example.android.core.network.api.EstadoLocalRequest
+import com.example.android.core.network.bluetooth.BluetoothController
 
 import com.example.android.R
 
@@ -32,11 +32,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.android.core.db.AppDatabase
-import com.example.android.core.db.Dispositivo
-import com.example.android.core.network.ApiHandler
-import com.example.android.core.network.BluetoothScanManager
-import com.example.android.core.network.RetrofitClient
+import com.example.android.core.db.init.AppDatabase
+import com.example.android.core.db.models.Dispositivo
+import com.example.android.core.network.api.ApiHandler
+import com.example.android.core.network.bluetooth.BluetoothScanManager
+import com.example.android.core.network.client.RetrofitClient
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
@@ -53,8 +53,8 @@ class DeviceActivity : AppCompatActivity() {
     private lateinit var baseDatos: AppDatabase
     private lateinit var gestorBluetooth: BluetoothScanManager
 
-    private val socketClient by lazy { com.example.android.core.network.SocketClient { Log.d("SocketClient", it) } }
-    private val bluetoothController by lazy { com.example.android.core.network.BluetoothController }
+    private val socketClient by lazy { com.example.android.core.network.client.SocketClient { Log.d("SocketClient", it) } }
+    private val bluetoothController by lazy { com.example.android.core.network.bluetooth.BluetoothController }
 
     private var accionPendienteBt: (() -> Unit)? = null
 
@@ -291,7 +291,7 @@ class DeviceActivity : AppCompatActivity() {
                 val preferencias = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
                 val token = preferencias.getString("apiToken", "") ?: ""
                 
-                val request = com.example.android.core.network.EstadoLocalRequest(encendido)
+                val request = com.example.android.core.network.api.EstadoLocalRequest(encendido)
                 val response = withContext(Dispatchers.IO) {
                     RetrofitClient.deviceService.setEstadoLocal("Bearer $token", dispositivo.id, request)
                 }
@@ -498,7 +498,7 @@ class DeviceActivity : AppCompatActivity() {
                     
                     if (esActualizacion) {
                         RetrofitClient.deviceService.updateDispositivo(encabezado, dispositivo.id, dispositivo)
-                        retrofit2.Response.success(com.example.android.core.network.ApiResponse(true, 200, dispositivo))
+                        retrofit2.Response.success(com.example.android.core.network.client.ApiResponse(true, 200, dispositivo))
                     } else {
                         RetrofitClient.deviceService.createDispositivo(encabezado, dispositivo)
                     }

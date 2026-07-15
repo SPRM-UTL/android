@@ -1,8 +1,8 @@
 package com.example.android.core.voice
 
 import android.content.Context
-import com.example.android.core.db.AppDatabase
-import com.example.android.core.db.Gesto
+import com.example.android.core.db.init.AppDatabase
+import com.example.android.core.db.models.Gesto
 import java.text.Normalizer
 
 object VoiceCommandMatcher {

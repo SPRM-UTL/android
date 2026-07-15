@@ -14,8 +14,8 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.Toast
 import coil.load
-import com.example.android.core.network.ApiHandler
-import com.example.android.core.network.RetrofitClient
+import com.example.android.core.network.api.ApiHandler
+import com.example.android.core.network.client.RetrofitClient
 import com.example.android.core.view.Snackbars
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import kotlinx.coroutines.launch

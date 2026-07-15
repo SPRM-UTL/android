@@ -1,11 +1,11 @@
 package com.example.android.feature.home
 import com.example.android.feature.home.LugaresActivity
 import com.example.android.core.ui.adapters.HabitacionesEditAdapter
-import com.example.android.core.network.RetrofitClient
-import com.example.android.core.network.ApiHandler
-import com.example.android.core.db.Habitacion
-import com.example.android.core.db.Casa
-import com.example.android.core.db.AppDatabase
+import com.example.android.core.network.client.RetrofitClient
+import com.example.android.core.network.api.ApiHandler
+import com.example.android.core.db.models.Habitacion
+import com.example.android.core.db.models.Casa
+import com.example.android.core.db.init.AppDatabase
 
 import android.content.Context
 import android.os.Bundle

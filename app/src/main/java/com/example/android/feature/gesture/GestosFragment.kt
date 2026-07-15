@@ -1,5 +1,5 @@
 package com.example.android.feature.gesture
-import com.example.android.core.db.Gesto
+import com.example.android.core.db.models.Gesto
 
 import com.example.android.R
 

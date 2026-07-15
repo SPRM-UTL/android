@@ -1,6 +1,6 @@
 package com.example.android.core.ui.adapters
 import com.example.android.core.ui.adapters.HabitacionesEditAdapter
-import com.example.android.core.db.Habitacion
+import com.example.android.core.db.models.Habitacion
 
 import android.view.LayoutInflater
 import android.view.View
