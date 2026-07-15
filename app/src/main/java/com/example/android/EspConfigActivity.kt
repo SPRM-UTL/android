@@ -33,6 +33,7 @@ import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.*
@@ -876,14 +877,18 @@ class EspConfigActivity : AppCompatActivity() {
         lifecycleScope.launch {
             asegurarDispositivoRegistrado(ip)
 
-            val mensaje = if (ip.isNotBlank()) {
-                "Dispositivo configurado y registrado (IP: $ip)"
+            if (dispositivoGuardadoEnBd) {
+                val mensaje = if (ip.isNotBlank()) {
+                    "Dispositivo configurado y registrado (IP: $ip)"
+                } else {
+                    "Dispositivo configurado y registrado"
+                }
+                mostrarSnackbar(mensaje, false)
+                setResult(RESULT_OK)
+                finish()
             } else {
-                "Dispositivo configurado y registrado"
+                mostrarSnackbar("No se pudo registrar el dispositivo en la nube", true)
             }
-            mostrarSnackbar(mensaje, false)
-            setResult(RESULT_OK)
-            finish()
         }
     }
 
@@ -913,6 +918,15 @@ class EspConfigActivity : AppCompatActivity() {
 
             val tipo = tipoDispositivo.ifBlank { "ESP32 Socket" }
             val nombre = connectedEspName.ifBlank { tipo }
+            val metodoVinculacion = intent.getStringExtra("EXTRA_METODO_VINCULACION") ?: "ESP32"
+
+            val habitacionDefault = withContext(Dispatchers.IO) {
+                val casas = db.casaDao().getAllCasas().firstOrNull() ?: emptyList()
+                val casaId = casas.firstOrNull()?.id ?: return@withContext null
+                val habitaciones = db.habitacionDao().getHabitacionesByCasa(casaId).firstOrNull() ?: emptyList()
+                habitaciones.firstOrNull()
+            }
+
             val dispositivo = Dispositivo(
                 id = 0,
                 nombre = nombre,
@@ -920,8 +934,11 @@ class EspConfigActivity : AppCompatActivity() {
                 accion = null,
                 comandoBluetooth = null,
                 icono = iconoDispositivo,
+                metodoVinculacion = metodoVinculacion,
                 macBluetooth = connectedEspMac,
                 nombreBluetooth = nombre,
+                skHabitacionId = habitacionDefault?.id,
+                nombreHabitacion = habitacionDefault?.nombre,
                 fechaSincronizacion = null
             )
 
@@ -934,7 +951,7 @@ class EspConfigActivity : AppCompatActivity() {
                 apiCall = { RetrofitClient.deviceService.createDispositivo("Bearer $token", dispositivo) },
                 onSuccess = { response ->
                     val guardado = response.data
-                    if (guardado != null) {
+                    if (response.success && guardado != null) {
                         aparatoIdRegistrado = guardado.id
                         dispositivoGuardadoEnBd = true
                         registrado = true

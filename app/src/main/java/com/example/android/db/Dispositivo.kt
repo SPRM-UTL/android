@@ -25,6 +25,10 @@ data class Dispositivo(
     @SerializedName("icono")
     val icono: String?,
 
+    @SerializedName("metodo_vinculacion")
+    @androidx.room.ColumnInfo(name = "metodo_vinculacion")
+    val metodoVinculacion: String? = null,
+
     @SerializedName("mac_bluetooth")
     @androidx.room.ColumnInfo(name = "mac_bluetooth")
     val macBluetooth: String?,

@@ -35,7 +35,6 @@ class BluetoothScanManager(private val contexto: Context) {
 
     private var alEncontrarDispositivo: ((ResultadoDispositivoBt) -> Unit)? = null
     private var alFinalizarEscaneo: (() -> Unit)? = null
-    private var receptorEventos: BroadcastReceiver? = null
     private var leScanner: BluetoothLeScanner? = null
     private var leScanCallback: ScanCallback? = null
     
@@ -92,52 +91,6 @@ class BluetoothScanManager(private val contexto: Context) {
         }
         handler.postDelayed(timeoutRunnable!!, 15000) // 15 seconds timeout
 
-        val filtro = IntentFilter().apply {
-            addAction(BluetoothDevice.ACTION_FOUND)
-            addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
-        }
-
-        receptorEventos = object : BroadcastReceiver() {
-            @SuppressLint("MissingPermission")
-            override fun onReceive(ctx: Context, intent: Intent) {
-                when (intent.action) {
-                    BluetoothDevice.ACTION_FOUND -> {
-                        val dispositivo: BluetoothDevice? =
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-                                intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
-                            else
-                                @Suppress("DEPRECATION")
-                                intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
-
-                        dispositivo?.let {
-                            val nombre = try { 
-                                it.name ?: "Dispositivo desconocido" 
-                            } catch (e: SecurityException) { 
-                                android.util.Log.w("BluetoothScanManager", "No se pudo obtener el nombre del dispositivo: ${e.message}")
-                                "Dispositivo Protegido" 
-                            }
-                            val mac    = it.address ?: return
-                            this@BluetoothScanManager.alEncontrarDispositivo?.invoke(
-                                ResultadoDispositivoBt(nombre, mac)
-                            )
-                        }
-                    }
-                    BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
-                        timeoutRunnable?.let { handler.removeCallbacks(it) }
-                        detenerEscaneo()
-                        this@BluetoothScanManager.alFinalizarEscaneo?.invoke()
-                    }
-                }
-            }
-        }
-
-        // Registrar con el flag RECEIVER_EXPORTED para compatibilidad con Android 14+
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            contexto.registerReceiver(receptorEventos, filtro, Context.RECEIVER_EXPORTED)
-        } else {
-            contexto.registerReceiver(receptorEventos, filtro)
-        }
-
         if (adaptadorBluetooth?.isDiscovering == true) {
             try {
                 android.util.Log.d("BluetoothScanManager", "Cancelando descubrimiento previo...")
@@ -145,20 +98,6 @@ class BluetoothScanManager(private val contexto: Context) {
             } catch (e: SecurityException) {
                 android.util.Log.e("BluetoothScanManager", "Error de seguridad al cancelar discovery", e)
             }
-        }
-        
-        // Iniciar el descubrimiento. startDiscovery es asíncrono y no bloquea significativamente,
-        // pero lo envolvemos en un bloque seguro.
-        try {
-            android.util.Log.d("BluetoothScanManager", "Iniciando startDiscovery()...")
-            val exito = adaptadorBluetooth?.startDiscovery() ?: false
-            if (!exito) {
-                android.util.Log.e("BluetoothScanManager", "Fallo al iniciar discovery (startDiscovery devolvió false)")
-            }
-        } catch (e: SecurityException) {
-            android.util.Log.e("BluetoothScanManager", "Error de seguridad al iniciar discovery", e)
-        } catch (e: Exception) {
-            android.util.Log.e("BluetoothScanManager", "Error inesperado al iniciar discovery", e)
         }
 
         // Iniciar también escaneo BLE
@@ -170,12 +109,18 @@ class BluetoothScanManager(private val contexto: Context) {
                     override fun onScanResult(callbackType: Int, result: ScanResult?) {
                         val dispositivo = result?.device
                         dispositivo?.let {
+                            if (it.bondState == BluetoothDevice.BOND_BONDED) {
+                                android.util.Log.d("BluetoothScanManager", "Ignorando dispositivo ya vinculado: ${it.address}")
+                                return@let
+                            }
+                            val scanName = result?.scanRecord?.deviceName
                             val nombre = try {
-                                it.name ?: "Dispositivo Desconocido (BLE)"
+                                scanName ?: it.name ?: "Dispositivo Desconocido"
                             } catch (e: SecurityException) {
-                                "Dispositivo Protegido (BLE)"
+                                scanName ?: "Dispositivo Protegido"
                             }
                             val mac = it.address ?: return
+                            android.util.Log.d("BluetoothScanManager", "BLE FOUND: $nombre - $mac")
                             this@BluetoothScanManager.alEncontrarDispositivo?.invoke(
                                 ResultadoDispositivoBt(nombre, mac)
                             )
@@ -201,8 +146,6 @@ class BluetoothScanManager(private val contexto: Context) {
     fun detenerEscaneo() {
         timeoutRunnable?.let { handler.removeCallbacks(it) }
         adaptadorBluetooth?.cancelDiscovery()
-        try { receptorEventos?.let { contexto.unregisterReceiver(it) } } catch (_: Exception) {}
-        receptorEventos = null
         
         try {
             leScanCallback?.let { leScanner?.stopScan(it) }

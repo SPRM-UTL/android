@@ -70,8 +70,19 @@ class DeviceAdapter(
                     tipo.contains("Regleta", ignoreCase = true)
             } == true
             
-            val isConnected = connectedMacs.any {
-                it.equals(dispositivo.macBluetooth, ignoreCase = true)
+            val isConnected = when (dispositivo.metodoVinculacion) {
+                "WIFI" -> {
+                    !dispositivo.ipAddress.isNullOrBlank()
+                }
+                "BLUETOOTH" -> {
+                    com.example.android.network.BluetoothController.isConnected &&
+                    com.example.android.network.BluetoothController.connectedMac.equals(dispositivo.macBluetooth, ignoreCase = true)
+                }
+                else -> {
+                    connectedMacs.any {
+                        it.equals(dispositivo.macBluetooth, ignoreCase = true)
+                    }
+                }
             }
             if (isConnected) {
                 tvStatus.text = "En línea"

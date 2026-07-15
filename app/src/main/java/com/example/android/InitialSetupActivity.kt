@@ -120,42 +120,60 @@ class InitialSetupActivity : AppCompatActivity() {
         val userId = sharedPref.getInt("userId", 0)
 
         lifecycleScope.launch {
-            try {
-                // 1. Crear Casa
-                val nuevaCasa = Casa(id = 0, nombre = nombreCasa, skUsuarioId = userId)
-                val casaResponse = RetrofitClient.casaService.createCasa("Bearer $token", nuevaCasa)
-                
-                if (casaResponse.isSuccessful && casaResponse.body()?.data != null) {
-                    val casaCreada = casaResponse.body()?.data!!
-                    
-                    withContext(Dispatchers.IO) {
-                        db.casaDao().insertAll(listOf(casaCreada))
-                    }
-
-                    // 2. Crear Habitación
-                    val nuevaHab = Habitacion(id = 0, nombre = nombreHabitacion, skCasaId = casaCreada.id)
-                    val habResponse = RetrofitClient.habitacionService.createHabitacion("Bearer $token", nuevaHab)
-                    
-                    if (habResponse.isSuccessful && habResponse.body()?.data != null) {
-                        withContext(Dispatchers.IO) {
-                            db.habitacionDao().insertAll(listOf(habResponse.body()?.data!!))
-                        }
+            // 1. Crear Casa
+            val nuevaCasa = Casa(id = 0, nombre = nombreCasa, skUsuarioId = userId)
+            
+            ApiHandler.safeApiCall(
+                activity = this@InitialSetupActivity,
+                showLoading = true,
+                loadingTitle = "Creando Casa",
+                loadingMessage = "Configurando tu nuevo hogar...",
+                apiCall = { RetrofitClient.casaService.createCasa("Bearer $token", nuevaCasa) },
+                onSuccess = { casaResponse ->
+                    if (casaResponse.data != null) {
+                        val casaCreada = casaResponse.data
                         
-                        // Todo correcto, ir al Home
-                        loadingOverlay.visibility = View.GONE
-                        val intent = Intent(this@InitialSetupActivity, HomeActivity::class.java)
-                        intent.putExtra("SHOW_WELCOME", true)
-                        startActivity(intent)
-                        finish()
+                        withContext(Dispatchers.IO) {
+                            db.casaDao().insertAll(listOf(casaCreada))
+                        }
+
+                        // 2. Crear Habitación
+                        val nuevaHab = Habitacion(id = 0, nombre = nombreHabitacion, skCasaId = casaCreada.id)
+                        
+                        ApiHandler.safeApiCall(
+                            activity = this@InitialSetupActivity,
+                            showLoading = true,
+                            loadingTitle = "Creando Habitación",
+                            loadingMessage = "Configurando tu primera habitación...",
+                            apiCall = { RetrofitClient.habitacionService.createHabitacion("Bearer $token", nuevaHab) },
+                            onSuccess = { habResponse ->
+                                if (habResponse.data != null) {
+                                    withContext(Dispatchers.IO) {
+                                        db.habitacionDao().insertAll(listOf(habResponse.data))
+                                    }
+                                    
+                                    // Todo correcto, ir al Home
+                                    loadingOverlay.visibility = View.GONE
+                                    val intent = Intent(this@InitialSetupActivity, HomeActivity::class.java)
+                                    intent.putExtra("SHOW_WELCOME", true)
+                                    startActivity(intent)
+                                    finish()
+                                } else {
+                                    mostrarError("Error al crear la habitación: Respuesta vacía")
+                                }
+                            },
+                            onError = { errorMsg ->
+                                mostrarError("Error al crear la habitación: $errorMsg")
+                            }
+                        )
                     } else {
-                        mostrarError("Error al crear la habitación. Intenta de nuevo.")
+                        mostrarError("Error al crear la casa: Respuesta vacía")
                     }
-                } else {
-                    mostrarError("Error al crear la casa. Intenta de nuevo.")
+                },
+                onError = { errorMsg ->
+                    mostrarError("Error al crear la casa: $errorMsg")
                 }
-            } catch (e: Exception) {
-                mostrarError("Error de conexión: ${e.message}")
-            }
+            )
         }
     }
     

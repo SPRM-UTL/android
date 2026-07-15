@@ -50,16 +50,32 @@ class AparatoTipoAdapter(
                 else -> "ic_menu_camera"
             }
         }
+        
+        val cleanIconName = iconName.substringBeforeLast(".").replace("-", "_")
 
         // Obtener ID del recurso de forma dinámica por nombre
         val resId = holder.itemView.context.resources.getIdentifier(
-            iconName,
+            cleanIconName,
             "drawable",
             holder.itemView.context.packageName
         )
 
-        // Si no lo encuentra en drawable, intenta en mipmap o usa uno por defecto
-        val finalResId = if (resId != 0) resId else android.R.drawable.ic_menu_camera
+        val finalResId = if (resId != 0) {
+            resId
+        } else {
+            when (tipo.nombreTipo) {
+                "Audífonos" -> R.drawable.headphones
+                "Bocinas" -> R.drawable.speaker
+                "Focos" -> R.drawable.lightbulb
+                "Luces" -> R.drawable.lamp_floor
+                "Ventilador" -> R.drawable.wind
+                "Televisión" -> R.drawable.tv_minimal
+                "Sockets Inteligentes", "Enchufe", "MultiSocket" -> R.drawable.plug
+                "Cámaras", "Cámara" -> R.drawable.camera
+                "Asistente" -> R.drawable.ic_input_add
+                else -> android.R.drawable.ic_menu_camera
+            }
+        }
 
         if (holder is HeroViewHolder) {
             holder.title.text = tipo.nombreTipo
@@ -67,6 +83,7 @@ class AparatoTipoAdapter(
             
             holder.wifiIcon.visibility = if (tipo.soportaWifi) View.VISIBLE else View.GONE
             holder.bluetoothIcon.visibility = if (tipo.soportaBluetooth) View.VISIBLE else View.GONE
+            holder.linkIcon.visibility = if (tipo.requiereVinculacionBluetooth) View.VISIBLE else View.GONE
 
             holder.itemView.setOnClickListener { onTipoClick(tipo) }
         } else if (holder is NormalViewHolder) {
@@ -75,6 +92,7 @@ class AparatoTipoAdapter(
 
             holder.wifiIcon.visibility = if (tipo.soportaWifi) View.VISIBLE else View.GONE
             holder.bluetoothIcon.visibility = if (tipo.soportaBluetooth) View.VISIBLE else View.GONE
+            holder.linkIcon.visibility = if (tipo.requiereVinculacionBluetooth) View.VISIBLE else View.GONE
 
             holder.itemView.setOnClickListener { onTipoClick(tipo) }
         }
@@ -92,6 +110,7 @@ class AparatoTipoAdapter(
         val icon: ImageView = view.findViewById(R.id.ivIconHero)
         val wifiIcon: ImageView = view.findViewById(R.id.ivHeroSupportWifi)
         val bluetoothIcon: ImageView = view.findViewById(R.id.ivHeroSupportBluetooth)
+        val linkIcon: ImageView = view.findViewById(R.id.ivHeroSupportLink)
     }
 
     class NormalViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -99,5 +118,6 @@ class AparatoTipoAdapter(
         val icon: ImageView = view.findViewById(R.id.ivIcon)
         val wifiIcon: ImageView = view.findViewById(R.id.ivSupportWifi)
         val bluetoothIcon: ImageView = view.findViewById(R.id.ivSupportBluetooth)
+        val linkIcon: ImageView = view.findViewById(R.id.ivSupportLink)
     }
 }

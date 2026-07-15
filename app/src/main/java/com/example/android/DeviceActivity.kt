@@ -47,6 +47,9 @@ class DeviceActivity : AppCompatActivity() {
     private lateinit var baseDatos: AppDatabase
     private lateinit var gestorBluetooth: BluetoothScanManager
 
+    private val socketClient by lazy { com.example.android.network.SocketClient { Log.d("SocketClient", it) } }
+    private val bluetoothController by lazy { com.example.android.network.BluetoothController }
+
     private var accionPendienteBt: (() -> Unit)? = null
 
     private val lanzadorActivarBt = registerForActivityResult(
@@ -187,6 +190,15 @@ class DeviceActivity : AppCompatActivity() {
     }
 
     private fun toggleDispositivo(dispositivo: Dispositivo, encendido: Boolean) {
+        Log.d("DeviceActivity", "toggleDispositivo: id=${dispositivo.id}, metodo=${dispositivo.metodoVinculacion}, encendido=$encendido")
+        when (dispositivo.metodoVinculacion) {
+            "WIFI" -> toggleDispositivoWifi(dispositivo, encendido)
+            "BLUETOOTH" -> toggleDispositivoBluetooth(dispositivo, encendido)
+            else -> toggleDispositivoEsp32(dispositivo, encendido)
+        }
+    }
+
+    private fun toggleDispositivoEsp32(dispositivo: Dispositivo, encendido: Boolean) {
         lifecycleScope.launch {
             try {
                 val response = withContext(Dispatchers.IO) {
@@ -202,9 +214,89 @@ class DeviceActivity : AppCompatActivity() {
                     }
                 }
             } catch (e: Exception) {
-                Log.e("DeviceActivity", "Error toggle: ${e.message}")
+                Log.e("DeviceActivity", "Error toggle ESP32: ${e.message}")
                 adaptadorDispositivos.actualizarEstadoDispositivo(dispositivo.id, !encendido)
                 Toast.makeText(this@DeviceActivity, "Error de conexión", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun toggleDispositivoWifi(dispositivo: Dispositivo, encendido: Boolean) {
+        Log.d("DeviceActivity", "toggleDispositivoWifi: Iniciando para IP ${dispositivo.ipAddress}")
+        lifecycleScope.launch {
+            val ip = dispositivo.ipAddress
+            if (ip.isNullOrEmpty()) {
+                Log.e("DeviceActivity", "toggleDispositivoWifi: IP vacía o nula")
+                adaptadorDispositivos.actualizarEstadoDispositivo(dispositivo.id, !encendido)
+                Toast.makeText(this@DeviceActivity, "IP no configurada para este dispositivo WIFI", Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+
+            try {
+                val command = if (encendido) {
+                    byteArrayOf(0x71.toByte(), 0x23.toByte(), 0x0f.toByte(), 0x33.toByte())
+                } else {
+                    byteArrayOf(0x71.toByte(), 0x24.toByte(), 0x0f.toByte(), 0x34.toByte())
+                }
+                Log.d("DeviceActivity", "toggleDispositivoWifi: Enviando comando TCP a $ip:5577")
+                socketClient.sendTcpCommandBytes(ip, 5577, command)
+                Log.d("DeviceActivity", "toggleDispositivoWifi: Comando enviado exitosamente")
+                reportarEstadoAlBackend(dispositivo, encendido)
+                
+            } catch (e: Exception) {
+                Log.e("DeviceActivity", "Error toggle WIFI: ${e.message}")
+                adaptadorDispositivos.actualizarEstadoDispositivo(dispositivo.id, !encendido)
+                Toast.makeText(this@DeviceActivity, "Error de conexión WIFI", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun toggleDispositivoBluetooth(dispositivo: Dispositivo, encendido: Boolean) {
+        Log.d("DeviceActivity", "toggleDispositivoBluetooth: Iniciando para MAC ${dispositivo.macBluetooth}")
+        val mac = dispositivo.macBluetooth
+        if (mac.isNullOrEmpty()) {
+            Log.e("DeviceActivity", "toggleDispositivoBluetooth: MAC vacía o nula")
+            adaptadorDispositivos.actualizarEstadoDispositivo(dispositivo.id, !encendido)
+            Toast.makeText(this, "MAC Bluetooth no configurada", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val command = if (encendido) "BT_ON\n" else "BT_OFF\n" // Or whatever standard you have
+
+        // For demo/simplicity, if already connected, send directly.
+        // But if we're not connected, we should probably connect first or inform the user.
+        // Actually, the user says "usa BluetoothController, ver Fase 2".
+        // Let's assume BluetoothController is already connected or we just send it.
+        if (bluetoothController.isConnected) {
+            Log.d("DeviceActivity", "toggleDispositivoBluetooth: Enviando comando BT: $command")
+            bluetoothController.enviarComando(command)
+            reportarEstadoAlBackend(dispositivo, encendido)
+        } else {
+            Log.w("DeviceActivity", "toggleDispositivoBluetooth: Bluetooth no conectado")
+            adaptadorDispositivos.actualizarEstadoDispositivo(dispositivo.id, !encendido)
+            Toast.makeText(this, "Bluetooth no conectado", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun reportarEstadoAlBackend(dispositivo: Dispositivo, encendido: Boolean) {
+        Log.d("DeviceActivity", "reportarEstadoAlBackend: Reportando estado $encendido para dispositivo ${dispositivo.id}")
+        lifecycleScope.launch {
+            try {
+                val preferencias = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
+                val token = preferencias.getString("apiToken", "") ?: ""
+                
+                val request = com.example.android.network.EstadoLocalRequest(encendido)
+                val response = withContext(Dispatchers.IO) {
+                    RetrofitClient.deviceService.setEstadoLocal("Bearer $token", dispositivo.id, request)
+                }
+                
+                if (!response.isSuccessful) {
+                    Log.w("DeviceActivity", "reportarEstadoAlBackend: Falló al reportar. HTTP ${response.code()}")
+                } else {
+                    Log.d("DeviceActivity", "reportarEstadoAlBackend: Reporte exitoso")
+                }
+            } catch (e: Exception) {
+                Log.e("DeviceActivity", "Error reportando estado al backend: ${e.message}")
             }
         }
     }

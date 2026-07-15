@@ -15,9 +15,17 @@ class BluetoothDeviceAdapter(
     private val elementos = mutableListOf<ResultadoDispositivoBt>()
 
     fun agregarDispositivo(dispositivo: ResultadoDispositivoBt) {
-        if (elementos.none { it.mac == dispositivo.mac }) {
+        val index = elementos.indexOfFirst { it.mac == dispositivo.mac }
+        if (index == -1) {
             elementos.add(dispositivo)
             notifyItemInserted(elementos.size - 1)
+        } else {
+            // Si ya existe pero el nuevo tiene un nombre mejor (que no sea "Desconocido")
+            val actual = elementos[index]
+            if (actual.nombre.contains("desconocido", ignoreCase = true) && !dispositivo.nombre.contains("desconocido", ignoreCase = true)) {
+                elementos[index] = dispositivo
+                notifyItemChanged(index)
+            }
         }
     }
 

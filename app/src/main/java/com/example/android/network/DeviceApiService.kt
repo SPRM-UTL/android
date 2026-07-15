@@ -39,6 +39,13 @@ interface DeviceApiService {
         @Body config: ConfiguracionRedRequest
     ): Response<ApiResponse<ConfiguracionRedResponse>>
 
+    @POST("api/aparatos/{sk_aparato_id}/estado-local")
+    suspend fun setEstadoLocal(
+        @Header("Authorization") token: String,
+        @Path("sk_aparato_id") aparatoId: Int,
+        @Body request: EstadoLocalRequest
+    ): Response<ApiResponse<Any>>
+
     @GET("ws/accion")
     suspend fun enviarComandoWebSocket(
         @retrofit2.http.Query("comando") comando: String,
@@ -213,4 +220,9 @@ data class AparatoConsumoResumenResponse(
     val hasta: String,
     @com.google.gson.annotations.SerializedName("puntos")
     val puntos: List<AparatoConsumoPuntoResponse>
+)
+
+data class EstadoLocalRequest(
+    @com.google.gson.annotations.SerializedName("estado_encendido")
+    val estadoEncendido: Boolean
 )

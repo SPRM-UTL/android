@@ -167,48 +167,57 @@ class SocketClient(private val onLog: (String) -> Unit) {
 
     fun scanLocalNetwork(onDeviceFound: (String, String) -> Unit) {
         CoroutineScope(Dispatchers.IO).launch {
-            var socket: DatagramSocket? = null
-            try {
-                socket = DatagramSocket()
-                socket.soTimeout = 3000
-                socket.broadcast = true
-                val address = InetAddress.getByName("255.255.255.255")
-                val port = 48899
+            scanLocalNetworkInternal(onDeviceFound)
+        }
+    }
 
-                val data = "HF-A11ASSISTHREAD".toByteArray()
-                val packet = DatagramPacket(data, data.size, address, port)
-                
-                onLog("Local Scan: Broadcasting discovery packet...")
-                socket.send(packet)
+    suspend fun scanLocalNetworkSuspend(): List<Pair<String, String>> = withContext(Dispatchers.IO) {
+        val results = mutableListOf<Pair<String, String>>()
+        scanLocalNetworkInternal { ip, mac -> results.add(ip to mac) }
+        results
+    }
 
-                val buffer = ByteArray(1024)
-                while (true) {
-                    val recvPacket = DatagramPacket(buffer, buffer.size)
-                    try {
-                        socket.receive(recvPacket)
-                        val response = String(recvPacket.data, 0, recvPacket.length).trim()
-                        val ip = recvPacket.address.hostAddress
-                        onLog("Local Scan: Received '$response' from $ip")
-                        // Response is typically: IP,MAC,Model
-                        if (response.contains(",")) {
-                            val parts = response.split(",")
-                            if (parts.size >= 2) {
-                                val mac = parts[1]
-                                onDeviceFound(ip ?: "Unknown", mac)
-                            }
-                        } else if (response.isNotEmpty() && response != "HF-A11ASSISTHREAD") {
-                            onDeviceFound(ip ?: "Unknown", response)
+    private fun scanLocalNetworkInternal(onDeviceFound: (String, String) -> Unit) {
+        var socket: DatagramSocket? = null
+        try {
+            socket = DatagramSocket()
+            socket.soTimeout = 3000
+            socket.broadcast = true
+            val address = InetAddress.getByName("255.255.255.255")
+            val port = 48899
+
+            val data = "HF-A11ASSISTHREAD".toByteArray()
+            val packet = DatagramPacket(data, data.size, address, port)
+
+            onLog("Local Scan: Broadcasting discovery packet...")
+            socket.send(packet)
+
+            val buffer = ByteArray(1024)
+            while (true) {
+                val recvPacket = DatagramPacket(buffer, buffer.size)
+                try {
+                    socket.receive(recvPacket)
+                    val response = String(recvPacket.data, 0, recvPacket.length).trim()
+                    val ip = recvPacket.address.hostAddress
+                    onLog("Local Scan: Received '$response' from $ip")
+                    if (response.contains(",")) {
+                        val parts = response.split(",")
+                        if (parts.size >= 2) {
+                            val mac = parts[1]
+                            onDeviceFound(ip ?: "Unknown", mac)
                         }
-                    } catch (e: java.net.SocketTimeoutException) {
-                        onLog("Local Scan: Finished.")
-                        break // Timeout means no more devices
+                    } else if (response.isNotEmpty() && response != "HF-A11ASSISTHREAD") {
+                        onDeviceFound(ip ?: "Unknown", response)
                     }
+                } catch (e: java.net.SocketTimeoutException) {
+                    onLog("Local Scan: Finished.")
+                    break
                 }
-            } catch (e: Exception) {
-                onLog("Local Scan Error: ${e.message}")
-            } finally {
-                socket?.close()
             }
+        } catch (e: Exception) {
+            onLog("Local Scan Error: ${e.message}")
+        } finally {
+            socket?.close()
         }
     }
 }

@@ -88,6 +88,15 @@
                 android:src="@drawable/bluetooth"
                 app:tint="#6F7EA8"
                 android:visibility="gone" />
+
+            <ImageView
+                android:id="@+id/ivHeroSupportLink"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_marginStart="6dp"
+                android:src="@drawable/ic_link"
+                app:tint="#6F7EA8"
+                android:visibility="gone" />
         </LinearLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

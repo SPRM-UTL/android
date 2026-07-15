@@ -39,11 +39,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import android.graphics.Typeface
 import androidx.core.content.ContextCompat
-import com.getkeepsafe.taptargetview.TapTarget
-import com.getkeepsafe.taptargetview.TapTargetSequence
+import com.example.android.ui.dialogs.DeviceInfoDialog
+import com.example.android.ui.dialogs.DeleteDeviceDialog
+import com.example.android.ui.HomeTutorialHelper
+import kotlinx.coroutines.withContext
 
 class HomeFragment : Fragment() {
 
@@ -64,19 +65,14 @@ class HomeFragment : Fragment() {
     private lateinit var btnConfigurarRed: View
 
     private lateinit var deviceAdapter: DeviceAdapter
+    private lateinit var deviceInfoDialog: DeviceInfoDialog
+    private lateinit var deleteDeviceDialog: DeleteDeviceDialog
 
     private var isLoggingOut = false
     private var pollingJob: kotlinx.coroutines.Job? = null
     private var pollCount = 0
     
     private var dispositivosJob: kotlinx.coroutines.Job? = null
-
-    // Referencias para actualizar el diálogo abierto
-    private var currentDeviceInfoDialog: android.app.Dialog? = null
-    private var currentDeviceDialogMac: String? = null
-    private var currentDeviceDialogType: String? = null
-    private var tvDialogStatusRedGlobal: TextView? = null
-    private var statusDotInfoGlobal: com.google.android.material.card.MaterialCardView? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -184,22 +180,8 @@ class HomeFragment : Fragment() {
     }
 
     private fun actualizarDialogoInformacion(connectedMacs: Set<String>) {
-        val mac = currentDeviceDialogMac ?: return
-        val isConnected = connectedMacs.any { it.equals(mac, ignoreCase = true) }
-        
-        tvDialogStatusRedGlobal?.let { tv ->
-            statusDotInfoGlobal?.let { dot ->
-                val tipo = currentDeviceDialogType ?: "Dispositivo"
-                if (isConnected) {
-                    tv.text = "$tipo en línea"
-                    tv.setTextColor(android.graphics.Color.parseColor("#009688"))
-                    dot.setCardBackgroundColor(android.graphics.Color.parseColor("#009688"))
-                } else {
-                    tv.text = "$tipo desconectado"
-                    tv.setTextColor(android.graphics.Color.parseColor("#6F7EA8"))
-                    dot.setCardBackgroundColor(android.graphics.Color.parseColor("#6F7EA8"))
-                }
-            }
+        if (::deviceInfoDialog.isInitialized) {
+            deviceInfoDialog.updateConnectionStatus(connectedMacs)
         }
     }
 
@@ -240,12 +222,26 @@ class HomeFragment : Fragment() {
     }
 
     private fun inicializarAdapters() {
+        deviceInfoDialog = DeviceInfoDialog(
+            fragment = this,
+            isDeviceConnected = { mac ->
+                mac != null && ::deviceAdapter.isInitialized && deviceAdapter.isDeviceConnected(mac)
+            }
+        )
+
+        deleteDeviceDialog = DeleteDeviceDialog(
+            fragment = this,
+            onConfirm = { dispositivo ->
+                eliminarDispositivoDeApi(dispositivo)
+            }
+        )
+
         deviceAdapter = DeviceAdapter(
             onEditClick = { dispositivo ->
-                mostrarInformacionDispositivo(dispositivo)
+                deviceInfoDialog.show(dispositivo)
             },
             onDeleteClick = { dispositivo ->
-                mostrarDialogoEliminar(dispositivo)
+                deleteDeviceDialog.show(dispositivo)
             },
             onToggleClick = { dispositivo, isChecked ->
                 viewLifecycleOwner.lifecycleScope.launch {
@@ -278,22 +274,6 @@ class HomeFragment : Fragment() {
                 }
             }
         )
-    }
-
-    private fun mostrarDialogoEliminar(dispositivo: com.example.android.db.Dispositivo) {
-        if (!isAdded || context == null) return
-
-        MaterialAlertDialogBuilder(requireContext(), R.style.CustomAlertDialogTheme)
-            .setTitle("Eliminar dispositivo")
-            .setMessage("¿Estás seguro de que deseas eliminar '${dispositivo.nombre}'? Esta acción desvinculará el hardware permanentemente.")
-            .setPositiveButton("Eliminar") { dialog, _ ->
-                eliminarDispositivoDeApi(dispositivo)
-                dialog.dismiss()
-            }
-            .setNegativeButton("Cancelar") { dialog, _ ->
-                dialog.dismiss()
-            }
-            .show()
     }
 
     private fun eliminarDispositivoDeApi(dispositivo: com.example.android.db.Dispositivo) {
@@ -351,115 +331,12 @@ class HomeFragment : Fragment() {
     }
 
     private fun mostrarTutorial() {
-        val sharedPref = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
-        val tutorialVisto = sharedPref.getBoolean("tutorial_visto", false)
-
-        if (tutorialVisto) return
-
-        vistaRaiz.postDelayed({
-            if (!isAdded) return@postDelayed
-
-            val typeFace = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
-
-            val targetRed = TapTarget.forView(
-                btnConfigurarRed,
-                "1. Conecta tu Hogar",
-                "Lo primero es configurar y vincular tu hardware controlador (ESP32) para que la app pueda comunicarse con tu casa."
-            )
-                .outerCircleColor(R.color.teal_primary)
-                .outerCircleAlpha(0.96f)
-                .targetCircleColor(R.color.white)
-                .titleTextSize(22)
-                .titleTextColor(R.color.white)
-                .descriptionTextSize(14)
-                .descriptionTextColor(R.color.white)
-                .textColor(R.color.white)
-                .textTypeface(typeFace)
-                .dimColor(R.color.black)
-                .drawShadow(true)
-                .cancelable(false)
-                .tintTarget(true)
-                .transparentTarget(true)
-                .targetRadius(30)
-
-            val targetDispositivos = TapTarget.forView(
-                vistaRaiz.findViewById(R.id.tvTituloDispositivos) ?: rvDispositivos,
-                "2. Añade y Controla",
-                "Una vez conectado, agrega tus dispositivos (focos, ventiladores, etc.) aquí para controlarlos manualmente con un solo toque."
-            )
-                .outerCircleColor(R.color.teal_primary)
-                .outerCircleAlpha(0.96f)
-                .targetCircleColor(R.color.white)
-                .titleTextSize(22)
-                .titleTextColor(R.color.white)
-                .descriptionTextSize(14)
-                .descriptionTextColor(R.color.white)
-                .textColor(R.color.white)
-                .textTypeface(typeFace)
-                .dimColor(R.color.black)
-                .drawShadow(true)
-                .cancelable(false)
-                .tintTarget(true)
-                .transparentTarget(true)
-                .targetRadius(60)
-
-            val targetIA = TapTarget.forView(
-                requireActivity().findViewById(R.id.bottom_bar_container),
-                "3. Inteligencia Artificial",
-                "Abre el menú central para activar la cámara, crear secuencias de gestos corporales y programar rutinas automatizadas."
-            )
-                .outerCircleColor(R.color.teal_primary)
-                .outerCircleAlpha(0.96f)
-                .targetCircleColor(R.color.white)
-                .titleTextSize(22)
-                .titleTextColor(R.color.white)
-                .descriptionTextSize(14)
-                .descriptionTextColor(R.color.white)
-                .textColor(R.color.white)
-                .textTypeface(typeFace)
-                .dimColor(R.color.black)
-                .drawShadow(true)
-                .cancelable(false)
-                .tintTarget(true)
-                .transparentTarget(true)
-                .targetRadius(70)
-
-            val targetPerfil = TapTarget.forView(
-                vistaRaiz.findViewById(R.id.profileCircle),
-                "4. Tu Perfil",
-                "Accede aquí para ajustar tus preferencias, habilitar la huella dactilar y cerrar tu sesión."
-            )
-                .outerCircleColor(R.color.teal_primary)
-                .outerCircleAlpha(0.96f)
-                .targetCircleColor(R.color.white)
-                .titleTextSize(22)
-                .titleTextColor(R.color.white)
-                .descriptionTextSize(14)
-                .descriptionTextColor(R.color.white)
-                .textColor(R.color.white)
-                .textTypeface(typeFace)
-                .dimColor(R.color.black)
-                .drawShadow(true)
-                .cancelable(false)
-                .tintTarget(false)
-                .transparentTarget(true)
-                .targetRadius(40)
-
-            TapTargetSequence(requireActivity())
-                .targets(targetRed, targetDispositivos, targetIA, targetPerfil)
-                .listener(object : TapTargetSequence.Listener {
-                    override fun onSequenceFinish() {
-                        sharedPref.edit().putBoolean("tutorial_visto", true).apply()
-                    }
-
-                    override fun onSequenceStep(lastTarget: TapTarget?, targetClicked: Boolean) {}
-
-                    override fun onSequenceCanceled(lastTarget: TapTarget?) {
-                        sharedPref.edit().putBoolean("tutorial_visto", true).apply()
-                    }
-                })
-                .start()
-        }, 800)
+        HomeTutorialHelper().mostrarTutorial(
+            fragment = this,
+            vistaRaiz = vistaRaiz,
+            btnConfigurarRed = btnConfigurarRed,
+            rvDispositivos = rvDispositivos
+        )
     }
 
     private fun configurarInsets() {
@@ -775,251 +652,4 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private fun mostrarInformacionDispositivo(dispositivo: com.example.android.db.Dispositivo) {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_device_info, null)
-        val dialog = android.app.Dialog(requireContext())
-        dialog.setContentView(dialogView)
-        dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
-
-        dialogView.findViewById<TextView>(R.id.tvDialogNombre).text = dispositivo.nombre ?: "Desconocido"
-        dialogView.findViewById<TextView>(R.id.tvDialogHabitacion).text = dispositivo.nombreHabitacion ?: "Sin asignar"
-        dialogView.findViewById<TextView>(R.id.tvDialogTipo).text = dispositivo.tipo ?: "Desconocido"
-        dialogView.findViewById<TextView>(R.id.tvDialogIp).text = dispositivo.ipAddress ?: "Desconocido"
-        dialogView.findViewById<TextView>(R.id.tvDialogFirmware).text = "N/A"
-        dialogView.findViewById<TextView>(R.id.tvDialogRssi).text = "N/A"
-        dialogView.findViewById<TextView>(R.id.tvDialogUltimaConexion).text = dispositivo.fechaEstadoActualizado ?: "Desconocido"
-        dialogView.findViewById<TextView>(R.id.tvDialogTiempoActivo).text = "N/A"
-
-        val tvDialogEstadoEncendido = dialogView.findViewById<TextView>(R.id.tvDialogEstadoEncendido)
-        val estadoTexto = when (dispositivo.estadoEncendido) {
-            true -> "Encendido"
-            false -> "Apagado"
-            null -> "Sin registrar"
-        }
-        tvDialogEstadoEncendido.text = estadoTexto
-
-        val tvDialogCorriente = dialogView.findViewById<TextView>(R.id.tvDialogCorriente)
-        val tvDialogPotencia = dialogView.findViewById<TextView>(R.id.tvDialogPotencia)
-        val tvDialogEnergia = dialogView.findViewById<TextView>(R.id.tvDialogEnergia)
-        val tvDialogVoltaje = dialogView.findViewById<TextView>(R.id.tvDialogVoltaje)
-        val tvDialogConsumoHoy = dialogView.findViewById<TextView>(R.id.tvDialogConsumoHoy)
-        val tvDialogHistorialConsumo = dialogView.findViewById<TextView>(R.id.tvDialogHistorialConsumo)
-
-        tvDialogVoltaje?.text = "N/A"
-        tvDialogConsumoHoy?.text = "N/A"
-
-        fun formatearConsumoActual() {
-            val corriente = dispositivo.corrienteA
-            val potencia = dispositivo.potenciaW
-            val energia = dispositivo.energiaAcumuladaWh
-
-            tvDialogCorriente.text = corriente?.let { String.format("%.3f A", it) } ?: "Sin medición"
-            tvDialogPotencia.text = potencia?.let { String.format("%.2f W", it) } ?: "Sin medición"
-            tvDialogEnergia.text = energia?.let { String.format("%.3f Wh", it) } ?: "Sin medición"
-        }
-        formatearConsumoActual()
-
-        val tvDialogHistorial = dialogView.findViewById<TextView>(R.id.tvDialogHistorial)
-        tvDialogHistorial.text = "Cargando historial..."
-
-        val isConnected = deviceAdapter.isDeviceConnected(dispositivo.macBluetooth)
-        val tvDialogStatusRed = dialogView.findViewById<TextView>(R.id.tvDialogStatusRed)
-        val statusDotInfo = dialogView.findViewById<com.google.android.material.card.MaterialCardView>(R.id.statusDotInfo)
-
-        val tipo = dispositivo.tipo ?: "Dispositivo"
-        if (isConnected) {
-            tvDialogStatusRed.text = "$tipo en línea"
-            tvDialogStatusRed.setTextColor(android.graphics.Color.parseColor("#009688"))
-            statusDotInfo.setCardBackgroundColor(android.graphics.Color.parseColor("#009688"))
-        } else {
-            tvDialogStatusRed.text = "$tipo desconectado"
-            tvDialogStatusRed.setTextColor(android.graphics.Color.parseColor("#6F7EA8"))
-            statusDotInfo.setCardBackgroundColor(android.graphics.Color.parseColor("#6F7EA8"))
-        }
-
-        dialogView.findViewById<ImageView>(R.id.btnDialogClose).setOnClickListener {
-            dialog.dismiss()
-        }
-
-        currentDeviceInfoDialog = dialog
-        currentDeviceDialogMac = dispositivo.macBluetooth
-        currentDeviceDialogType = dispositivo.tipo
-        tvDialogStatusRedGlobal = tvDialogStatusRed
-        statusDotInfoGlobal = statusDotInfo
-
-        dialog.setOnDismissListener {
-            currentDeviceInfoDialog = null
-            currentDeviceDialogMac = null
-            currentDeviceDialogType = null
-            tvDialogStatusRedGlobal = null
-            statusDotInfoGlobal = null
-        }
-
-        val fabMain = dialogView.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fabMain)
-        val llFabConsumo = dialogView.findViewById<android.view.View>(R.id.llFabConsumo)
-        val llFabControles = dialogView.findViewById<android.view.View>(R.id.llFabControles)
-        val llFabEditar = dialogView.findViewById<android.view.View>(R.id.llFabEditar)
-        val fabOverlay = dialogView.findViewById<android.view.View>(R.id.fabOverlay)
-        var isFabOpen = false
-
-        fun toggleFab() {
-            isFabOpen = !isFabOpen
-            if (isFabOpen) {
-                fabMain.animate().rotation(45f).setDuration(200).start()
-                fabOverlay.visibility = android.view.View.VISIBLE
-                fabOverlay.animate().alpha(1f).setDuration(200).start()
-                
-                val views = listOf(llFabConsumo, llFabControles, llFabEditar)
-                views.forEachIndexed { index, view ->
-                    view.visibility = android.view.View.VISIBLE
-                    view.alpha = 0f
-                    view.translationY = 50f
-                    view.animate()
-                        .alpha(1f)
-                        .translationY(0f)
-                        .setDuration(200)
-                        .setStartDelay((index * 50).toLong())
-                        .start()
-                }
-            } else {
-                fabMain.animate().rotation(0f).setDuration(200).start()
-                fabOverlay.animate().alpha(0f).setDuration(200).withEndAction {
-                    fabOverlay.visibility = android.view.View.GONE
-                }.start()
-                
-                val views = listOf(llFabConsumo, llFabControles, llFabEditar)
-                views.forEach { view ->
-                    view.animate()
-                        .alpha(0f)
-                        .translationY(50f)
-                        .setDuration(200)
-                        .withEndAction { view.visibility = android.view.View.GONE }
-                        .start()
-                }
-            }
-        }
-
-        fabMain.setOnClickListener { toggleFab() }
-        fabOverlay.setOnClickListener { if (isFabOpen) toggleFab() }
-        
-        dialog.setOnKeyListener { _, keyCode, event ->
-            if (keyCode == android.view.KeyEvent.KEYCODE_BACK && event.action == android.view.KeyEvent.ACTION_UP && isFabOpen) {
-                toggleFab()
-                true
-            } else {
-                false
-            }
-        }
-
-        dialogView.findViewById<android.view.View>(R.id.btnDialogEditar).setOnClickListener {
-            dialog.dismiss()
-            requireActivity().supportFragmentManager.beginTransaction()
-                .setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right, android.R.anim.slide_in_left, android.R.anim.slide_out_right)
-                .add(R.id.fragment_container_overlay, EditDeviceFragment.newInstance(dispositivo.id))
-                .addToBackStack("EditDevice")
-                .commit()
-        }
-
-        dialogView.findViewById<android.view.View>(R.id.btnDialogControles).setOnClickListener {
-            dialog.dismiss()
-            val isMultiSocket = dispositivo.tipo?.let { tipo ->
-                tipo.contains("MultiSocket", ignoreCase = true) ||
-                tipo.contains("Regleta", ignoreCase = true)
-            } == true
-            
-            val intent = if (isMultiSocket) {
-                Intent(requireContext(), MultiSocketActivity::class.java).apply {
-                    putExtra("EXTRA_DEVICE_ID", dispositivo.id)
-                }
-            } else {
-                Intent(requireContext(), DeviceControlsActivity::class.java).apply {
-                    putExtra("EXTRA_DEVICE_ID", dispositivo.id)
-                }
-            }
-            startActivity(intent)
-        }
-
-        dialogView.findViewById<android.view.View>(R.id.btnDialogConsumo)?.setOnClickListener {
-            dialog.hide()
-            
-            val fragmentManager = requireActivity().supportFragmentManager
-            fragmentManager.beginTransaction()
-                .setCustomAnimations(R.anim.slide_in_bottom, R.anim.stationary, R.anim.stationary, R.anim.slide_out_bottom)
-                .add(R.id.fragment_container_overlay, DeviceConsumptionFragment.newInstance(dispositivo.id))
-                .addToBackStack("DeviceConsumption")
-                .commit()
-
-            fragmentManager.addOnBackStackChangedListener(object : androidx.fragment.app.FragmentManager.OnBackStackChangedListener {
-                override fun onBackStackChanged() {
-                    val currentFragment = fragmentManager.findFragmentById(R.id.fragment_container_overlay)
-                    if (currentFragment !is DeviceConsumptionFragment) {
-                        try {
-                            dialog.show()
-                        } catch (e: Exception) {}
-                        fragmentManager.removeOnBackStackChangedListener(this)
-                    }
-                }
-            })
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val token = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
-                    .getString("apiToken", "") ?: return@launch
-
-                val consumoActualResponse = RetrofitClient.deviceService.getConsumoActual("Bearer $token", dispositivo.id)
-                if (consumoActualResponse.isSuccessful) {
-                    val consumo = consumoActualResponse.body()?.data
-                    tvDialogCorriente.text = consumo?.corrienteA?.let { String.format("%.3f A", it) } ?: "Sin medición"
-                    tvDialogPotencia.text = consumo?.potenciaW?.let { String.format("%.2f W", it) } ?: "Sin medición"
-                    tvDialogEnergia.text = consumo?.energiaAcumuladaWh?.let { String.format("%.3f Wh", it) } ?: "Sin medición"
-                }
-
-                val consumoHistoricoResponse = RetrofitClient.deviceService.getConsumoHistorico("Bearer $token", dispositivo.id, 8)
-                if (consumoHistoricoResponse.isSuccessful) {
-                    val lecturas = consumoHistoricoResponse.body()?.data.orEmpty()
-                    tvDialogHistorialConsumo.text = if (lecturas.isEmpty()) {
-                        "Sin lecturas de consumo registradas."
-                    } else {
-                        lecturas.joinToString("\n") { lectura ->
-                            String.format(
-                                "%.3f A · %.2f W · %.3f Wh",
-                                lectura.corrienteA,
-                                lectura.potenciaW,
-                                lectura.energiaWh
-                            )
-                        }
-                    }
-                } else {
-                    tvDialogHistorialConsumo.text = "No se pudo cargar el historial de consumo."
-                }
-
-                val response = RetrofitClient.deviceService.getMensajesSocket("Bearer $token", dispositivo.id, 8)
-                if (response.isSuccessful) {
-                    val mensajes = response.body()?.data.orEmpty()
-                    tvDialogHistorial.text = if (mensajes.isEmpty()) {
-                        "Sin mensajes registrados todavía."
-                    } else {
-                        mensajes.joinToString("\n\n") { msg ->
-                            val resumen = msg.comando ?: msg.payloadJson.take(120)
-                            "${msg.direccion.uppercase()} · $resumen"
-                        }
-                    }
-                } else {
-                    tvDialogHistorial.text = "No se pudo cargar el historial."
-                }
-            } catch (_: Exception) {
-                tvDialogHistorial.text = "Error al cargar el historial."
-            }
-        }
-
-        dialog.show()
-        val window = dialog.window
-        if (window != null) {
-            val displayMetrics = resources.displayMetrics
-            val width = (displayMetrics.widthPixels * 0.95).toInt()
-            val height = (displayMetrics.heightPixels * 0.90).toInt()
-            window.setLayout(width, height)
-        }
-    }
 }
