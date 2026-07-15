@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Estado Activo: Teal suave/translúcido para el fondo -->
+    <item android:color="#80008080" android:state_checked="true" /> <!-- Reemplaza por un código hex de tu teal con 50% alfa si lo prefieres -->
+    <!-- Estado Inactivo: Gris muy tenue -->
+    <item android:color="#E0E0E0" android:state_checked="false" />
+</selector>

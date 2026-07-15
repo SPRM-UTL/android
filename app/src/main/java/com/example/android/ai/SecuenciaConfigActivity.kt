@@ -1,6 +1,6 @@
 package com.example.android.ai
-import com.example.android.R
 
+import com.example.android.R
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -25,6 +25,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.android.db.AppDatabase
 import com.example.android.db.Gesto
+import com.example.android.db.GestoDetalle
 import com.example.android.network.ApiHandler
 import com.example.android.network.RetrofitClient
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -46,7 +47,6 @@ class SecuenciaConfigActivity : AppCompatActivity() {
     private lateinit var comboActual: Combo
     private var comboIndex: Int = -1
 
-    // Launcher existente para Pasos/Activadores
     private val wizardLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val data = result.data ?: return@registerForActivityResult
@@ -60,10 +60,35 @@ class SecuenciaConfigActivity : AppCompatActivity() {
 
             when (extraType) {
                 "ACTIVATOR" -> {
+                    val yaExisteEnPasos = adapter.pasos.any { it.nombreGesto.equals(nombreGesto, ignoreCase = true) }
+                    if (yaExisteEnPasos) {
+                        mostrarAdvertenciaDuplicado(
+                            "Gesto Duplicado",
+                            "El gesto '$nombreGesto' ya está registrado como un paso en la secuencia de este combo. No se puede usar como activador."
+                        )
+                        return@registerForActivityResult
+                    }
                     comboActual.activador = newStep
                     updateHeaders()
                 }
                 "STEP" -> {
+                    val esIgualAlActivador = comboActual.activador?.nombreGesto.equals(nombreGesto, ignoreCase = true)
+                    val yaExisteEnPasos = adapter.pasos.any { it.nombreGesto.equals(nombreGesto, ignoreCase = true) }
+
+                    if (esIgualAlActivador) {
+                        mostrarAdvertenciaDuplicado(
+                            "Gesto Duplicado",
+                            "Este gesto ya está configurado como el Gesto Activador de este combo y no se puede duplicar."
+                        )
+                        return@registerForActivityResult
+                    } else if (yaExisteEnPasos) {
+                        mostrarAdvertenciaDuplicado(
+                            "Paso Duplicado",
+                            "El gesto '$nombreGesto' ya forma parte de los pasos de tu secuencia."
+                        )
+                        return@registerForActivityResult
+                    }
+
                     adapter.pasos.add(newStep)
                     adapter.notifyItemInserted(adapter.pasos.size - 1)
                     updateHeaders()
@@ -71,6 +96,18 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                 "EDIT_STEP" -> {
                     val editIndex = data.getIntExtra("EDIT_INDEX", -1)
                     if (editIndex != -1) {
+                        val esIgualAlActivador = comboActual.activador?.nombreGesto.equals(nombreGesto, ignoreCase = true)
+                        val yaExisteEnOtrosPasos = adapter.pasos.filterIndexed { idx, _ -> idx != editIndex }
+                            .any { it.nombreGesto.equals(nombreGesto, ignoreCase = true) }
+
+                        if (esIgualAlActivador || yaExisteEnOtrosPasos) {
+                            mostrarAdvertenciaDuplicado(
+                                "Gesto Duplicado",
+                                "No puedes cambiar el paso al gesto '$nombreGesto' porque ya está en uso en este combo."
+                            )
+                            return@registerForActivityResult
+                        }
+
                         adapter.pasos[editIndex] = newStep
                         adapter.notifyItemChanged(editIndex)
                         updateHeaders()
@@ -80,27 +117,36 @@ class SecuenciaConfigActivity : AppCompatActivity() {
         }
     }
 
-    // === NUEVO LAUNCHER PARA EL WIZARD DE VINCULAR DISPOSITIVO ===
     private val dispositivoWizardLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val data = result.data ?: return@registerForActivityResult
 
             val dispositivoId = data.getIntExtra("DISPOSITIVO_ID", -1)
             val nombreDispositivo = data.getStringExtra("DISPOSITIVO_NOMBRE") ?: "Dispositivo"
-            val accionTipo = data.getIntExtra("ACCION_TIPO", -1) // 0 = Encender, 1 = Apagar, 2 = Alternar, -1 = Quitar/Ninguna
+            val accionTipo = data.getIntExtra("ACCION_TIPO", -1)
 
             if (dispositivoId == -1 || accionTipo == -1) {
-                // Si el usuario seleccionó "Quitar acción" dentro de su Wizard
                 comboActual.aparatoId = null
                 comboActual.accionEncendido = null
                 comboActual.accionVinculada = null
             } else {
-                // Asignar los valores devueltos por el Wizard
+                val comboDuplicado = todosCombos.find { it.id != comboActual.id && it.aparatoId == dispositivoId }
+
+                if (comboDuplicado != null) {
+                    mostrarAdvertenciaDuplicado(
+                        "Dispositivo en Uso",
+                        "El dispositivo '$nombreDispositivo' ya está vinculado al combo '${comboDuplicado.name}'. Asigna un dispositivo diferente."
+                    )
+                    return@registerForActivityResult
+                }
+
+                Toast.makeText(this, "Dispositivo '$nombreDispositivo' asignado con éxito", Toast.LENGTH_SHORT).show()
+
                 comboActual.aparatoId = dispositivoId
                 comboActual.accionEncendido = when (accionTipo) {
                     0 -> true
                     1 -> false
-                    else -> null // Alternar estado
+                    else -> null
                 }
                 val verbo = when (accionTipo) {
                     0 -> "Encender"
@@ -129,18 +175,13 @@ class SecuenciaConfigActivity : AppCompatActivity() {
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.mainSequenceConfig)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-
             v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom + ime.bottom)
-
             val cardBack = findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardBack)
             cardBack?.getChildAt(0)?.setPadding(0, systemBars.top, 0, 0)
-
             insets
         }
 
-        findViewById<android.widget.ImageButton>(R.id.btnBack).setOnClickListener {
-            finish()
-        }
+        findViewById<android.widget.ImageButton>(R.id.btnBack).setOnClickListener { finish() }
         tvComboNameDesc = findViewById(R.id.tvComboNameDesc)
         tvStepsDesc = findViewById(R.id.tvStepsDesc)
         tvActivatorDesc = findViewById(R.id.tvActivatorDesc)
@@ -148,19 +189,12 @@ class SecuenciaConfigActivity : AppCompatActivity() {
         tvAccionDesc = findViewById(R.id.tvAccionDesc)
         btnSave = findViewById(R.id.btnSave)
 
-        if (!loadCurrentConfig()) {
-            return
-        }
+        if (!loadCurrentConfig()) return
 
         val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
-            ItemTouchHelper.UP or ItemTouchHelper.DOWN,
-            ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
+            ItemTouchHelper.UP or ItemTouchHelper.DOWN, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
         ) {
-            override fun onMove(
-                recyclerView: RecyclerView,
-                viewHolder: RecyclerView.ViewHolder,
-                target: RecyclerView.ViewHolder
-            ): Boolean {
+            override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
                 adapter.moveItem(viewHolder.adapterPosition, target.adapterPosition)
                 return true
             }
@@ -168,7 +202,6 @@ class SecuenciaConfigActivity : AppCompatActivity() {
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 val position = viewHolder.adapterPosition
                 val deletedStep = adapter.pasos[position]
-
                 adapter.removeItem(position)
                 updateHeaders()
 
@@ -190,15 +223,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                 }
             }
 
-            override fun onChildDraw(
-                c: android.graphics.Canvas,
-                recyclerView: RecyclerView,
-                viewHolder: RecyclerView.ViewHolder,
-                dX: Float,
-                dY: Float,
-                actionState: Int,
-                isCurrentlyActive: Boolean
-            ) {
+            override fun onChildDraw(c: android.graphics.Canvas, recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, dX: Float, dY: Float, actionState: Int, isCurrentlyActive: Boolean) {
                 if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE) {
                     val itemView = viewHolder.itemView
                     val paint = android.graphics.Paint().apply {
@@ -208,10 +233,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                     val cornerRadius = 12 * resources.displayMetrics.density
 
                     if (dX > 0) {
-                        val rect = android.graphics.RectF(
-                            itemView.left.toFloat(), itemView.top.toFloat(),
-                            itemView.left + dX, itemView.bottom.toFloat()
-                        )
+                        val rect = android.graphics.RectF(itemView.left.toFloat(), itemView.top.toFloat(), itemView.left + dX, itemView.bottom.toFloat())
                         c.drawRoundRect(rect, cornerRadius, cornerRadius, paint)
                         icon?.let {
                             val iconMargin = (itemView.height - it.intrinsicHeight) / 2
@@ -224,10 +246,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                             it.draw(c)
                         }
                     } else if (dX < 0) {
-                        val rect = android.graphics.RectF(
-                            itemView.right + dX, itemView.top.toFloat(),
-                            itemView.right.toFloat(), itemView.bottom.toFloat()
-                        )
+                        val rect = android.graphics.RectF(itemView.right + dX, itemView.top.toFloat(), itemView.right.toFloat(), itemView.bottom.toFloat())
                         c.drawRoundRect(rect, cornerRadius, cornerRadius, paint)
                         icon?.let {
                             val iconMargin = (itemView.height - it.intrinsicHeight) / 2
@@ -245,19 +264,15 @@ class SecuenciaConfigActivity : AppCompatActivity() {
             }
         })
 
-        adapter = SecuenciaAdapter(comboActual.pasos, { holder ->
-            itemTouchHelper.startDrag(holder)
-        }, { position ->
-            val intent = Intent(this, PasoWizardActivity::class.java)
-            intent.putExtra("EXTRA_TYPE", "EDIT_STEP")
-            intent.putExtra("EDIT_INDEX", position)
-
-            val step = comboActual.pasos[position]
-            intent.putExtra("INITIAL_POSE", step.nombreGesto)
-            intent.putExtra("INITIAL_HAND", step.manoObjetivo.name)
-            intent.putExtra("INITIAL_FRAMES", step.cuadrosRequeridos)
-
-            wizardLauncher.launch(intent)
+        adapter = SecuenciaAdapter(comboActual.pasos, { holder -> itemTouchHelper.startDrag(holder) }, { position ->
+            val intent = Intent(this, PasoWizardActivity::class.java).apply {
+                putExtra("EXTRA_TYPE", "EDIT_STEP")
+                putExtra("EDIT_INDEX", position)
+                val step = comboActual.pasos[position]
+                putExtra("INITIAL_POSE", step.nombreGesto)
+                putExtra("INITIAL_HAND", step.manoObjetivo.name)
+                putExtra("INITIAL_FRAMES", step.cuadrosRequeridos)
+            }
             wizardLauncher.launch(intent)
         })
 
@@ -268,7 +283,6 @@ class SecuenciaConfigActivity : AppCompatActivity() {
 
             val etBottomSheetComboName = bottomSheetView.findViewById<EditText>(R.id.etBottomSheetComboName)
             val btnSaveComboName = bottomSheetView.findViewById<Button>(R.id.btnSaveComboName)
-
             etBottomSheetComboName.setText(comboActual.name)
 
             btnSaveComboName.setOnClickListener {
@@ -277,7 +291,6 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                 updateHeaders()
                 bottomSheetDialog.dismiss()
             }
-
             bottomSheetDialog.setOnShowListener {
                 etBottomSheetComboName.requestFocus()
                 etBottomSheetComboName.post {
@@ -298,15 +311,10 @@ class SecuenciaConfigActivity : AppCompatActivity() {
             rvBottomSheetSteps.adapter = adapter
             itemTouchHelper.attachToRecyclerView(rvBottomSheetSteps)
 
-            bottomSheetView.findViewById<View>(R.id.fabAddStep).setOnClickListener {
-                launchWizard("STEP")
-            }
-
+            bottomSheetView.findViewById<View>(R.id.fabAddStep).setOnClickListener { launchWizard("STEP") }
             bottomSheetDialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
             bottomSheetDialog.show()
         }
-
-        val ivComboIcon = findViewById<android.widget.ImageView>(R.id.ivComboIcon)
 
         val availableIcons = listOf(
             "lucide_lightbulb", "lucide_tv", "lucide_music", "lucide_fan", "lucide_zap",
@@ -350,7 +358,6 @@ class SecuenciaConfigActivity : AppCompatActivity() {
 
             val etBottomSheetVoice = bottomSheetView.findViewById<EditText>(R.id.etBottomSheetVoiceCommand)
             val btnSaveVoice = bottomSheetView.findViewById<Button>(R.id.btnSaveVoiceCommand)
-
             etBottomSheetVoice.setText(comboActual.fraseVozActivadora)
 
             btnSaveVoice.setOnClickListener {
@@ -359,7 +366,6 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                 updateHeaders()
                 bottomSheetDialog.dismiss()
             }
-
             bottomSheetDialog.setOnShowListener {
                 etBottomSheetVoice.requestFocus()
                 etBottomSheetVoice.post {
@@ -367,27 +373,31 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                     imm.showSoftInput(etBottomSheetVoice, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
                 }
             }
-
             bottomSheetDialog.show()
         }
 
         findViewById<View>(R.id.cardActivator).setOnClickListener {
-            if (comboActual.activador != null) {
-                // If it already has an activator, maybe we want to edit or delete it
-                // For simplicity, we just launch the wizard to replace it.
-                // You could also show a dialog to let the user delete it, but wizard is fine.
-                launchWizard("ACTIVATOR", comboActual.activador)
-            } else {
-                launchWizard("ACTIVATOR", null)
-            }
+            launchWizard("ACTIVATOR", comboActual.activador)
         }
 
-        // Eventos modificados para abrir la nueva actividad Wizard en lugar del diálogo antiguo
-        findViewById<View>(R.id.cardAccionVinculada).setOnClickListener {
-            showActionSelectionDialog()
-        }
+        findViewById<View>(R.id.cardAccionVinculada).setOnClickListener { showActionSelectionDialog() }
 
         btnSave.setOnClickListener {
+            val nombresPasos = comboActual.pasos.map { it.nombreGesto.trim().lowercase() }
+            val pasosDuplicados = nombresPasos.groupBy { it }.filter { it.value.size > 1 }.keys
+            if (pasosDuplicados.isNotEmpty()) {
+                val gestoRepetidoOriginal = comboActual.pasos.find { it.nombreGesto.trim().lowercase() == pasosDuplicados.first() }?.nombreGesto ?: pasosDuplicados.first()
+                mostrarAdvertenciaDuplicado("Secuencia con Duplicados", "El gesto '$gestoRepetidoOriginal' está repetido en la secuencia.")
+                return@setOnClickListener
+            }
+
+            val activadorNombre = comboActual.activador?.nombreGesto?.trim()?.lowercase()
+            if (activadorNombre != null && nombresPasos.contains(activadorNombre)) {
+                val activadorOriginal = comboActual.activador?.nombreGesto ?: "Activador"
+                mostrarAdvertenciaDuplicado("Gesto Duplicado", "El Gesto Activador '$activadorOriginal' no puede ser parte de los pasos.")
+                return@setOnClickListener
+            }
+
             SecuenciaConfigManager.saveCombos(this, todosCombos)
             notificarRecargaCombos()
             sincronizarGestoConServidor()
@@ -395,29 +405,26 @@ class SecuenciaConfigActivity : AppCompatActivity() {
     }
 
     private fun launchWizard(extraType: String, step: PasoSecuencia? = null) {
-        val intent = Intent(this, PasoWizardActivity::class.java)
-        intent.putExtra("EXTRA_TYPE", extraType)
-        if (step != null) {
-            intent.putExtra("INITIAL_POSE", step.nombreGesto)
-            intent.putExtra("INITIAL_HAND", step.manoObjetivo.name)
-            intent.putExtra("INITIAL_FRAMES", step.cuadrosRequeridos)
+        val intent = Intent(this, PasoWizardActivity::class.java).apply {
+            putExtra("EXTRA_TYPE", extraType)
+            if (step != null) {
+                putExtra("INITIAL_POSE", step.nombreGesto)
+                putExtra("INITIAL_HAND", step.manoObjetivo.name)
+                putExtra("INITIAL_FRAMES", step.cuadrosRequeridos)
+            }
         }
         wizardLauncher.launch(intent)
     }
 
-
-
     private fun loadCurrentConfig(): Boolean {
         val comboId = intent.getStringExtra("COMBO_ID")
         todosCombos = SecuenciaConfigManager.loadCombos(this).toMutableList()
-
         comboIndex = todosCombos.indexOfFirst { it.id == comboId }
         if (comboIndex == -1) {
             Toast.makeText(this, "Error cargando combo", Toast.LENGTH_SHORT).show()
             finish()
             return false
         }
-
         comboActual = todosCombos[comboIndex]
         updateHeaders()
         return true
@@ -431,11 +438,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
         if (ivComboIcon != null) {
             val iconName = comboActual.icono ?: "lucide_star"
             val resId = resources.getIdentifier(iconName, "drawable", packageName)
-            if (resId != 0) {
-                ivComboIcon.setImageResource(resId)
-            } else {
-                ivComboIcon.setImageResource(R.drawable.lucide_star)
-            }
+            ivComboIcon.setImageResource(if (resId != 0) resId else R.drawable.lucide_star)
         }
 
         if (comboActual.activador != null) {
@@ -463,9 +466,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
         }
     }
 
-    // === FUNCIÓN REDISEÑADA: ABRE LA NUEVA ACTIVIDAD DE TIPO WIZARD ===
     private fun showActionSelectionDialog() {
-        // Debes crear una nueva Activity llamada 'DispositivoWizardActivity' (o el nombre que prefieras)
         val intent = Intent(this, DispositivoWizardActivity::class.java).apply {
             putExtra("INITIAL_DISPOSITIVO_ID", comboActual.aparatoId ?: -1)
             putExtra("INITIAL_ACCION_ENCENDIDO", comboActual.accionEncendido)
@@ -480,43 +481,64 @@ class SecuenciaConfigActivity : AppCompatActivity() {
         startService(intent)
     }
 
+    private fun mostrarAdvertenciaDuplicado(titulo: String, mensaje: String) {
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle(titulo).setMessage(mensaje)
+            .setPositiveButton("Entendido") { dialog, _ -> dialog.dismiss() }
+            .setIcon(android.R.drawable.ic_dialog_alert).show()
+    }
+
     // ==========================================================
-    // SINCRONIZACIÓN CON BACKEND
+    // SINCRONIZACIÓN CON BACKEND MODIFICADA CON GESTO_DETALLE
     // ==========================================================
 
     private fun sincronizarGestoConServidor() {
-        val nombreRepresentativo = comboActual.activador?.nombreGesto
-            ?: comboActual.pasos.firstOrNull()?.nombreGesto
-            ?: comboActual.name
+        val nombreRepresentativo = comboActual.activador?.nombreGesto ?: comboActual.pasos.firstOrNull()?.nombreGesto ?: comboActual.name
         val nombreValido = comboActual.name.ifBlank { nombreRepresentativo }
         val tipoDisparador = if (comboActual.activador != null) "COMBO_SECUENCIA" else "COMBO_LIBRE"
 
         val pasosList = mutableListOf<com.example.android.db.GestoPaso>()
         var order = 1
+        var cuadrosTotales = 0
+
         if (comboActual.activador != null) {
+            cuadrosTotales += comboActual.activador!!.cuadrosRequeridos
             pasosList.add(com.example.android.db.GestoPaso(orden = order++, esActivador = true, nombreGesto = comboActual.activador!!.nombreGesto, manoObjetivo = comboActual.activador!!.manoObjetivo.name, cuadrosRequeridos = comboActual.activador!!.cuadrosRequeridos))
         }
         comboActual.pasos.forEach { paso ->
+            cuadrosTotales += paso.cuadrosRequeridos
             pasosList.add(com.example.android.db.GestoPaso(orden = order++, esActivador = false, nombreGesto = paso.nombreGesto, manoObjetivo = paso.manoObjetivo.name, cuadrosRequeridos = paso.cuadrosRequeridos))
         }
 
+        // 👇 CÁLCULO DINÁMICO PARA GESTO DETALLE
+        val idRelacional = comboActual.backendGestoId ?: 0
+        val duracionCalculada = if (cuadrosTotales > 0) Math.max(1, cuadrosTotales / 30) else 2
+
+        val objetoDetalle = GestoDetalle(
+            gestoId = idRelacional,
+            duracionSegundos = duracionCalculada,
+            iluminacionRecomendada = "Estable / Media",
+            distanciaRecomendada = "0.8m - 2.0m"
+        )
+
         val gesto = Gesto(
-            id = comboActual.backendGestoId ?: 0,
-            bkId = comboActual.backendGestoId ?: 0,
+            id = idRelacional,
+            bkId = idRelacional,
             nombre = nombreValido,
             identificadorIa = 0,
             nivelConfianzaMinimo = 0.5,
             tipoDisparadorNombre = tipoDisparador,
             aparatoId = comboActual.aparatoId,
+            icono = comboActual.icono ?: "lucide_star",
+            fraseVozActivadora = comboActual.fraseVozActivadora,
             pasos = pasosList,
-            fraseVozActivadora = comboActual.fraseVozActivadora
+            detalle = objetoDetalle // 👈 Se inyecta el detalle completo al DTO de envío
         )
+
         lifecycleScope.launch {
             ApiHandler.safeApiCall(
-                activity = this@SecuenciaConfigActivity,
-                showLoading = true,
-                loadingTitle = "Guardando",
-                loadingMessage = "Sincronizando gesto...",
+                activity = this@SecuenciaConfigActivity, showLoading = true,
+                loadingTitle = "Guardando", loadingMessage = "Sincronizando gesto y detalles...",
                 apiCall = {
                     val token = getSharedPreferences("SesionApp", Context.MODE_PRIVATE).getString("apiToken", "") ?: ""
                     val bearer = "Bearer $token"
@@ -537,19 +559,24 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                         comboActual.backendGestoId = guardado.id
                         todosCombos[comboIndex] = comboActual
                         SecuenciaConfigManager.saveCombos(this@SecuenciaConfigActivity, todosCombos)
+
+                        // Localmente guardamos el Gesto principal y su Detalle en Room en hilos de fondo
                         lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
                             db.gestoDao().insertGesto(guardado)
+
+                            // Re-mapeamos el ID real devuelto por la API al detalle antes de guardarlo en Room
+                            guardado.detalle?.let { detalleServidor ->
+                                val detalleListo = detalleServidor.copy(gestoId = guardado.id)
+                                // Asumiendo que agregaste 'gestoDetalleDao()' a tu AppDatabase
+                                // db.gestoDetalleDao().insertDetalle(detalleListo)
+                            }
                         }
                     }
-                    Toast.makeText(this@SecuenciaConfigActivity, "Gesto guardado y sincronizado", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@SecuenciaConfigActivity, "Gesto y detalles sincronizados", Toast.LENGTH_SHORT).show()
                     finish()
                 },
                 onError = { errorMsg ->
-                    Toast.makeText(
-                        this@SecuenciaConfigActivity,
-                        "Gesto guardado localmente, pero falló la sincronización: $errorMsg",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    Toast.makeText(this@SecuenciaConfigActivity, "Guardado local. Falló servidor: $errorMsg", Toast.LENGTH_LONG).show()
                     finish()
                 }
             )

@@ -39,13 +39,30 @@ data class Gesto(
     @SerializedName("sk_aparato_id")
     val aparatoId: Int?,
 
+    @SerializedName("icono")
+    val icono: String? = "lucide_star",
+
     @SerializedName("frase_voz_activadora")
     val fraseVozActivadora: String? = null,
 
     @androidx.room.Ignore
     @SerializedName("pasos")
-    val pasos: List<GestoPaso>? = null
+    val pasos: List<GestoPaso>? = null,
+
+    // 👇 AGREGADO: Detalle ignorado por Room pero procesado por Gson
+    @androidx.room.Ignore
+    @SerializedName("detalle")
+    val detalle: GestoDetalle? = null
 ) {
-    constructor(id: Int, bkId: Int, nombre: String?, identificadorIa: Int, nivelConfianzaMinimo: Double, tipoDisparadorNombre: String?, aparatoId: Int?, fraseVozActivadora: String?) : 
-        this(id, bkId, nombre, identificadorIa, nivelConfianzaMinimo, tipoDisparadorNombre, aparatoId, fraseVozActivadora, null)
+    constructor(
+        id: Int,
+        bkId: Int,
+        nombre: String?,
+        identificadorIa: Int,
+        nivelConfianzaMinimo: Double,
+        tipoDisparadorNombre: String?,
+        aparatoId: Int?,
+        icono: String?,
+        fraseVozActivadora: String?
+    ) : this(id, bkId, nombre, identificadorIa, nivelConfianzaMinimo, tipoDisparadorNombre, aparatoId, icono, fraseVozActivadora, null, null)
 }
