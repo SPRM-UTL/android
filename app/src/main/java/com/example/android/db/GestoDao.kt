@@ -1,35 +1,30 @@
 package com.example.android.db
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import kotlinx.coroutines.flow.Flow
+import androidx.room.Update
 
 @Dao
 interface GestoDao {
-    @Query("SELECT * FROM gestos")
-    fun getAllGestos(): Flow<List<Gesto>>
-
-    @Query("SELECT * FROM gestos WHERE fraseVozActivadora IS NOT NULL AND fraseVozActivadora != ''")
-    suspend fun getGestosConFraseVoz(): List<Gesto>
-
-    @Query("SELECT * FROM gestos WHERE aparatoId = :aparatoId")
-    fun getGestosByDispositivo(aparatoId: Int): Flow<List<Gesto>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertGesto(gesto: Gesto): Long
+    fun insertGesto(gesto: Gesto): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAll(gestos: List<Gesto>): List<Long>
+    fun insertAll(gestos: List<Gesto>)
 
-    @Delete
-    suspend fun deleteGesto(gesto: Gesto): Int
+    @Update
+    fun updateGesto(gesto: Gesto)
 
-    @Query("DELETE FROM gestos WHERE id = :id")
-    suspend fun deleteGestoById(id: Int): Int
+    @Query("SELECT * FROM gestos WHERE sk_gesto_id = :gestoId")
+    fun getGestoById(gestoId: Long): Gesto?
+
+    // 🌟 AÑADIDO: Retorna los gestos que tienen una frase de voz configurada
+    @Query("SELECT * FROM gestos WHERE frase_voz_activadora IS NOT NULL AND frase_voz_activadora != ''")
+    fun getGestosConFraseVoz(): List<Gesto>
 
     @Query("DELETE FROM gestos")
-    suspend fun deleteAllGestos(): Int
+    fun deleteAllGestos()
 }
