@@ -1,4 +1,4 @@
-package com.example.android
+package com.example.android.ui.home
 
 import android.graphics.Color
 import android.app.ActivityManager
@@ -45,6 +45,9 @@ import com.example.android.ui.dialogs.DeviceInfoDialog
 import com.example.android.ui.dialogs.DeleteDeviceDialog
 import com.example.android.ui.HomeTutorialHelper
 import kotlinx.coroutines.withContext
+import com.example.android.ui.device.SelectTypeDevice
+import com.example.android.ui.profile.ProfileActivity
+import com.example.android.ui.network.EspConfigActivity
 
 class HomeFragment : Fragment() {
 

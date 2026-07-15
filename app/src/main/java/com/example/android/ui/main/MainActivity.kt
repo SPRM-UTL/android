@@ -1,4 +1,4 @@
-package com.example.android
+package com.example.android.ui.main
 
 import android.Manifest
 import android.content.Context
@@ -36,6 +36,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.concurrent.Executor
 import com.example.android.ai.PermisosActivity
+import com.example.android.ui.home.HomeActivity
+import com.example.android.ui.auth.InitialSetupActivity
+import com.example.android.ui.auth.RegisterActivity
 
 
 class MainActivity : AppCompatActivity() {

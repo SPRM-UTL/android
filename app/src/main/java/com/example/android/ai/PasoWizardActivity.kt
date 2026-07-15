@@ -17,6 +17,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.viewpager2.widget.ViewPager2
+import com.example.android.ui.adapters.GestureDropdownAdapter
 
 class PasoWizardActivity : AppCompatActivity() {
 

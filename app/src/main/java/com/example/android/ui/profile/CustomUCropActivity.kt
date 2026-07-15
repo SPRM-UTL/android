@@ -1,4 +1,4 @@
-package com.example.android
+package com.example.android.ui.profile
 
 import android.os.Bundle
 import android.view.View

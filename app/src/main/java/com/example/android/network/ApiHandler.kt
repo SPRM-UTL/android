@@ -10,7 +10,7 @@ import android.view.View
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import com.example.android.MainActivity
+import com.example.android.ui.main.MainActivity
 import com.example.android.R
 import com.example.android.view.CustomDialog
 import com.google.android.material.button.MaterialButton

@@ -12,11 +12,11 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.lifecycleScope
-import com.example.android.DeviceControlsActivity
-import com.example.android.EditDeviceFragment
-import com.example.android.MultiSocketActivity
+import com.example.android.ui.device.DeviceControlsActivity
+import com.example.android.ui.device.EditDeviceFragment
+import com.example.android.ui.device.MultiSocketActivity
 import com.example.android.R
-import com.example.android.DeviceConsumptionFragment
+import com.example.android.ui.device.DeviceConsumptionFragment
 import com.example.android.db.Dispositivo
 import com.example.android.network.RetrofitClient
 import com.google.android.material.card.MaterialCardView

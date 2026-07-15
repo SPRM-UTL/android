@@ -1,4 +1,4 @@
-package com.example.android
+package com.example.android.ui.home
 
 import android.os.Bundle
 import android.widget.FrameLayout
@@ -20,6 +20,9 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.example.android.ui.components.BottomBarWithFab
 import androidx.viewpager2.widget.ViewPager2
 import androidx.viewpager2.adapter.FragmentStateAdapter
+import com.example.android.ui.network.EspConfigActivity
+import com.example.android.ui.gesture.GestosFragment
+import com.example.android.ui.dialogs.MenuBottomSheetDialog
 
 class HomeActivity : AppCompatActivity() {
 

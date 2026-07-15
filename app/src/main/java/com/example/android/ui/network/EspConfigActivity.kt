@@ -1,4 +1,4 @@
-package com.example.android
+package com.example.android.ui.network
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -37,6 +37,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.*
+import com.example.android.ui.device.PortraitCaptureActivity
 
 class EspConfigActivity : AppCompatActivity() {
 

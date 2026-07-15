@@ -1,7 +1,7 @@
 package com.example.android.ai
 
 import com.example.android.R
-import com.example.android.HomeActivity
+import com.example.android.ui.home.HomeActivity
 
 import android.Manifest
 import android.content.Context
@@ -29,6 +29,7 @@ import android.graphics.PorterDuff
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.launch
 import kotlin.coroutines.resume
+import com.example.android.ui.auth.InitialSetupActivity
 
 class PermisosActivity : AppCompatActivity() {
 
@@ -482,7 +483,7 @@ class PermisosActivity : AppCompatActivity() {
                 com.example.android.view.CustomDialog.dismissDialog()
                 
                 if (!tieneCasas) {
-                    startActivity(Intent(this@PermisosActivity, com.example.android.InitialSetupActivity::class.java))
+                    startActivity(Intent(this@PermisosActivity, com.example.android.ui.auth.InitialSetupActivity::class.java))
                 } else {
                     startActivity(Intent(this@PermisosActivity, HomeActivity::class.java))
                 }

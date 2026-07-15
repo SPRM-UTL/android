@@ -1,4 +1,4 @@
-package com.example.android
+package com.example.android.ui.profile
 
 import android.app.Dialog
 import android.content.Context
@@ -44,6 +44,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.example.android.ui.main.MainActivity
 
 class ProfileActivity : AppCompatActivity() {
 

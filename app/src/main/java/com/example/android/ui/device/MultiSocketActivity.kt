@@ -1,4 +1,4 @@
-package com.example.android
+package com.example.android.ui.device
 
 import android.content.res.ColorStateList
 import android.graphics.Color

@@ -32,6 +32,7 @@ import com.example.android.actions.GestureActionExecutor
 import java.util.Calendar
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import com.example.android.ui.home.HomeActivity
 
 class BackgroundCameraService : LifecycleService() {
 
@@ -164,7 +165,7 @@ class BackgroundCameraService : LifecycleService() {
     private fun startForegroundService(text: String) {
         createNotificationChannel()
         
-        val notificationIntent = Intent(this, com.example.android.HomeActivity::class.java)
+        val notificationIntent = Intent(this, com.example.android.ui.home.HomeActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(
             this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE
         )
@@ -178,7 +179,7 @@ class BackgroundCameraService : LifecycleService() {
     }
 
     private fun updateNotification(title: String, text: String) {
-        val notificationIntent = Intent(this, com.example.android.HomeActivity::class.java)
+        val notificationIntent = Intent(this, com.example.android.ui.home.HomeActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(
             this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE
         )

@@ -1,4 +1,4 @@
-package com.example.android
+package com.example.android.ui.gesture
 
 import android.Manifest
 import android.content.pm.PackageManager

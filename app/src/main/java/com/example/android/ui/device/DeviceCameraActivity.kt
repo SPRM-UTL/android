@@ -1,4 +1,4 @@
-package com.example.android
+package com.example.android.ui.device
 
 import android.content.Intent
 import android.os.Bundle
@@ -20,6 +20,7 @@ import android.widget.Toast
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
+import com.example.android.ui.home.HomeActivity
 
 class DeviceCameraActivity : AppCompatActivity() {
 

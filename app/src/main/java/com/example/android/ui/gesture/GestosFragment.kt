@@ -1,4 +1,4 @@
-package com.example.android
+package com.example.android.ui.gesture
 
 import android.content.Context
 import android.content.Intent
@@ -24,6 +24,9 @@ import com.google.android.material.snackbar.Snackbar
 import com.example.android.ai.Combo
 import com.example.android.ui.AddGestoAdapter
 import java.util.UUID
+import com.example.android.ui.profile.ProfileActivity
+import com.example.android.ui.adapters.AddGestoAdapter
+import com.example.android.ui.adapters.GestosAdminAdapter
 
 class GestosFragment : Fragment() {
 

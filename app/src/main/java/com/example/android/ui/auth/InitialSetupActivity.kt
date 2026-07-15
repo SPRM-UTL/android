@@ -1,4 +1,4 @@
-package com.example.android
+package com.example.android.ui.auth
 
 import android.content.Context
 import android.content.Intent
@@ -25,6 +25,7 @@ import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.example.android.ui.home.HomeActivity
 
 class InitialSetupActivity : AppCompatActivity() {
 

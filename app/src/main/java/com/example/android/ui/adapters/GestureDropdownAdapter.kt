@@ -13,6 +13,7 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.example.android.R
 import java.util.Locale
+import com.example.android.ui.adapters.GestureDropdownAdapter
 
 /**
  * Adapter personalizado para mostrar gestos/manos.

@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.android.R
+import com.example.android.ui.adapters.AddGestoAdapter
 
 class AddGestoAdapter(private val onAddClick: () -> Unit) :
     RecyclerView.Adapter<AddGestoAdapter.AddViewHolder>() {

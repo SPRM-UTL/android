@@ -1,4 +1,4 @@
-package com.example.android
+package com.example.android.ui.dialogs
 
 import android.content.Context
 import android.content.DialogInterface
@@ -18,6 +18,9 @@ import com.example.android.view.Snackbars
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import kotlinx.coroutines.launch
 import androidx.lifecycle.lifecycleScope
+import com.example.android.ui.profile.ProfileActivity
+import com.example.android.ui.settings.SettingsActivity
+import com.example.android.ui.main.MainActivity
 
 class MenuBottomSheetDialog(
     private val appContext: Context

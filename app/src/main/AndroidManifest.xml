@@ -40,7 +40,7 @@
         android:usesCleartextTraffic="true">
 
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.main.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.AnimatedSplash.MySplash">
             <intent-filter>
@@ -50,24 +50,24 @@
         </activity>
 
         <activity
-            android:name=".EspConfigActivity"
+            android:name=".ui.network.EspConfigActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
         <activity
-            android:name=".ProfileActivity"
+            android:name=".ui.profile.ProfileActivity"
             android:exported="false" />
 
         <activity
-            android:name=".RegisterActivity"
+            android:name=".ui.auth.RegisterActivity"
             android:exported="false" />
 
         <activity
-            android:name=".SettingsActivity"
+            android:name=".ui.settings.SettingsActivity"
             android:exported="false" />
 
         <activity
-            android:name=".CustomUCropActivity"
+            android:name=".ui.profile.CustomUCropActivity"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.UCrop.Custom"
             android:exported="false" />
@@ -77,7 +77,7 @@
             android:exported="false" />
 
         <activity
-            android:name=".DeviceCameraActivity"
+            android:name=".ui.device.DeviceCameraActivity"
             android:exported="true" />
 
         <activity
@@ -107,42 +107,42 @@
             android:foregroundServiceType="camera" />
 
         <activity
-            android:name=".HomeActivity"
+            android:name=".ui.home.HomeActivity"
             android:exported="false" />
 
         <activity
-            android:name=".DeviceActivity"
+            android:name=".ui.device.DeviceActivity"
             android:exported="false" />
 
 
 
         <activity
-            android:name=".AddDeviceWifiActivity"
+            android:name=".ui.device.AddDeviceWifiActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             tools:ignore="LockedOrientationActivity" />
 
         <activity
-            android:name=".AddDeviceBluetoothActivity"
+            android:name=".ui.device.AddDeviceBluetoothActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             tools:ignore="LockedOrientationActivity" />
 
         <activity
-            android:name=".MultiSocketActivity"
+            android:name=".ui.device.MultiSocketActivity"
             android:exported="false" />
 
         <activity
-            android:name=".DeviceControlsActivity"
+            android:name=".ui.device.DeviceControlsActivity"
             android:exported="false" />
 
         <activity
-            android:name=".SelectTypeDevice"
+            android:name=".ui.device.SelectTypeDevice"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
         <activity
-            android:name=".InitialSetupActivity"
+            android:name=".ui.auth.InitialSetupActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
@@ -151,11 +151,11 @@
             android:exported="false" />
 
         <activity
-            android:name=".GestureActivity"
+            android:name=".ui.gesture.GestureActivity"
             android:exported="false" />
 
         <activity
-            android:name=".NetworkActivity"
+            android:name=".ui.network.NetworkActivity"
             android:exported="false" />
 
         <activity
@@ -167,7 +167,7 @@
             android:exported="false" />
 
         <activity
-            android:name=".PortraitCaptureActivity"
+            android:name=".ui.device.PortraitCaptureActivity"
             android:screenOrientation="portrait"
             android:stateNotNeeded="true"
             android:theme="@style/zxing_CaptureTheme" />

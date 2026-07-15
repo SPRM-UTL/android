@@ -1,4 +1,4 @@
-package com.example.android
+package com.example.android.ui.device
 
 import android.content.Context
 import android.content.Intent
@@ -23,6 +23,8 @@ import android.text.Editable
 import android.text.TextWatcher
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.textfield.TextInputEditText
+import com.example.android.ui.network.EspConfigActivity
+import com.example.android.ui.adapters.AparatoTipoAdapter
 
 class SelectTypeDevice : AppCompatActivity() {
 
