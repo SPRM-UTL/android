@@ -8,7 +8,7 @@
     android:layout_height="match_parent"
     android:background="#F7FBFD"
     app:layoutDescription="@xml/fragment_home_scene"
-    tools:context=".ui.home.HomeFragment">
+    tools:context=".feature.home.HomeFragment">
 
     <View
         android:id="@+id/headerBackground"

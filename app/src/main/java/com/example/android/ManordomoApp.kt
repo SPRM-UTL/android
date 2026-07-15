@@ -1,4 +1,5 @@
 package com.example.android
+import com.example.android.core.voice.TtsManager
 
 import android.app.Application
 import androidx.appcompat.app.AppCompatDelegate
@@ -18,6 +19,6 @@ class ManordomoApp : Application() {
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
         }
 
-        com.example.android.voice.TtsManager.inicializar(this)
+        com.example.android.core.voice.TtsManager.inicializar(this)
     }
 }

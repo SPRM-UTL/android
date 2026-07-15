@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F7FBFD"
-    tools:context=".ui.gesture.GestosFragment">
+    tools:context=".feature.gesture.GestosFragment">
 
     <View
         android:id="@+id/headerBackground"
