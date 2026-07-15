@@ -88,6 +88,15 @@
                 android:src="@drawable/bluetooth"
                 app:tint="#6F7EA8"
                 android:visibility="gone" />
+
+            <ImageView
+                android:id="@+id/ivSupportLink"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginStart="6dp"
+                android:src="@drawable/ic_link"
+                app:tint="#6F7EA8"
+                android:visibility="gone" />
         </LinearLayout>
 
         <ImageView

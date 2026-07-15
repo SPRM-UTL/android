@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F8FFFF"
-    tools:context=".voice.VoiceConfigActivity">
+    tools:context=".core.voice.VoiceConfigActivity">
 
     <!-- Header / Barra Superior -->
     <com.google.android.material.card.MaterialCardView

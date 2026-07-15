@@ -40,7 +40,7 @@
         android:usesCleartextTraffic="true">
 
         <activity
-            android:name=".MainActivity"
+            android:name=".feature.main.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.AnimatedSplash.MySplash">
             <intent-filter>
@@ -50,97 +50,99 @@
         </activity>
 
         <activity
-            android:name=".EspConfigActivity"
+            android:name=".feature.network_config.EspConfigActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
         <activity
-            android:name=".ProfileActivity"
+            android:name=".feature.profile.ProfileActivity"
             android:exported="false" />
 
         <activity
-            android:name=".RegisterActivity"
+            android:name=".feature.auth.RegisterActivity"
             android:exported="false" />
 
         <activity
-            android:name=".SettingsActivity"
+            android:name=".feature.settings.SettingsActivity"
             android:exported="false" />
 
         <activity
-            android:name=".CustomUCropActivity"
+            android:name=".feature.profile.CustomUCropActivity"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.UCrop.Custom"
             android:exported="false" />
 
         <activity
-            android:name=".ai.PermisosActivity"
+            android:name=".feature.ai.PermisosActivity"
             android:exported="false" />
 
         <activity
-            android:name=".DeviceCameraActivity"
+            android:name=".feature.device.DeviceCameraActivity"
             android:exported="true" />
 
         <activity
-            android:name=".ai.SecuenciaConfigActivity"
+            android:name=".feature.ai.SecuenciaConfigActivity"
             android:exported="false" />
 
         <activity
-            android:name=".ai.PasoWizardActivity"
+            android:name=".feature.ai.PasoWizardActivity"
             android:exported="false" />
 
         <activity
-            android:name=".ai.ScheduleActivity"
+            android:name=".feature.ai.ScheduleActivity"
             android:exported="false" />
 
         <activity
-            android:name=".ai.DispositivoWizardActivity"
+            android:name=".feature.ai.DispositivoWizardActivity"
             android:exported="false" />
 
         <activity
-            android:name=".ai.AIVisionActivity"
+            android:name=".feature.ai.AIVisionActivity"
             android:exported="false" />
 
         <service
-            android:name=".ai.BackgroundCameraService"
+            android:name=".feature.ai.BackgroundCameraService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="camera" />
 
         <activity
-            android:name=".HomeActivity"
+            android:name=".feature.home.HomeActivity"
             android:exported="false" />
 
         <activity
-            android:name=".DeviceActivity"
+            android:name=".feature.device.DeviceActivity"
             android:exported="false" />
 
+
+
         <activity
-            android:name=".AddDeviceActivity"
+            android:name=".feature.device.AddDeviceWifiActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             tools:ignore="LockedOrientationActivity" />
 
         <activity
-            android:name=".AddDeviceWifiActivity"
+            android:name=".feature.device.AddDeviceBluetoothActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             tools:ignore="LockedOrientationActivity" />
 
         <activity
-            android:name=".MultiSocketActivity"
+            android:name=".feature.device.MultiSocketActivity"
             android:exported="false" />
 
         <activity
-            android:name=".DeviceControlsActivity"
+            android:name=".feature.device.DeviceControlsActivity"
             android:exported="false" />
 
         <activity
-            android:name=".SelectTypeDevice"
+            android:name=".feature.device.SelectTypeDevice"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
         <activity
-            android:name=".InitialSetupActivity"
+            android:name=".feature.auth.InitialSetupActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
@@ -149,15 +151,15 @@
             android:exported="false" />
 
         <activity
-            android:name=".GestureActivity"
+            android:name=".feature.gesture.GestureActivity"
             android:exported="false" />
 
         <activity
-            android:name=".NetworkActivity"
+            android:name=".feature.network_config.NetworkActivity"
             android:exported="false" />
 
         <activity
-            android:name=".extra.MusicActivity"
+            android:name=".feature.extra.MusicActivity"
             android:exported="false" />
 
         <activity
@@ -165,13 +167,13 @@
             android:exported="false" />
 
         <activity
-            android:name=".PortraitCaptureActivity"
+            android:name=".feature.device.PortraitCaptureActivity"
             android:screenOrientation="portrait"
             android:stateNotNeeded="true"
             android:theme="@style/zxing_CaptureTheme" />
 
         <activity
-            android:name=".voice.VoiceConfigActivity"
+            android:name=".core.voice.VoiceConfigActivity"
             android:exported="false" />
 
         <provider
