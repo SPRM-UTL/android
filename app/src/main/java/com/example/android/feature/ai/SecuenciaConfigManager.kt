@@ -1,13 +1,12 @@
 package com.example.android.feature.ai
-import com.example.android.core.network.client.RetrofitClient
-import com.example.android.core.db.models.GestoPaso
-import com.example.android.core.db.models.Gesto
-import com.example.android.R
 
 import android.content.Context
+import com.example.android.R
+import com.example.android.core.db.models.Gesto
+import com.example.android.core.db.models.GestoPaso
+import com.example.android.core.network.client.RetrofitClient
 import org.json.JSONArray
 import org.json.JSONObject
-
 import java.util.UUID
 
 data class Combo(
@@ -147,17 +146,17 @@ object SecuenciaConfigManager {
         )
     }
 
-    private fun comboToGesto(combo: Combo): com.example.android.core.db.models.Gesto {
-        val pasosList = mutableListOf<com.example.android.core.db.models.GestoPaso>()
+    private fun comboToGesto(combo: Combo): Gesto {
+        val pasosList = mutableListOf<GestoPaso>()
         var order = 1
         if (combo.activador != null) {
-            pasosList.add(com.example.android.core.db.models.GestoPaso(orden = order++, esActivador = true, nombreGesto = combo.activador!!.nombreGesto, manoObjetivo = combo.activador!!.manoObjetivo.name, cuadrosRequeridos = combo.activador!!.cuadrosRequeridos))
+            pasosList.add(GestoPaso(orden = order++, esActivador = true, nombreGesto = combo.activador!!.nombreGesto, manoObjetivo = combo.activador!!.manoObjetivo.name, cuadrosRequeridos = combo.activador!!.cuadrosRequeridos))
         }
         combo.pasos.forEach { paso ->
-            pasosList.add(com.example.android.core.db.models.GestoPaso(orden = order++, esActivador = false, nombreGesto = paso.nombreGesto, manoObjetivo = paso.manoObjetivo.name, cuadrosRequeridos = paso.cuadrosRequeridos))
+            pasosList.add(GestoPaso(orden = order++, esActivador = false, nombreGesto = paso.nombreGesto, manoObjetivo = paso.manoObjetivo.name, cuadrosRequeridos = paso.cuadrosRequeridos))
         }
-        
-        return com.example.android.core.db.models.Gesto(
+
+        return Gesto(
             id = combo.backendGestoId ?: 0,
             bkId = 0,
             nombre = combo.name,
@@ -165,6 +164,7 @@ object SecuenciaConfigManager {
             nivelConfianzaMinimo = 0.5,
             tipoDisparadorNombre = if (combo.fraseVozActivadora != null && combo.activador == null && combo.pasos.isEmpty()) "VOZ" else "COMBO",
             aparatoId = combo.aparatoId,
+            icono = combo.icono, // 🌟 Conservado e integrado aquí
             pasos = pasosList,
             fraseVozActivadora = combo.fraseVozActivadora
         )
@@ -178,7 +178,7 @@ object SecuenciaConfigManager {
         try {
             val gesto = comboToGesto(combo)
             val service = RetrofitClient.gestureService
-            
+
             if (combo.backendGestoId == null || combo.backendGestoId == 0) {
                 // Create
                 val response = service.createGesto("Bearer $token", gesto)
