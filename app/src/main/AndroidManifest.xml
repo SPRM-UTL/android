@@ -73,7 +73,7 @@
             android:exported="false" />
 
         <activity
-            android:name=".feature.ai.PermisosActivity"
+            android:name=".feature.ai.presentation.activities.PermisosActivity"
             android:exported="false" />
 
         <activity
@@ -81,27 +81,27 @@
             android:exported="true" />
 
         <activity
-            android:name=".feature.ai.SecuenciaConfigActivity"
+            android:name=".feature.ai.presentation.activities.SecuenciaConfigActivity"
             android:exported="false" />
 
         <activity
-            android:name=".feature.ai.PasoWizardActivity"
+            android:name=".feature.ai.presentation.activities.PasoWizardActivity"
             android:exported="false" />
 
         <activity
-            android:name=".feature.ai.ScheduleActivity"
+            android:name=".feature.ai.presentation.activities.ScheduleActivity"
             android:exported="false" />
 
         <activity
-            android:name=".feature.ai.DispositivoWizardActivity"
+            android:name=".feature.ai.presentation.activities.DispositivoWizardActivity"
             android:exported="false" />
 
         <activity
-            android:name=".feature.ai.AIVisionActivity"
+            android:name=".feature.ai.presentation.activities.AIVisionActivity"
             android:exported="false" />
 
         <service
-            android:name=".feature.ai.BackgroundCameraService"
+            android:name=".feature.ai.data.service.BackgroundCameraService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="camera" />

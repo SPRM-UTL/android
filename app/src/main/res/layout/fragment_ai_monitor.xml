@@ -122,7 +122,7 @@
                 android:layout_height="match_parent"
                 android:scaleType="centerCrop" />
 
-            <com.example.android.feature.ai.OverlayView
+            <com.example.android.feature.ai.presentation.views.OverlayView
                 android:id="@+id/overlayView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />

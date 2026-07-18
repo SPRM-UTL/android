@@ -1,4 +1,5 @@
 package com.example.android.feature.main
+import com.example.android.feature.ai.presentation.activities.PermisosActivity
 
 import com.example.android.R
 
@@ -37,7 +38,6 @@ import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.concurrent.Executor
-import com.example.android.feature.ai.PermisosActivity
 import com.example.android.feature.home.HomeActivity
 import com.example.android.feature.auth.InitialSetupActivity
 import com.example.android.feature.auth.RegisterActivity

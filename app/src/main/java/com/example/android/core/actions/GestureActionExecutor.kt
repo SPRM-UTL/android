@@ -1,9 +1,9 @@
 package com.example.android.core.actions
+import com.example.android.feature.ai.domain.manager.Combo
 import com.example.android.core.db.models.Gesto
 
 import android.content.Context
 import android.util.Log
-import com.example.android.feature.ai.Combo
 import com.example.android.core.db.init.AppDatabase
 import com.example.android.core.network.client.RetrofitClient
 import com.example.android.core.voice.TtsManager
@@ -102,6 +102,7 @@ object GestureActionExecutor {
                 val mensaje = if (estadoConfirmado) "Encendí $nombreDispositivo" else "Apagué $nombreDispositivo"
                 TtsManager.anunciar(mensaje)
 
+                Log.i(TAG, "Gesto de voz '${gesto.nombre}' → aparato $aparatoId ${if (estadoConfirmado) "ON" else "OFF"}")
                 true
             } catch (e: Exception) {
                 Log.e(TAG, "Error ejecutando acción por voz '${gesto.nombre}'", e)
