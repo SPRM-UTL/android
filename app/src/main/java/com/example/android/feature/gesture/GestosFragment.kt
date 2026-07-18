@@ -1,4 +1,8 @@
 package com.example.android.feature.gesture
+import com.example.android.feature.ai.presentation.activities.AIVisionActivity
+import com.example.android.feature.ai.domain.manager.SecuenciaConfigManager
+import com.example.android.feature.ai.domain.manager.Combo
+import com.example.android.feature.ai.presentation.activities.SecuenciaConfigActivity
 import com.example.android.core.db.models.Gesto
 
 import com.example.android.R
@@ -18,13 +22,9 @@ import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
-import com.example.android.feature.ai.AIVisionActivity
-import com.example.android.feature.ai.SecuenciaConfigActivity
-import com.example.android.feature.ai.SecuenciaConfigManager
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
-import com.example.android.feature.ai.Combo
 
 import java.util.UUID
 import com.example.android.feature.profile.ProfileActivity

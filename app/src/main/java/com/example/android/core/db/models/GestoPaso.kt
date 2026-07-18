@@ -1,4 +1,5 @@
 package com.example.android.core.db.models
+import com.example.android.feature.ai.domain.analyzer.ManoObjetivo
 
 import com.google.gson.annotations.SerializedName
 

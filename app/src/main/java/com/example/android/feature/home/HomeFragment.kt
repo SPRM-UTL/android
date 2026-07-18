@@ -3,8 +3,8 @@ import com.example.android.core.ui.adapters.DeviceAdapter
 import com.example.android.feature.home.LugaresActivity
 import com.example.android.feature.home.HomeTutorialHelper
 import com.example.android.core.ui.adapters.AddDeviceAdapter
-import com.example.android.feature.ai.SecuenciaConfigManager
-import com.example.android.feature.ai.AIVisionActivity
+import com.example.android.feature.ai.domain.manager.SecuenciaConfigManager
+import com.example.android.feature.ai.presentation.activities.AIVisionActivity
 import com.example.android.core.db.models.Dispositivo
 
 import com.example.android.R
@@ -239,7 +239,7 @@ class HomeFragment : Fragment() {
                         db.dispositivoDao().getAllDispositivosOnce().find { it.macBluetooth.equals(savedMac, ignoreCase = true) }
                     }
                     if (dispositivo != null) {
-                        val intent = Intent(requireContext(), com.example.android.feature.ai.AIVisionActivity::class.java).apply {
+                        val intent = Intent(requireContext(), AIVisionActivity::class.java).apply {
                             putExtra("dispositivo_id", dispositivo.id)
                         }
                         startActivity(intent)
@@ -713,13 +713,13 @@ class HomeFragment : Fragment() {
                             }
                             
                             // Limpiar los combos locales eliminados en el backend
-                            val combosLocales = com.example.android.feature.ai.SecuenciaConfigManager.loadCombos(requireContext()).toMutableList()
+                            val combosLocales = SecuenciaConfigManager.loadCombos(requireContext()).toMutableList()
                             val gestosIds = gestos.map { it.id }
                             val combosValidos = combosLocales.filter { combo ->
                                 combo.backendGestoId == null || gestosIds.contains(combo.backendGestoId)
                             }
                             if (combosLocales.size != combosValidos.size) {
-                                com.example.android.feature.ai.SecuenciaConfigManager.saveCombos(requireContext(), combosValidos)
+                                SecuenciaConfigManager.saveCombos(requireContext(), combosValidos)
                             }
                         }
                     )

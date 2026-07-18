@@ -1,0 +1,30 @@
+package com.example.android.feature.ai.data.state
+import com.example.android.feature.ai.data.state.CameraSharedState
+import com.example.android.R
+
+import android.graphics.Bitmap
+import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarkerResult
+
+
+object CameraSharedState {
+    @Volatile
+    var isServiceRunning: Boolean = false
+
+    @Volatile
+    var latestBitmap: Bitmap? = null
+
+    @Volatile
+    var lastHandResult: HandLandmarkerResult? = null
+
+    @Volatile
+    var currentAction: String = "Ninguno"
+
+    @Volatile
+    var currentGesture: String = "Ninguno"
+
+    @Volatile
+    var imageWidth: Int = 1
+
+    @Volatile
+    var imageHeight: Int = 1
+}
