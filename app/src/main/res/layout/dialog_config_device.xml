@@ -44,15 +44,31 @@
             android:textSize="15sp"
             android:textStyle="bold" />
 
-        <!-- NUEVO: ícono del tipo seleccionado -->
-        <ImageView
-            android:id="@+id/ivTipoIcono"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+        <!-- NUEVO: ícono del tipo seleccionado y bluetooth si lo requiere -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_marginTop="16dp"
-            android:visibility="gone"
-            app:tint="@color/teal_primary" />
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <ImageView
+                android:id="@+id/ivTipoIcono"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:visibility="gone"
+                app:tint="@color/teal_primary" />
+
+            <ImageView
+                android:id="@+id/ivBluetoothRequired"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginStart="8dp"
+                android:src="@drawable/ic_link"
+                android:visibility="gone"
+                app:tint="@color/teal_primary" />
+        </LinearLayout>
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/layoutNombre"
