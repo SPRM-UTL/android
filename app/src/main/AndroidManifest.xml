@@ -128,6 +128,8 @@
             android:screenOrientation="portrait"
             tools:ignore="LockedOrientationActivity" />
 
+
+
         <activity
             android:name=".feature.device.MultiSocketActivity"
             android:exported="false" />

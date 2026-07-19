@@ -199,6 +199,7 @@ class DeviceActivity : AppCompatActivity() {
         Log.d("DeviceActivity", "toggleDispositivo: id=${dispositivo.id}, metodo=${dispositivo.metodoVinculacion}, encendido=$encendido")
         when (dispositivo.metodoVinculacion) {
             "WIFI" -> toggleDispositivoWifi(dispositivo, encendido)
+            "LAN"  -> toggleDispositivoLan(dispositivo, encendido)
             "BLUETOOTH" -> toggleDispositivoBluetooth(dispositivo, encendido)
             else -> toggleDispositivoEsp32(dispositivo, encendido)
         }
@@ -253,6 +254,39 @@ class DeviceActivity : AppCompatActivity() {
                 Log.e("DeviceActivity", "Error toggle WIFI: ${e.message}")
                 adaptadorDispositivos.actualizarEstadoDispositivo(dispositivo.id, !encendido)
                 Toast.makeText(this@DeviceActivity, "Error de conexión WIFI", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    /**
+     * Controla un socket genérico LAN (MagicHome) directamente por TCP.
+     * Utiliza los bytes del protocolo MagicHome: ON=0x71,0x23,0x0F,0xA3 / OFF=0x71,0x24,0x0F,0xA4
+     */
+    private fun toggleDispositivoLan(dispositivo: Dispositivo, encendido: Boolean) {
+        Log.d("DeviceActivity", "toggleDispositivoLan: IP=${dispositivo.ipAddress}, encendido=$encendido")
+        lifecycleScope.launch {
+            val ip = dispositivo.ipAddress
+            if (ip.isNullOrEmpty()) {
+                adaptadorDispositivos.actualizarEstadoDispositivo(dispositivo.id, !encendido)
+                Toast.makeText(this@DeviceActivity,
+                    "IP no configurada para este socket LAN", Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+            try {
+                // Comandos MagicHome ON/OFF
+                val command = if (encendido) {
+                    byteArrayOf(0x71.toByte(), 0x23.toByte(), 0x0F.toByte(), 0xA3.toByte())
+                } else {
+                    byteArrayOf(0x71.toByte(), 0x24.toByte(), 0x0F.toByte(), 0xA4.toByte())
+                }
+                socketClient.sendTcpCommandBytes(ip, 5577, command)
+                Log.d("DeviceActivity", "toggleDispositivoLan: Comando enviado exitosamente")
+                // Reportar estado al backend (actualiza accion_nombre en BD)
+                reportarEstadoAlBackend(dispositivo, encendido)
+            } catch (e: Exception) {
+                Log.e("DeviceActivity", "Error toggle LAN: ${e.message}")
+                adaptadorDispositivos.actualizarEstadoDispositivo(dispositivo.id, !encendido)
+                Toast.makeText(this@DeviceActivity, "Error al controlar socket LAN", Toast.LENGTH_SHORT).show()
             }
         }
     }

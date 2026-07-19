@@ -37,6 +37,7 @@ import com.example.android.core.db.init.AppDatabase
 import com.example.android.core.network.api.ApiHandler
 import com.example.android.core.network.bluetooth.BluetoothController
 import com.example.android.core.network.client.RetrofitClient
+import com.example.android.core.network.client.SocketClient
 import com.example.android.core.view.Snackbars
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -46,6 +47,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import android.graphics.Typeface
 import androidx.core.content.ContextCompat
 import com.example.android.core.ui.dialogs.DeviceInfoDialog
@@ -143,15 +146,35 @@ class HomeFragment : Fragment() {
             val response = RetrofitClient.deviceService.getWsStatusAll()
             if (response.isSuccessful) {
                 val macs = response.body()?.connectedDevices ?: emptyList()
-                val macsSet = macs.toSet()
-                deviceAdapter.actualizarEstados(macsSet)
-                actualizarDialogoInformacion(macsSet)
+                val activeIdentifiers = macs.toMutableSet()
+                
+                // Hacer ping en paralelo a los dispositivos WIFI/LAN locales
+                val localDevices = deviceAdapter.currentList.filter { it.metodoVinculacion == "WIFI" || it.metodoVinculacion == "LAN" }
+                val onlineIps = withContext(Dispatchers.IO) {
+                    localDevices.mapNotNull { dev ->
+                        val ip = dev.ipAddress
+                        if (!ip.isNullOrBlank()) {
+                            async {
+                                try {
+                                    val socket = java.net.Socket()
+                                    socket.connect(java.net.InetSocketAddress(ip, 5577), 1500)
+                                    socket.close()
+                                    ip
+                                } catch (e: Exception) { null }
+                            }
+                        } else null
+                    }.awaitAll().filterNotNull()
+                }
+                activeIdentifiers.addAll(onlineIps)
+
+                deviceAdapter.actualizarEstados(activeIdentifiers)
+                actualizarDialogoInformacion(activeIdentifiers)
                 
                 // Actualizar UI del Estado Red (Cámara)
                 val sharedPref = requireContext().getSharedPreferences("EspConfigPrefs", Context.MODE_PRIVATE)
                 val savedMac = sharedPref.getString("saved_mac_address", "") ?: ""
                 if (savedMac.isNotBlank()) {
-                    actualizarUiEstadoRed(macsSet.any { it.equals(savedMac, ignoreCase = true) })
+                    actualizarUiEstadoRed(activeIdentifiers.any { it.equals(savedMac, ignoreCase = true) })
                 } else {
                     actualizarUiEstadoRed(false)
                 }
@@ -253,36 +276,109 @@ class HomeFragment : Fragment() {
                 deleteDeviceDialog.show(dispositivo)
             },
             onToggleClick = { dispositivo, isChecked ->
-                viewLifecycleOwner.lifecycleScope.launch {
-                    try {
-                        val response = RetrofitClient.deviceService.toggleAparato(dispositivo.id, isChecked)
-                        if (response.isSuccessful) {
-                            val estadoConfirmado = response.body()?.estadoEncendido ?: isChecked
-                            deviceAdapter.actualizarEstadoDispositivo(dispositivo.id, estadoConfirmado)
-                            Snackbars.success(
-                                mainHome,
-                                "${dispositivo.nombre} ${if (isChecked) "encendido" else "apagado"}",
-                                Snackbar.LENGTH_SHORT
-                            ).show()
-                        } else {
-                            deviceAdapter.actualizarEstadoDispositivo(dispositivo.id, !isChecked)
-                            Snackbars.error(
-                                mainHome,
-                                "${dispositivo.nombre}: sin conexión al servidor. ¿Está el ESP32 conectado?",
-                                Snackbar.LENGTH_LONG
-                            ).show()
-                        }
-                    } catch (e: Exception) {
-                        deviceAdapter.actualizarEstadoDispositivo(dispositivo.id, !isChecked)
-                        Snackbars.error(
-                            mainHome,
-                            "Error de red al intentar controlar ${dispositivo.nombre}.",
-                            Snackbar.LENGTH_LONG
-                        ).show()
-                    }
+                when (dispositivo.metodoVinculacion) {
+                    "WIFI", "LAN" -> toggleDispositivoTcp(dispositivo, isChecked)
+                    "BLUETOOTH"   -> toggleDispositivoBt(dispositivo, isChecked)
+                    else          -> toggleDispositivoEsp32Api(dispositivo, isChecked)
                 }
             }
         )
+    }
+
+    /** Controla sockets Wi-Fi/LAN (MagicHome) directamente por TCP sin pasar por el servidor. */
+    private fun toggleDispositivoTcp(dispositivo: com.example.android.core.db.models.Dispositivo, encendido: Boolean) {
+        val ip = dispositivo.ipAddress
+        if (ip.isNullOrEmpty()) {
+            Snackbars.error(
+                mainHome,
+                "${dispositivo.nombre}: IP no configurada. Vuelve a agregar el dispositivo.",
+                Snackbar.LENGTH_LONG
+            ).show()
+            return
+        }
+        val socketClient = SocketClient { /* silencioso */ }
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val command = if (encendido) {
+                    byteArrayOf(0x71.toByte(), 0x23.toByte(), 0x0F.toByte(), 0xA3.toByte())
+                } else {
+                    byteArrayOf(0x71.toByte(), 0x24.toByte(), 0x0F.toByte(), 0xA4.toByte())
+                }
+                withContext(Dispatchers.IO) {
+                    socketClient.sendTcpCommandBytes(ip, 5577, command)
+                }
+                deviceAdapter.actualizarEstadoDispositivo(dispositivo.id, encendido)
+                // Actualiza el estado en el backend (no crítico)
+                try {
+                    RetrofitClient.deviceService.toggleAparato(dispositivo.id, encendido)
+                } catch (_: Exception) { /* ignorar si el backend falla */ }
+                Snackbars.success(
+                    mainHome,
+                    "${dispositivo.nombre} ${if (encendido) "encendido" else "apagado"}",
+                    Snackbar.LENGTH_SHORT
+                ).show()
+            } catch (e: Exception) {
+                deviceAdapter.actualizarEstadoDispositivo(dispositivo.id, !encendido)
+                Snackbars.error(
+                    mainHome,
+                    "${dispositivo.nombre}: no se pudo conectar. ¿Está encendido en la red?",
+                    Snackbar.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
+    /** Controla dispositivos Bluetooth clásico. */
+    private fun toggleDispositivoBt(dispositivo: com.example.android.core.db.models.Dispositivo, encendido: Boolean) {
+        val mac = dispositivo.macBluetooth
+        if (mac.isNullOrEmpty()) {
+            Snackbars.error(mainHome, "${dispositivo.nombre}: MAC Bluetooth no configurada.", Snackbar.LENGTH_SHORT).show()
+            return
+        }
+        val command = if (encendido) "BT_ON\n" else "BT_OFF\n"
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    BluetoothController.enviarComando(command)
+                }
+                deviceAdapter.actualizarEstadoDispositivo(dispositivo.id, encendido)
+            } catch (e: Exception) {
+                deviceAdapter.actualizarEstadoDispositivo(dispositivo.id, !encendido)
+                Snackbars.error(mainHome, "Error Bluetooth: ${e.message}", Snackbar.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    /** Controla dispositivos ESP32 vía API del servidor (WebSocket). */
+    private fun toggleDispositivoEsp32Api(dispositivo: com.example.android.core.db.models.Dispositivo, isChecked: Boolean) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.deviceService.toggleAparato(dispositivo.id, isChecked)
+                if (response.isSuccessful) {
+                    val estadoConfirmado = response.body()?.estadoEncendido ?: isChecked
+                    deviceAdapter.actualizarEstadoDispositivo(dispositivo.id, estadoConfirmado)
+                    Snackbars.success(
+                        mainHome,
+                        "${dispositivo.nombre} ${if (isChecked) "encendido" else "apagado"}",
+                        Snackbar.LENGTH_SHORT
+                    ).show()
+                } else {
+                    deviceAdapter.actualizarEstadoDispositivo(dispositivo.id, !isChecked)
+                    Snackbars.error(
+                        mainHome,
+                        "${dispositivo.nombre}: sin conexión al servidor. ¿Está el ESP32 conectado?",
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                }
+            } catch (e: Exception) {
+                deviceAdapter.actualizarEstadoDispositivo(dispositivo.id, !isChecked)
+                Snackbars.error(
+                    mainHome,
+                    "Error de red al intentar controlar ${dispositivo.nombre}.",
+                    Snackbar.LENGTH_LONG
+                ).show()
+            }
+        }
     }
 
     private fun eliminarDispositivoDeApi(dispositivo: com.example.android.core.db.models.Dispositivo) {

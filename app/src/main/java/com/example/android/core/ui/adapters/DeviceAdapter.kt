@@ -73,8 +73,10 @@ class DeviceAdapter(
             } == true
             
             val isConnected = when (dispositivo.metodoVinculacion) {
-                "WIFI" -> {
-                    !dispositivo.ipAddress.isNullOrBlank()
+                "WIFI", "LAN" -> {
+                    val ip = dispositivo.ipAddress
+                    if (ip.isNullOrBlank()) false
+                    else connectedMacs.any { it.equals(ip, ignoreCase = true) }
                 }
                 "BLUETOOTH" -> {
                     com.example.android.core.network.bluetooth.BluetoothController.isConnected &&

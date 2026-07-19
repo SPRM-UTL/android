@@ -22,6 +22,7 @@ import com.example.android.core.db.models.Dispositivo
 import com.example.android.core.actions.DeviceActionManager
 import com.example.android.core.network.bluetooth.BluetoothController
 import com.example.android.core.network.client.RetrofitClient
+import com.example.android.core.network.client.SocketClient
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.slider.Slider
 import com.google.android.material.switchmaterial.SwitchMaterial
@@ -127,8 +128,27 @@ class DeviceControlsActivity : AppCompatActivity() {
 
                 lifecycleScope.launch {
                     try {
-                        withContext(Dispatchers.IO) {
-                            RetrofitClient.deviceService.toggleAparato(dev.id, isChecked)
+                        if (dev.metodoVinculacion == "WIFI" || dev.metodoVinculacion == "LAN") {
+                            val ip = dev.ipAddress
+                            if (!ip.isNullOrEmpty()) {
+                                val command = if (isChecked) {
+                                    byteArrayOf(0x71.toByte(), 0x23.toByte(), 0x0F.toByte(), 0xA3.toByte())
+                                } else {
+                                    byteArrayOf(0x71.toByte(), 0x24.toByte(), 0x0F.toByte(), 0xA4.toByte())
+                                }
+                                val socketClient = SocketClient {}
+                                withContext(Dispatchers.IO) {
+                                    socketClient.sendTcpCommandBytes(ip, 5577, command)
+                                    // También avisar al backend en caso de que esté sincronizado
+                                    try {
+                                        RetrofitClient.deviceService.toggleAparato(dev.id, isChecked)
+                                    } catch (_: Exception) {}
+                                }
+                            }
+                        } else {
+                            withContext(Dispatchers.IO) {
+                                RetrofitClient.deviceService.toggleAparato(dev.id, isChecked)
+                            }
                         }
                     } catch (e: Exception) {
                         e.printStackTrace()
