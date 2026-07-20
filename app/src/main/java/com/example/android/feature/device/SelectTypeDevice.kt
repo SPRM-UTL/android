@@ -216,8 +216,6 @@ class SelectTypeDevice : AppCompatActivity() {
             lanzarEspConfig(tipo, "ESP32")
         }
 
-        view.findViewById<View>(R.id.btnConnectGeneric)?.visibility = View.GONE
-
         bottomSheet.setContentView(view)
         bottomSheet.show()
     }

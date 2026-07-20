@@ -429,16 +429,24 @@ class AddDeviceWifiActivity : AppCompatActivity() {
 
             connectionManager.disconnectWifi()
 
-            // Esperar a que el dispositivo se una a la red doméstica (protocolo ConexionWifi)
+            // Esperar a que el dispositivo se una a la red doméstica
+            // El socket LEDnet puede tardar 10-20s en conectarse; intentamos hasta 3 veces
             delay(8000)
+            var intentos = 0
+            var coincidencia: Pair<String, String>? = null
             val bssidObjetivo = currentDispositivoAProvisionar?.BSSID?.uppercase()
-            val dispositivosEnRed = socketClient.scanLocalNetworkSuspend()
 
-            val coincidencia = dispositivosEnRed.find { (_, mac) ->
-                mac.uppercase() == bssidObjetivo
-            } ?: dispositivosEnRed.firstOrNull()
+            while (intentos < 3 && coincidencia == null) {
+                intentos++
+                android.util.Log.d("AddDeviceWifiActivity", "Scan post-provisioning: intento $intentos/3")
+                val dispositivosEnRed = socketClient.scanLocalNetworkSuspend()
+                coincidencia = dispositivosEnRed.find { (_, mac) ->
+                    !bssidObjetivo.isNullOrEmpty() && mac.uppercase() == bssidObjetivo
+                } ?: dispositivosEnRed.firstOrNull()
+                if (coincidencia == null && intentos < 3) delay(3000)
+            }
 
-            dispositivoDescubiertoIp = coincidencia?.first
+            dispositivoDescubiertoIp  = coincidencia?.first
             dispositivoDescubiertoMac = coincidencia?.second ?: bssidObjetivo
 
             withContext(Dispatchers.Main) {
@@ -452,7 +460,7 @@ class AddDeviceWifiActivity : AppCompatActivity() {
                 } else {
                     Toast.makeText(
                         this@AddDeviceWifiActivity,
-                        "Credenciales enviadas. No se detectó IP en la red local.",
+                        "Credenciales enviadas. No se detectó IP. Puedes ingresarla manualmente.",
                         Toast.LENGTH_LONG
                     ).show()
                 }
