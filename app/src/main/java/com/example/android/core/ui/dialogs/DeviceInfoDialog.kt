@@ -71,7 +71,30 @@ class DeviceInfoDialog(
         dialogView.findViewById<TextView>(R.id.tvDialogFirmware).text = "N/A"
         dialogView.findViewById<TextView>(R.id.tvDialogRssi).text = "N/A"
         dialogView.findViewById<TextView>(R.id.tvDialogUltimaConexion).text = dispositivo.fechaEstadoActualizado ?: "Desconocido"
-        dialogView.findViewById<TextView>(R.id.tvDialogTiempoActivo).text = "N/A"
+        var tiempoActivoStr = "N/A"
+        if (dispositivo.estadoEncendido == true && !dispositivo.fechaEstadoActualizado.isNullOrEmpty()) {
+            try {
+                val cleanDateString = dispositivo.fechaEstadoActualizado.substringBefore(".")
+                val format = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.getDefault())
+                format.timeZone = java.util.TimeZone.getTimeZone("UTC")
+                val date = format.parse(cleanDateString)
+                if (date != null) {
+                    val diff = System.currentTimeMillis() - date.time
+                    if (diff > 0) {
+                        val hours = diff / (1000 * 60 * 60)
+                        val mins = (diff / (1000 * 60)) % 60
+                        tiempoActivoStr = if (hours > 0) "${hours} hora(s) ${mins} minuto(s)" else "${mins} minuto(s)"
+                    } else {
+                        tiempoActivoStr = "Recién encendido"
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        } else if (dispositivo.estadoEncendido == false) {
+            tiempoActivoStr = "Apagado"
+        }
+        dialogView.findViewById<TextView>(R.id.tvDialogTiempoActivo).text = tiempoActivoStr
 
         val tvDialogEstadoEncendido = dialogView.findViewById<TextView>(R.id.tvDialogEstadoEncendido)
         val estadoTexto = when (dispositivo.estadoEncendido) {
@@ -101,6 +124,12 @@ class DeviceInfoDialog(
             tvDialogEnergia.text = energia?.let { String.format("%.3f Wh", it) } ?: "Sin medición"
         }
         formatearConsumoActual()
+
+        val tipoDispositivo = dispositivo.tipo?.lowercase() ?: ""
+        if (tipoDispositivo.contains("sockets inteligentes") || tipoDispositivo.contains("enchufe")) {
+            dialogView.findViewById<TextView>(R.id.tvConsumoTitle)?.visibility = View.GONE
+            dialogView.findViewById<MaterialCardView>(R.id.cvConsumoContainer)?.visibility = View.GONE
+        }
 
         val tvDialogHistorial = dialogView.findViewById<TextView>(R.id.tvDialogHistorial)
         tvDialogHistorial.text = "Cargando historial..."
@@ -152,7 +181,10 @@ class DeviceInfoDialog(
                 fabOverlay.visibility = View.VISIBLE
                 fabOverlay.animate().alpha(1f).setDuration(200).start()
                 
-                val views = listOf(llFabConsumo, llFabControles, llFabEditar)
+                val tipoLower = dispositivo.tipo?.lowercase() ?: ""
+                val isEnchufe = tipoLower.contains("enchufe")
+                val views = if (isEnchufe) listOf(llFabControles, llFabEditar) else listOf(llFabConsumo, llFabControles, llFabEditar)
+                
                 views.forEachIndexed { index, view ->
                     view.visibility = View.VISIBLE
                     view.alpha = 0f
@@ -170,7 +202,10 @@ class DeviceInfoDialog(
                     fabOverlay.visibility = View.GONE
                 }.start()
                 
-                val views = listOf(llFabConsumo, llFabControles, llFabEditar)
+                val tipoLower = dispositivo.tipo?.lowercase() ?: ""
+                val isEnchufe = tipoLower.contains("enchufe")
+                val views = if (isEnchufe) listOf(llFabControles, llFabEditar) else listOf(llFabConsumo, llFabControles, llFabEditar)
+                
                 views.forEach { view ->
                     view.animate()
                         .alpha(0f)

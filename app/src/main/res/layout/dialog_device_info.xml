@@ -121,6 +121,7 @@
 
             <!-- SECCIÓN 2: CONSUMO ELÉCTRICO -->
             <TextView
+                android:id="@+id/tvConsumoTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Consumo eléctrico"
@@ -132,6 +133,7 @@
                 android:layout_marginBottom="8dp"/>
 
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cvConsumoContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
