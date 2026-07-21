@@ -9,6 +9,8 @@ import com.example.android.feature.ai.domain.analyzer.FingerAnalyzer
 import com.example.android.feature.ai.domain.analyzer.PalmAnalyzer
 import com.example.android.feature.ai.domain.analyzer.GestureClassifier
 import com.example.android.feature.ai.domain.analyzer.GestureAnalyzer
+import com.example.android.feature.ai.domain.utils.HandLandmarkSmoother
+import com.example.android.feature.ai.domain.utils.HandPoseStabilizer
 import com.example.android.R
 
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarkerResult
@@ -18,10 +20,12 @@ class GestureAnalyzer {
     var onComboCompleted: ((Combo) -> Unit)? = null
     val sequenceDetector = SecuenciaDetector { combo -> onComboCompleted?.invoke(combo) }
 
-    // History for hand temporal smoothing
-    private val leftHandPoseHistory = mutableListOf<String>()
-    private val rightHandPoseHistory = mutableListOf<String>()
-    private val handHistorySize = 7 // Smoothing window
+    // Smoother EMA de landmarks crudos (reduce jitter antes de clasificar)
+    private val landmarkSmoother = HandLandmarkSmoother()
+
+    // Stabilizers de pose: 2 frames para confirmar, 3 frames vacíos para limpiar
+    private val leftStabilizer = HandPoseStabilizer(framesToConfirm = 2, emptyFramesToClear = 3)
+    private val rightStabilizer = HandPoseStabilizer(framesToConfirm = 2, emptyFramesToClear = 3)
 
     @Synchronized
     fun analyze(
@@ -45,8 +49,19 @@ class GestureAnalyzer {
                 val handedness = handednesses[i].first().categoryName() // "Left" or "Right"
 
                 handDetected = true
-                // Nueva tubería 3D
-                val localLandmarks = HandNormalizer.toLocalCoordinates(hand)
+
+                // Determinar mano real ANTES de suavizar para no mezclar historiales
+                val realHandednessForSmoothing = if (isFrontCamera) {
+                    if (handedness == "Left") "Right" else "Left"
+                } else {
+                    handedness
+                }
+
+                // Suavizar landmarks crudos con EMA antes de normalizar
+                val smoothedHand = landmarkSmoother.smooth(hand, realHandednessForSmoothing)
+
+                // Nueva tubería 3D (sobre landmarks suavizados)
+                val localLandmarks = HandNormalizer.toLocalCoordinates(smoothedHand)
                 val fingers = FingerAnalyzer.analyzeFingers(localLandmarks)
                 val palm = PalmAnalyzer.analyzePalm(localLandmarks, handedness, isFrontCamera)
                 
@@ -76,25 +91,9 @@ class GestureAnalyzer {
             }
         }
 
-        // Apply Temporal Smoothing
-        if (leftPose.isNotEmpty()) {
-            leftHandPoseHistory.add(leftPose)
-        } else {
-            leftHandPoseHistory.add("") // Vacío si no se detectó mano izquierda
-        }
-
-        if (rightPose.isNotEmpty()) {
-            rightHandPoseHistory.add(rightPose)
-        } else {
-            rightHandPoseHistory.add("") // Vacío si no se detectó mano derecha
-        }
-
-        if (leftHandPoseHistory.size > handHistorySize) leftHandPoseHistory.removeAt(0)
-        if (rightHandPoseHistory.size > handHistorySize) rightHandPoseHistory.removeAt(0)
-
-        // Obtener la pose más frecuente (Moda) en la ventana de tiempo
-        val smoothedLeftPose = leftHandPoseHistory.filter { it.isNotEmpty() }.groupingBy { it }.eachCount().maxByOrNull { it.value }?.key ?: ""
-        val smoothedRightPose = rightHandPoseHistory.filter { it.isNotEmpty() }.groupingBy { it }.eachCount().maxByOrNull { it.value }?.key ?: ""
+        // Suavizado temporal: stabilizer de confirmación rápida (2 frames) en lugar de voto de mayoría de 7
+        val smoothedLeftPose = leftStabilizer.update(leftPose)
+        val smoothedRightPose = rightStabilizer.update(rightPose)
 
         // Process sequence
         sequenceDetector.processPoses(smoothedLeftPose, smoothedRightPose)
