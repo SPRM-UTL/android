@@ -361,12 +361,10 @@ class BackgroundCameraService : LifecycleService() {
             Log.e("MediaPipe", "Error al procesar bitmap: ${e.message}")
         }
 
-        // 2) Bitmap para MOSTRAR: sí necesita orientación correcta (y espejo en frontal).
-        // Barato ahora porque ya viene reducido a 480x640 desde la Fase 2.
         val displayBitmap = if (rotationDegrees != 0 || cameraMode == 0) {
             val matrix = Matrix().apply {
+                if (cameraMode == 0) preScale(-1f, 1f) // mirror ANTES de rotar para no invertir verticalmente
                 postRotate(rotationDegrees.toFloat())
-                if (cameraMode == 0) postScale(-1f, 1f) // mirror solo en frontal
             }
             Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, false)
         } else {
