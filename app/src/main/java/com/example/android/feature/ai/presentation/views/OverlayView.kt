@@ -95,8 +95,8 @@ class OverlayView(context: Context, attrs: AttributeSet?) : View(context, attrs)
         if (PrefsManager.isShowLandmarks(context)) {            // Dibujar puntos de las manos
             handResult?.landmarks()?.forEach { landmarkList ->
                 landmarkList.forEach { landmark ->
-                    // Invertir x si es cámara frontal (espejo) para alinear con el bitmap
-                    val rawX = if (isMirror) 1f - landmark.x() else landmark.x()
+                    // Ya no invertimos X, porque MediaPipe recibe el bitmap ya en espejo
+                    val rawX = landmark.x()
                     val x = (rawX * imageWidth * scaleFactor) + dx
                     val y = (landmark.y() * imageHeight * scaleFactor) + dy
                     canvas.drawCircle(x, y, 8f, pointPaint)

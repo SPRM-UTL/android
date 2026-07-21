@@ -349,26 +349,28 @@ class BackgroundCameraService : LifecycleService() {
     }
 
     private fun processBitmap(bitmap: Bitmap, rotationDegrees: Int = 0) {
-        // 1) Bitmap para el MODELO: sin rotar, MediaPipe rota internamente con ImageProcessingOptions
-        val mpImage = BitmapImageBuilder(bitmap).build()
-        val timestamp = System.currentTimeMillis()
-        val processingOptions = ImageProcessingOptions.builder()
-            .setRotationDegrees(rotationDegrees)
-            .build()
-        try {
-            handLandmarker?.detectAsync(mpImage, processingOptions, timestamp)
-        } catch (e: Exception) {
-            Log.e("MediaPipe", "Error al procesar bitmap: ${e.message}")
-        }
-
+        // 1) Crear el bitmap final para mostrar (rotado y espejo si es frontal)
         val displayBitmap = if (rotationDegrees != 0 || cameraMode == 0) {
             val matrix = Matrix().apply {
-                if (cameraMode == 0) preScale(-1f, 1f) // mirror ANTES de rotar para no invertir verticalmente
                 postRotate(rotationDegrees.toFloat())
+                if (cameraMode == 0) postScale(-1f, 1f) // Mirror DESPUÉS de rotar para invertir horizontalmente
             }
             Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, false)
         } else {
             bitmap
+        }
+
+        // 2) Pasar el displayBitmap a MediaPipe. 
+        // Ya está rotado (y en espejo), así que las coordenadas de los landmarks 
+        // coincidirán perfectamente con la vista, y el handedness será el esperado.
+        val mpImage = BitmapImageBuilder(displayBitmap).build()
+        val timestamp = System.currentTimeMillis()
+        val processingOptions = ImageProcessingOptions.builder().build() // Sin rotación adicional
+        
+        try {
+            handLandmarker?.detectAsync(mpImage, processingOptions, timestamp)
+        } catch (e: Exception) {
+            Log.e("MediaPipe", "Error al procesar bitmap: ${e.message}")
         }
 
         CameraSharedState.imageWidth = displayBitmap.width
