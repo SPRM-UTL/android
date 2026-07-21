@@ -285,12 +285,23 @@ class BackgroundCameraService : LifecycleService() {
                 return@addListener
             }
 
+            val resolutionSelector = androidx.camera.core.resolutionselector.ResolutionSelector.Builder()
+                .setResolutionStrategy(
+                    androidx.camera.core.resolutionselector.ResolutionStrategy(
+                        android.util.Size(480, 640),
+                        androidx.camera.core.resolutionselector.ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER
+                    )
+                )
+                .build()
+
             val imageAnalyzer = ImageAnalysis.Builder()
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
+                .setResolutionSelector(resolutionSelector)
                 .build()
                 .also {
                     it.setAnalyzer(cameraExecutor) { imageProxy ->
+                        Log.d("CameraX", "Frame: ${imageProxy.width}x${imageProxy.height}")
                         processImageProxy(imageProxy)
                     }
                 }
