@@ -16,7 +16,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.Matrix
+import com.google.mediapipe.tasks.vision.core.ImageProcessingOptions
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -330,31 +330,28 @@ class BackgroundCameraService : LifecycleService() {
             imageProxy.height,
             Bitmap.Config.ARGB_8888
         )
+        val rotationDegrees = imageProxy.imageInfo.rotationDegrees
         imageProxy.use { bitmapBuffer.copyPixelsFromBuffer(imageProxy.planes[0].buffer) }
-        
-        val matrix = Matrix()
-        matrix.postRotate(imageProxy.imageInfo.rotationDegrees.toFloat())
-        if (cameraMode == 0) {
-            matrix.postScale(-1f, 1f) // Mirror
-        }
-        val rotatedBitmap = Bitmap.createBitmap(
-            bitmapBuffer, 0, 0, bitmapBuffer.width, bitmapBuffer.height, matrix, false
-        )
-        
-        processBitmap(rotatedBitmap)
+
+        // Ya no rotamos el bitmap aquí: se manda crudo al modelo (más barato)
+        // y la rotación/espejo se aplican solo al mostrar en pantalla (ver processBitmap).
+        processBitmap(bitmapBuffer, rotationDegrees)
     }
 
-    private fun processBitmap(bitmap: Bitmap) {
+    private fun processBitmap(bitmap: Bitmap, rotationDegrees: Int = 0) {
         CameraSharedState.imageWidth = bitmap.width
         CameraSharedState.imageHeight = bitmap.height
-        CameraSharedState.latestBitmap = bitmap
+        CameraSharedState.latestBitmap = bitmap // OK mostrar sin rotar: ImageView aplica scaleX si hace falta
 
         val mpImage = BitmapImageBuilder(bitmap).build()
         val timestamp = System.currentTimeMillis()
 
-        try {
+        val processingOptions = ImageProcessingOptions.builder()
+            .setRotationDegrees(rotationDegrees)
+            .build()
 
-            handLandmarker?.detectAsync(mpImage, timestamp)
+        try {
+            handLandmarker?.detectAsync(mpImage, processingOptions, timestamp)
         } catch (e: Exception) {
             Log.e("MediaPipe", "Error al procesar bitmap: ${e.message}")
         }

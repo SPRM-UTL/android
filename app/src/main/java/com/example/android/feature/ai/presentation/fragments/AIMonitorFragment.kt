@@ -67,8 +67,11 @@ class AIMonitorFragment : Fragment() {
             if (CameraSharedState.isServiceRunning) {
                 CameraSharedState.latestBitmap?.let { bmp ->
                     viewFinder.setImageBitmap(bmp)
+                    // Espejo visual para cámara frontal (sin allocation de Bitmap)
+                    viewFinder.scaleX = if (cameraMode == 0) -1f else 1f
                 }
 
+                overlayView.setMirror(cameraMode == 0)
                 overlayView.updateResults(
                     CameraSharedState.lastHandResult,
                     CameraSharedState.imageWidth,
@@ -79,6 +82,7 @@ class AIMonitorFragment : Fragment() {
                 tvNoCameraInfo.visibility = View.GONE
             } else {
                 viewFinder.setImageBitmap(null)
+                viewFinder.scaleX = 1f
                 overlayView.updateResults(null, 1, 1)
                 tvNoCameraInfo.visibility = View.VISIBLE
             }

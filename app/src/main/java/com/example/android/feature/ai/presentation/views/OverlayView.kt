@@ -19,6 +19,7 @@ class OverlayView(context: Context, attrs: AttributeSet?) : View(context, attrs)
     private var imageWidth = 1
     private var imageHeight = 1
     private var scaleFactor = 1f
+    private var isMirror = false // true cuando la cámara es frontal
 
     private val textPaint = Paint().apply {
         color = Color.GREEN
@@ -43,6 +44,14 @@ class OverlayView(context: Context, attrs: AttributeSet?) : View(context, attrs)
     fun updateAction(action: String) {
         if (currentAction != action) {
             currentAction = action
+            invalidate()
+        }
+    }
+
+    /** Indica si los landmarks deben invertirse horizontalmente (cámara frontal). */
+    fun setMirror(mirror: Boolean) {
+        if (isMirror != mirror) {
+            isMirror = mirror
             invalidate()
         }
     }
@@ -86,7 +95,9 @@ class OverlayView(context: Context, attrs: AttributeSet?) : View(context, attrs)
         if (PrefsManager.isShowLandmarks(context)) {            // Dibujar puntos de las manos
             handResult?.landmarks()?.forEach { landmarkList ->
                 landmarkList.forEach { landmark ->
-                    val x = (landmark.x() * imageWidth * scaleFactor) + dx
+                    // Invertir x si es cámara frontal (espejo) para alinear con el bitmap
+                    val rawX = if (isMirror) 1f - landmark.x() else landmark.x()
+                    val x = (rawX * imageWidth * scaleFactor) + dx
                     val y = (landmark.y() * imageHeight * scaleFactor) + dy
                     canvas.drawCircle(x, y, 8f, pointPaint)
                 }
