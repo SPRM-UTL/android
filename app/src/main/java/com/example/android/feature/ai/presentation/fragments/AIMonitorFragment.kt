@@ -49,6 +49,9 @@ class AIMonitorFragment : Fragment() {
     private lateinit var tvNoCameraInfo: TextView
     private lateinit var btnGuardarAccion: ExtendedFloatingActionButton
 
+    // Dirty-flag: evitar setImageBitmap si el bitmap no cambió
+    private var lastShownBitmap: android.graphics.Bitmap? = null
+
     private val requestCameraPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
@@ -66,7 +69,11 @@ class AIMonitorFragment : Fragment() {
 
             if (CameraSharedState.isServiceRunning) {
                 CameraSharedState.latestBitmap?.let { bmp ->
-                    viewFinder.setImageBitmap(bmp)
+                    // Solo actualizar si el bitmap cambió (comparar referencia, no contenido)
+                    if (bmp !== lastShownBitmap) {
+                        lastShownBitmap = bmp
+                        viewFinder.setImageBitmap(bmp)
+                    }
                     // Espejo visual para cámara frontal (sin allocation de Bitmap)
                     viewFinder.scaleX = if (cameraMode == 0) -1f else 1f
                 }
@@ -81,7 +88,10 @@ class AIMonitorFragment : Fragment() {
                 overlayView.updateAction(CameraSharedState.currentGesture)
                 tvNoCameraInfo.visibility = View.GONE
             } else {
-                viewFinder.setImageBitmap(null)
+                if (lastShownBitmap != null) {
+                    lastShownBitmap = null
+                    viewFinder.setImageBitmap(null)
+                }
                 viewFinder.scaleX = 1f
                 overlayView.updateResults(null, 1, 1)
                 tvNoCameraInfo.visibility = View.VISIBLE
