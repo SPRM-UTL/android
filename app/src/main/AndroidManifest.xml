@@ -100,6 +100,10 @@
             android:name=".feature.ai.presentation.activities.AIVisionActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".feature.ai.presentation.activities.VideoGestureImportActivity"
+            android:exported="false" />
+
         <service
             android:name=".feature.ai.data.service.BackgroundCameraService"
             android:enabled="true"

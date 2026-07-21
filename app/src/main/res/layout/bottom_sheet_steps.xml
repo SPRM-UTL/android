@@ -59,4 +59,15 @@
         android:textColor="@color/white"
         app:backgroundTint="@color/teal_primary" />
 
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btnDesdeVideo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|start"
+        android:layout_margin="24dp"
+        android:contentDescription="Importar desde video"
+        android:src="@drawable/lucide_video"
+        app:backgroundTint="#FF0A5E73"
+        app:tint="@android:color/white" />
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

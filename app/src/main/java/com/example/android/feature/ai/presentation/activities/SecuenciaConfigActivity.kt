@@ -146,10 +146,36 @@ class SecuenciaConfigActivity : AppCompatActivity() {
             }
         }
 
-    private val dispositivoWizardLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == Activity.RESULT_OK) {
-                val data = result.data ?: return@registerForActivityResult
+    /**
+     * Recibe los pasos detectados desde VideoGestureImportActivity y los añade al combo actual.
+     * El usuario puede seguir editando/eliminando los pasos antes de guardar.
+     */
+    private val videoImportLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val data = result.data ?: return@registerForActivityResult
+            val pasosStr = data.getStringExtra(VideoGestureImportActivity.EXTRA_PASOS_JSON) ?: return@registerForActivityResult
+            val nuevoPasos = pasosStr.lines().mapNotNull { line ->
+                val parts = line.split("|")
+                if (parts.size == 3) {
+                    val mano = try { ManoObjetivo.valueOf(parts[1]) } catch (e: Exception) { ManoObjetivo.ANY }
+                    val frames = parts[2].toIntOrNull() ?: 15
+                    PasoSecuencia(parts[0], mano, frames)
+                } else null
+            }
+            if (nuevoPasos.isEmpty()) {
+                Toast.makeText(this, "No se detectaron pasos en el video", Toast.LENGTH_SHORT).show()
+                return@registerForActivityResult
+            }
+            adapter.pasos.addAll(nuevoPasos)
+            adapter.notifyItemRangeInserted(adapter.pasos.size - nuevoPasos.size, nuevoPasos.size)
+            updateHeaders()
+            Toast.makeText(this, "${nuevoPasos.size} paso(s) importados desde video — revísalos antes de guardar", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private val dispositivoWizardLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val data = result.data ?: return@registerForActivityResult
 
                 val dispositivoId = data.getIntExtra("DISPOSITIVO_ID", -1)
                 val nombreDispositivo = data.getStringExtra("DISPOSITIVO_NOMBRE") ?: "Dispositivo"
@@ -400,10 +426,15 @@ class SecuenciaConfigActivity : AppCompatActivity() {
             rvBottomSheetSteps.adapter = adapter
             itemTouchHelper.attachToRecyclerView(rvBottomSheetSteps)
 
-            bottomSheetView.findViewById<View>(R.id.fabAddStep)
-                .setOnClickListener { launchWizard("STEP") }
-            bottomSheetDialog.behavior.state =
-                com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+            bottomSheetView.findViewById<View>(R.id.fabAddStep).setOnClickListener { launchWizard("STEP") }
+            // Botón para importar pasos desde un video
+            val btnDesdeVideo = bottomSheetView.findViewById<View?>(R.id.btnDesdeVideo)
+            btnDesdeVideo?.setOnClickListener {
+                bottomSheetDialog.dismiss()
+                val intent = android.content.Intent(this, VideoGestureImportActivity::class.java)
+                videoImportLauncher.launch(intent)
+            }
+            bottomSheetDialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
             bottomSheetDialog.show()
         }
 
