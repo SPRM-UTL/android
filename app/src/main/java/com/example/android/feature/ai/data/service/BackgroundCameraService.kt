@@ -16,6 +16,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Matrix
 import com.google.mediapipe.tasks.vision.core.ImageProcessingOptions
 import android.os.Build
 import android.os.Handler
@@ -344,28 +345,37 @@ class BackgroundCameraService : LifecycleService() {
         val rotationDegrees = imageProxy.imageInfo.rotationDegrees
         imageProxy.use { bitmapBuffer.copyPixelsFromBuffer(imageProxy.planes[0].buffer) }
 
-        // Ya no rotamos el bitmap aquí: se manda crudo al modelo (más barato)
-        // y la rotación/espejo se aplican solo al mostrar en pantalla (ver processBitmap).
         processBitmap(bitmapBuffer, rotationDegrees)
     }
 
     private fun processBitmap(bitmap: Bitmap, rotationDegrees: Int = 0) {
-        CameraSharedState.imageWidth = bitmap.width
-        CameraSharedState.imageHeight = bitmap.height
-        CameraSharedState.latestBitmap = bitmap // OK mostrar sin rotar: ImageView aplica scaleX si hace falta
-
+        // 1) Bitmap para el MODELO: sin rotar, MediaPipe rota internamente con ImageProcessingOptions
         val mpImage = BitmapImageBuilder(bitmap).build()
         val timestamp = System.currentTimeMillis()
-
         val processingOptions = ImageProcessingOptions.builder()
             .setRotationDegrees(rotationDegrees)
             .build()
-
         try {
             handLandmarker?.detectAsync(mpImage, processingOptions, timestamp)
         } catch (e: Exception) {
             Log.e("MediaPipe", "Error al procesar bitmap: ${e.message}")
         }
+
+        // 2) Bitmap para MOSTRAR: sí necesita orientación correcta (y espejo en frontal).
+        // Barato ahora porque ya viene reducido a 480x640 desde la Fase 2.
+        val displayBitmap = if (rotationDegrees != 0 || cameraMode == 0) {
+            val matrix = Matrix().apply {
+                postRotate(rotationDegrees.toFloat())
+                if (cameraMode == 0) postScale(-1f, 1f) // mirror solo en frontal
+            }
+            Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, false)
+        } else {
+            bitmap
+        }
+
+        CameraSharedState.imageWidth = displayBitmap.width
+        CameraSharedState.imageHeight = displayBitmap.height
+        CameraSharedState.latestBitmap = displayBitmap
     }
 
     override fun onDestroy() {

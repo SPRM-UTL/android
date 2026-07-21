@@ -74,8 +74,6 @@ class AIMonitorFragment : Fragment() {
                         lastShownBitmap = bmp
                         viewFinder.setImageBitmap(bmp)
                     }
-                    // Espejo visual para cámara frontal (sin allocation de Bitmap)
-                    viewFinder.scaleX = if (cameraMode == 0) -1f else 1f
                 }
 
                 overlayView.setMirror(cameraMode == 0)
@@ -92,7 +90,6 @@ class AIMonitorFragment : Fragment() {
                     lastShownBitmap = null
                     viewFinder.setImageBitmap(null)
                 }
-                viewFinder.scaleX = 1f
                 overlayView.updateResults(null, 1, 1)
                 tvNoCameraInfo.visibility = View.VISIBLE
             }
