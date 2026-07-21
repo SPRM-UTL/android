@@ -284,8 +284,7 @@ class HomeFragment : Fragment() {
             }
         )
     }
-
-    /** Controla sockets Wi-Fi/LAN (MagicHome) directamente por TCP sin pasar por el servidor. */
+    /* Controla sockets WI-FI/lan directamente por TCP sin pasar por el servidor */
     private fun toggleDispositivoTcp(dispositivo: com.example.android.core.db.models.Dispositivo, encendido: Boolean) {
         val ip = dispositivo.ipAddress
         if (ip.isNullOrEmpty()) {
@@ -306,9 +305,9 @@ class HomeFragment : Fragment() {
                 }
                 withContext(Dispatchers.IO) {
                     socketClient.sendTcpCommandBytes(ip, 5577, command)
+                    db.dispositivoDao().updateEstadoEncendido(dispositivo.id, encendido)
                 }
                 deviceAdapter.actualizarEstadoDispositivo(dispositivo.id, encendido)
-                // Actualiza el estado en el backend (no crítico)
                 try {
                     RetrofitClient.deviceService.toggleAparato(dispositivo.id, encendido)
                 } catch (_: Exception) { /* ignorar si el backend falla */ }
@@ -328,7 +327,6 @@ class HomeFragment : Fragment() {
         }
     }
 
-    /** Controla dispositivos Bluetooth clásico. */
     private fun toggleDispositivoBt(dispositivo: com.example.android.core.db.models.Dispositivo, encendido: Boolean) {
         val mac = dispositivo.macBluetooth
         if (mac.isNullOrEmpty()) {
@@ -340,6 +338,7 @@ class HomeFragment : Fragment() {
             try {
                 withContext(Dispatchers.IO) {
                     BluetoothController.enviarComando(command)
+                    db.dispositivoDao().updateEstadoEncendido(dispositivo.id, encendido)
                 }
                 deviceAdapter.actualizarEstadoDispositivo(dispositivo.id, encendido)
             } catch (e: Exception) {
@@ -356,6 +355,9 @@ class HomeFragment : Fragment() {
                 val response = RetrofitClient.deviceService.toggleAparato(dispositivo.id, isChecked)
                 if (response.isSuccessful) {
                     val estadoConfirmado = response.body()?.estadoEncendido ?: isChecked
+                    withContext(Dispatchers.IO) {
+                        db.dispositivoDao().updateEstadoEncendido(dispositivo.id, estadoConfirmado)
+                    }
                     deviceAdapter.actualizarEstadoDispositivo(dispositivo.id, estadoConfirmado)
                     Snackbars.success(
                         mainHome,

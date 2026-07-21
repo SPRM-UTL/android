@@ -23,6 +23,9 @@ interface DispositivoDao {
     @Query("SELECT * FROM dispositivos WHERE id = :id")
     suspend fun getDispositivoById(id: Int): Dispositivo?
 
+    @Query("UPDATE dispositivos SET estado_encendido = :estado WHERE id = :id")
+    suspend fun updateEstadoEncendido(id: Int, estado: Boolean): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDispositivo(dispositivo: Dispositivo): Long
 

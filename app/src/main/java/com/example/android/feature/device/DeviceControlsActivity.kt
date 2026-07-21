@@ -114,47 +114,7 @@ class DeviceControlsActivity : AppCompatActivity() {
         }
 
         switchPower.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                tvPowerState.text = "Encendido"
-                tvPowerState.setTextColor(ContextCompat.getColor(this, R.color.teal_primary))
-                switchPower.trackTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.teal_primary))
-            } else {
-                tvPowerState.text = "Apagado"
-                tvPowerState.setTextColor(Color.parseColor("#757575"))
-                switchPower.trackTintList = ColorStateList.valueOf(Color.parseColor("#E0E0E0"))
-            }
-            currentDevice?.let { dev ->
-                DeviceActionManager.ejecutarAccion(this, dev, DeviceActionManager.ACTION_POWER, isChecked)
-
-                lifecycleScope.launch {
-                    try {
-                        if (dev.metodoVinculacion == "WIFI" || dev.metodoVinculacion == "LAN") {
-                            val ip = dev.ipAddress
-                            if (!ip.isNullOrEmpty()) {
-                                val command = if (isChecked) {
-                                    byteArrayOf(0x71.toByte(), 0x23.toByte(), 0x0F.toByte(), 0xA3.toByte())
-                                } else {
-                                    byteArrayOf(0x71.toByte(), 0x24.toByte(), 0x0F.toByte(), 0xA4.toByte())
-                                }
-                                val socketClient = SocketClient {}
-                                withContext(Dispatchers.IO) {
-                                    socketClient.sendTcpCommandBytes(ip, 5577, command)
-                                    // También avisar al backend en caso de que esté sincronizado
-                                    try {
-                                        RetrofitClient.deviceService.toggleAparato(dev.id, isChecked)
-                                    } catch (_: Exception) {}
-                                }
-                            }
-                        } else {
-                            withContext(Dispatchers.IO) {
-                                RetrofitClient.deviceService.toggleAparato(dev.id, isChecked)
-                            }
-                        }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                }
-            }
+            manejarCambioToggle(isChecked)
         }
 
         sliderVolume.addOnChangeListener { _, value, _ ->
@@ -165,6 +125,50 @@ class DeviceControlsActivity : AppCompatActivity() {
         }
     }
 
+    private fun manejarCambioToggle(isChecked: Boolean) {
+        if (isChecked) {
+            tvPowerState.text = "Encendido"
+            tvPowerState.setTextColor(ContextCompat.getColor(this, R.color.teal_primary))
+            switchPower.trackTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.teal_primary))
+        } else {
+            tvPowerState.text = "Apagado"
+            tvPowerState.setTextColor(Color.parseColor("#757575"))
+            switchPower.trackTintList = ColorStateList.valueOf(Color.parseColor("#E0E0E0"))
+        }
+        currentDevice?.let { dev ->
+            DeviceActionManager.ejecutarAccion(this, dev, DeviceActionManager.ACTION_POWER, isChecked)
+
+            lifecycleScope.launch {
+                try {
+                    if (dev.metodoVinculacion == "WIFI" || dev.metodoVinculacion == "LAN") {
+                        val ip = dev.ipAddress
+                        if (!ip.isNullOrEmpty()) {
+                            val command = if (isChecked) {
+                                byteArrayOf(0x71.toByte(), 0x23.toByte(), 0x0F.toByte(), 0xA3.toByte())
+                            } else {
+                                byteArrayOf(0x71.toByte(), 0x24.toByte(), 0x0F.toByte(), 0xA4.toByte())
+                            }
+                            val socketClient = SocketClient {}
+                            withContext(Dispatchers.IO) {
+                                socketClient.sendTcpCommandBytes(ip, 5577, command)
+                                db.dispositivoDao().updateEstadoEncendido(dev.id, isChecked)
+                                try {
+                                    RetrofitClient.deviceService.toggleAparato(dev.id, isChecked)
+                                } catch (_: Exception) {}
+                            }
+                        }
+                    } else {
+                        withContext(Dispatchers.IO) {
+                            db.dispositivoDao().updateEstadoEncendido(dev.id, isChecked)
+                            RetrofitClient.deviceService.toggleAparato(dev.id, isChecked)
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
     private fun cargarDispositivo() {
         lifecycleScope.launch {
             currentDevice = db.dispositivoDao().getDispositivoById(deviceId)
@@ -179,6 +183,23 @@ class DeviceControlsActivity : AppCompatActivity() {
                     actualizarSliderDesdeSistema()
                 } else {
                     cardVolumeControl.visibility = View.GONE
+                }
+
+                val isEncendido = dispositivo.estadoEncendido == true
+                switchPower.setOnCheckedChangeListener(null)
+                switchPower.isChecked = isEncendido
+                if (isEncendido) {
+                    tvPowerState.text = "Encendido"
+                    tvPowerState.setTextColor(ContextCompat.getColor(this@DeviceControlsActivity, R.color.teal_primary))
+                    switchPower.trackTintList = ColorStateList.valueOf(ContextCompat.getColor(this@DeviceControlsActivity, R.color.teal_primary))
+                } else {
+                    tvPowerState.text = "Apagado"
+                    tvPowerState.setTextColor(Color.parseColor("#757575"))
+                    switchPower.trackTintList = ColorStateList.valueOf(Color.parseColor("#E0E0E0"))
+                }
+                
+                switchPower.setOnCheckedChangeListener { _, isChecked ->
+                    manejarCambioToggle(isChecked)
                 }
 
                 validarConexionYConectar(dispositivo)
