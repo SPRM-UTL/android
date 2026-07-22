@@ -3,7 +3,6 @@ import com.example.android.feature.ai.domain.analyzer.SecuenciaDetector
 import com.example.android.feature.ai.data.state.CameraSharedState
 import com.example.android.feature.ai.domain.models.GestureAnalyzerConfig
 import com.example.android.feature.ai.domain.manager.Combo
-import com.example.android.feature.ai.domain.models.HandMetrics
 import com.example.android.feature.ai.domain.analyzer.HandNormalizer
 import com.example.android.feature.ai.domain.analyzer.FingerAnalyzer
 import com.example.android.feature.ai.domain.analyzer.PalmAnalyzer
@@ -27,13 +26,28 @@ class GestureAnalyzer {
     private val leftStabilizer = HandPoseStabilizer(framesToConfirm = 2, emptyFramesToClear = 3)
     private val rightStabilizer = HandPoseStabilizer(framesToConfirm = 2, emptyFramesToClear = 3)
 
-    @Synchronized
+    // Frame skipping: analizar cada 2do frame para reducir carga de CPU/GPU
+    private var frameCounter = 0
+    private val FRAME_SKIP_INTERVAL = 2
+
+    // Confidence: umbral mínimo de handedness score para aceptar una detección
+    var minHandednessScore: Float = 0.6f
+
+    // Confidence: último score máximo detectado (para UI)
+    var lastMaxConfidence: Float = 0f
+        private set
+
     fun analyze(
         handResult: HandLandmarkerResult?,
         isFrontCamera: Boolean = true
     ): String {
         var action = "Ninguno"
 
+        // Frame skipping: incrementar contador y saltar frames impares
+        frameCounter++
+        if (frameCounter % FRAME_SKIP_INTERVAL != 0) {
+            return CameraSharedState.currentAction ?: action
+        }
 
         val handLandmarks = handResult?.landmarks()
         val handednesses = handResult?.handednesses()
@@ -42,11 +56,22 @@ class GestureAnalyzer {
         var leftPose = ""
         var rightPose = ""
         var handDetected = false
+        lastMaxConfidence = 0f
 
         if (handLandmarks != null && handednesses != null && handLandmarks.isNotEmpty()) {
             for (i in handLandmarks.indices) {
                 val hand = handLandmarks[i]
-                val handedness = handednesses[i].first().categoryName() // "Left" or "Right"
+                val handednessCategory = handednesses[i].first()
+                val handedness = handednessCategory.categoryName() // "Left" or "Right"
+                val handScore = handednessCategory.score() // Float 0.0..1.0
+
+                // Confidence: filtrar manos con score bajo
+                if (handScore < minHandednessScore) continue
+
+                // Trackear confidence máxima para UI
+                if (handScore > lastMaxConfidence) {
+                    lastMaxConfidence = handScore
+                }
 
                 handDetected = true
 
@@ -110,6 +135,7 @@ class GestureAnalyzer {
         }
 
         CameraSharedState.currentGesture = gestureName
+        CameraSharedState.lastHandConfidence = lastMaxConfidence
 
         // Texto completo para mostrar en el overlay de la cámara
         // (este sí incluye el feedback de todos los combos configurados)

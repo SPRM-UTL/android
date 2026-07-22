@@ -85,6 +85,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".feature.ai.presentation.activities.GrabarSecuenciaActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".feature.ai.presentation.activities.PasoWizardActivity"
             android:exported="false" />
 
@@ -136,6 +140,10 @@
 
         <activity
             android:name=".feature.device.MultiSocketActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".feature.device.VentiladorInteligenteActivity"
             android:exported="false" />
 
         <activity

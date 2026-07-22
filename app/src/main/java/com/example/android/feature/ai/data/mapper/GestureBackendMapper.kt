@@ -1,13 +1,12 @@
 package com.example.android.feature.ai.data.mapper
 import com.example.android.feature.ai.data.mapper.GestureBackendMapper
-import com.example.android.feature.ai.domain.models.HandMetrics
 
 /**
- * Traduce el nombre "libre" de un gesto detectado localmente (HandMetrics / activador / paso)
+ * Traduce el nombre "libre" de un gesto detectado localmente (HandPose / activador / paso)
  * a uno de los nombres que el backend acepta (ver GestosController.GestosValidos):
  * "Manos Arriba", "Una Mano Arriba", "Agitar la Mano", "Abrir Puño", "Cerrar Puño".
  *
- * Esto es un mapeo por palabras clave, AJUSTAR si los nombres reales de HandMetrics no calzan bien.
+ * Esto es un mapeo por palabras clave, AJUSTAR si los nombres reales de HandPose no calzan bien.
  */
 object GestureBackendMapper {
 

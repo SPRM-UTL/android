@@ -4,12 +4,15 @@ import com.example.android.feature.ai.domain.analyzer.PasoSecuencia
 import com.example.android.feature.ai.domain.analyzer.ManoObjetivo
 import android.content.Context
 import com.example.android.R
+import com.example.android.core.db.models.ComboEntity
 import com.example.android.core.db.models.Gesto
 import com.example.android.core.db.models.GestoPaso
+import com.example.android.core.db.init.AppDatabase
 import com.example.android.core.network.client.RetrofitClient
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
+import kotlinx.coroutines.runBlocking
 
 data class Combo(
     var id: String = UUID.randomUUID().toString(),
@@ -19,7 +22,8 @@ data class Combo(
     var accionVinculada: String? = null,
     var aparatoId: Int? = null,
     var accionEncendido: Boolean? = null,
-    var backendGestoId: Int? = null, // ID del registro 'gesto' en el backend (null = aún no sincronizado)
+    var contactoOutlet: Int? = null,
+    var backendGestoId: Int? = null,
     var icono: String? = "lucide_star",
     var fraseVozActivadora: String? = null
 )
@@ -33,63 +37,118 @@ object SecuenciaConfigManager {
         return sesionPrefs.getInt("userId", -1)
     }
 
-    private fun getPrefsName(context: Context): String {
+    private suspend fun getComboDao(context: Context): com.example.android.core.db.dao.ComboDao {
+        return AppDatabase.getDatabase(context).comboDao()
+    }
+
+    suspend fun saveCombos(context: Context, combos: List<Combo>) {
         val userId = getCurrentUserId(context)
-        return "${PREFS_NAME_BASE}_user_$userId"
+        val dao = getComboDao(context)
+        
+        dao.deleteAllCombosByUserId(userId)
+        
+        val entities = combos.map { comboToEntity(it, userId) }
+        dao.insertAll(entities)
+        
+        migrateFromPrefsIfNeeded(context, userId)
     }
 
-    fun saveCombos(context: Context, combos: List<Combo>) {
-        val prefs = context.getSharedPreferences(getPrefsName(context), Context.MODE_PRIVATE)
-        val editor = prefs.edit()
-
-        val combosArray = JSONArray()
-        for (combo in combos) {
-            val comboObj = JSONObject()
-            comboObj.put("id", combo.id)
-            comboObj.put("name", combo.name)
-            if (combo.activador != null) comboObj.put("activador", stepToJson(combo.activador!!))
-            if (combo.accionVinculada != null) comboObj.put("accionVinculada", combo.accionVinculada)
-            if (combo.aparatoId != null) comboObj.put("aparatoId", combo.aparatoId)
-            if (combo.accionEncendido != null) comboObj.put("accionEncendido", combo.accionEncendido)
-            if (combo.backendGestoId != null) comboObj.put("backendGestoId", combo.backendGestoId)
-            if (combo.icono != null) comboObj.put("icono", combo.icono)
-            if (!combo.fraseVozActivadora.isNullOrBlank()) comboObj.put("fraseVozActivadora", combo.fraseVozActivadora)
-
-            val pasosArray = JSONArray()
-            for (step in combo.pasos) {
-                pasosArray.put(stepToJson(step))
-            }
-            comboObj.put("pasos", pasosArray)
-
-            combosArray.put(comboObj)
-        }
-        editor.putString(KEY_COMBOS, combosArray.toString())
-        editor.apply()
-    }
-
-    fun loadCombos(context: Context): List<Combo> {
-        val prefs = context.getSharedPreferences(getPrefsName(context), Context.MODE_PRIVATE)
-        val combosStr = prefs.getString(KEY_COMBOS, null)
-
-        val defaultCombo = Combo(
-            id = "default-combo",
-            name = "Ataque Base",
-            activador = PasoSecuencia("TE AMO ILY", ManoObjetivo.ANY, 15),
-            pasos = mutableListOf(
-                PasoSecuencia("L", ManoObjetivo.ANY, 10),
-                PasoSecuencia("ROCK", ManoObjetivo.ANY, 10),
-                PasoSecuencia("L", ManoObjetivo.ANY, 10)
-            ),
-            accionVinculada = "Encender Luces Sala"
-        )
-
-        if (combosStr == null) {
+    suspend fun loadCombos(context: Context): List<Combo> {
+        val userId = getCurrentUserId(context)
+        val dao = getComboDao(context)
+        
+        val entities = dao.getCombosByUserId(userId)
+        
+        if (entities.isEmpty()) {
+            val defaultCombo = Combo(
+                id = "default-combo",
+                name = "Ataque Base",
+                activador = PasoSecuencia("TE AMO ILY", ManoObjetivo.ANY, 15),
+                pasos = mutableListOf(
+                    PasoSecuencia("L", ManoObjetivo.ANY, 10),
+                    PasoSecuencia("ROCK", ManoObjetivo.ANY, 10),
+                    PasoSecuencia("L", ManoObjetivo.ANY, 10)
+                ),
+                accionVinculada = "Encender Luces Sala"
+            )
             return listOf(defaultCombo)
         }
+        
+        return entities.map { entityToCombo(it) }
+    }
 
+    suspend fun saveCombo(context: Context, combo: Combo) {
+        val userId = getCurrentUserId(context)
+        val dao = getComboDao(context)
+        val entity = comboToEntity(combo, userId)
+        dao.insertCombo(entity)
+    }
+
+    suspend fun deleteCombo(context: Context, comboId: String) {
+        val dao = getComboDao(context)
+        dao.deleteComboById(comboId)
+    }
+
+    private fun comboToEntity(combo: Combo, userId: Int): ComboEntity {
+        return ComboEntity(
+            id = combo.id,
+            name = combo.name,
+            activadorJson = combo.activador?.let { stepToJson(it).toString() },
+            pasosJson = JSONArray().apply {
+                combo.pasos.forEach { put(stepToJson(it)) }
+            }.toString(),
+            accionVinculada = combo.accionVinculada,
+            aparatoId = combo.aparatoId,
+            accionEncendido = combo.accionEncendido,
+            contactoOutlet = combo.contactoOutlet,
+            backendGestoId = combo.backendGestoId,
+            icono = combo.icono,
+            fraseVozActivadora = combo.fraseVozActivadora,
+            userId = userId
+        )
+    }
+
+    private fun entityToCombo(entity: ComboEntity): Combo {
+        val combo = Combo(
+            id = entity.id,
+            name = entity.name,
+            accionVinculada = entity.accionVinculada,
+            aparatoId = entity.aparatoId,
+            accionEncendido = entity.accionEncendido,
+            contactoOutlet = entity.contactoOutlet,
+            backendGestoId = entity.backendGestoId,
+            icono = entity.icono,
+            fraseVozActivadora = entity.fraseVozActivadora
+        )
+        
+        entity.activadorJson?.let {
+            try {
+                combo.activador = stepFromJson(JSONObject(it))
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        
+        try {
+            val pasosArray = JSONArray(entity.pasosJson)
+            for (j in 0 until pasosArray.length()) {
+                combo.pasos.add(stepFromJson(pasosArray.getJSONObject(j)))
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        
+        return combo
+    }
+
+    private fun migrateFromPrefsIfNeeded(context: Context, userId: Int) {
+        val prefs = context.getSharedPreferences("${PREFS_NAME_BASE}_user_$userId", Context.MODE_PRIVATE)
+        val combosStr = prefs.getString(KEY_COMBOS, null) ?: return
+        
         try {
             val combosArray = JSONArray(combosStr)
-            val combosList = mutableListOf<Combo>()
+            val dao = runBlocking { getComboDao(context) }
+            
             for (i in 0 until combosArray.length()) {
                 val comboObj = combosArray.getJSONObject(i)
                 val combo = Combo(
@@ -123,12 +182,14 @@ object SecuenciaConfigManager {
                         combo.pasos.add(stepFromJson(pasosArray.getJSONObject(j)))
                     }
                 }
-                combosList.add(combo)
+                
+                val entity = comboToEntity(combo, userId)
+                runBlocking { dao.insertCombo(entity) }
             }
-            return combosList
+            
+            prefs.edit().remove(KEY_COMBOS).apply()
         } catch (e: Exception) {
             e.printStackTrace()
-            return listOf(defaultCombo)
         }
     }
 
@@ -166,7 +227,8 @@ object SecuenciaConfigManager {
             nivelConfianzaMinimo = 0.5,
             tipoDisparadorNombre = if (combo.fraseVozActivadora != null && combo.activador == null && combo.pasos.isEmpty()) "VOZ" else "COMBO",
             aparatoId = combo.aparatoId,
-            icono = combo.icono, // 🌟 Conservado e integrado aquí
+            contactoOutlet = combo.contactoOutlet,
+            icono = combo.icono,
             pasos = pasosList,
             fraseVozActivadora = combo.fraseVozActivadora
         )
@@ -182,17 +244,16 @@ object SecuenciaConfigManager {
             val service = RetrofitClient.gestureService
 
             if (combo.backendGestoId == null || combo.backendGestoId == 0) {
-                // Create
                 val response = service.createGesto("Bearer $token", gesto)
                 if (response.isSuccessful) {
                     val createdGesto = response.body()?.data
                     if (createdGesto != null) {
                         combo.backendGestoId = createdGesto.id
+                        saveCombo(context, combo)
                         return true
                     }
                 }
             } else {
-                // Update
                 val response = service.updateGesto("Bearer $token", combo.backendGestoId!!, gesto)
                 return response.isSuccessful
             }

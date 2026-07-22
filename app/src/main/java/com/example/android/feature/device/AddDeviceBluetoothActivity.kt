@@ -256,7 +256,7 @@ class AddDeviceBluetoothActivity : AppCompatActivity() {
             listOf("MULTISOCKET", "MULTI SOCKET", "REGLETA", "POWERSTRIP", "POWER STRIP", "MULTIENCHUFE", "CONTACTOS") to "MultiSocket",
             listOf("BULB", "FOCO", "LIGHT", "LAMP", "STRIP", "LED") to "Focos",
             listOf("SPEAKER", "BOCINA", "AUDIO", "SOUND") to "Bocinas",
-            listOf("FAN", "VENTILADOR") to "Ventilador",
+            listOf("FAN", "VENTILADOR") to "Ventilador Inteligente",
             listOf("TV", "TELEVISION", "TELEVISIÓN", "TELEVISOR") to "Televisión",
             listOf("HEADPHONE", "AUDIFONO", "AUDÍFONO", "EARBUD") to "Audífonos",
             listOf("PLUG", "ENCHUFE", "SOCKET", "OUTLET") to "Enchufe",
@@ -296,7 +296,7 @@ class AddDeviceBluetoothActivity : AppCompatActivity() {
                 "Bocinas"    -> R.drawable.speaker
                 "Focos"      -> R.drawable.lightbulb
                 "Luces"      -> R.drawable.lamp_floor
-                "Ventilador" -> R.drawable.wind
+                "Ventilador Inteligente" -> R.drawable.wind
                 "Televisión" -> R.drawable.tv_minimal
                 "Enchufe", "MultiSocket", "Sockets Inteligentes" -> R.drawable.plug
                 "Cámara", "Cámaras" -> R.drawable.camera

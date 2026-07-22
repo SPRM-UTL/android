@@ -8,7 +8,7 @@ import com.google.mediapipe.tasks.components.containers.NormalizedLandmark
  * Reduce jitter antes de clasificar el gesto.
  */
 class HandLandmarkSmoother(
-    private val alpha: Float = 0.65f
+    private val alpha: Float = 0.4f
 ) {
     private val leftState = FloatArray(LANDMARK_COUNT * 3)
     private val rightState = FloatArray(LANDMARK_COUNT * 3)

@@ -31,11 +31,16 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.example.android.R
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import java.util.UUID
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class AIMonitorFragment : Fragment() {
 
@@ -145,11 +150,15 @@ class AIMonitorFragment : Fragment() {
             name = "Combo: $accionActual"
         )
 
-        val combosActuales = SecuenciaConfigManager.loadCombos(requireContext()).toMutableList()
-        combosActuales.add(nuevoCombo)
-        SecuenciaConfigManager.saveCombos(requireContext(), combosActuales)
-
-        Snackbar.make(requireView(), "Acción '$accionActual' guardada como combo", Snackbar.LENGTH_SHORT).show()
+        viewLifecycleOwner.lifecycleScope.launch {
+            val combosActuales = SecuenciaConfigManager.loadCombos(requireContext()).toMutableList()
+            combosActuales.add(nuevoCombo)
+            SecuenciaConfigManager.saveCombos(requireContext(), combosActuales)
+            
+            withContext(Dispatchers.Main) {
+                Snackbar.make(requireView(), "Acción '$accionActual' guardada como combo", Snackbar.LENGTH_SHORT).show()
+            }
+        }
 
         // Como ahora todo está en AIVisionActivity, en lugar de lanzar una nueva Activity,
         // podríamos notificar al ViewPager para cambiar a la Tab de Secuencias, 
@@ -314,6 +323,45 @@ class AIMonitorFragment : Fragment() {
             requireContext().startService(intent)
         }
         uiHandler.post(updateRunnable)
+        
+        // Recoger StateFlows para actualizaciones reactivas
+        viewLifecycleOwner.lifecycleScope.launch {
+            CameraSharedState.uiBitmap.collectLatest { bitmap ->
+                bitmap?.let {
+                    if (it !== lastShownBitmap) {
+                        lastShownBitmap = it
+                        viewFinder.setImageBitmap(it)
+                    }
+                }
+            }
+        }
+        
+        viewLifecycleOwner.lifecycleScope.launch {
+            CameraSharedState.uiGesture.collectLatest { gesture ->
+                overlayView.updateAction(gesture)
+            }
+        }
+        
+        viewLifecycleOwner.lifecycleScope.launch {
+            CameraSharedState.uiServiceRunning.collectLatest { running ->
+                if (running) {
+                    tvNoCameraInfo.visibility = View.GONE
+                } else {
+                    if (lastShownBitmap != null) {
+                        lastShownBitmap = null
+                        viewFinder.setImageBitmap(null)
+                    }
+                    overlayView.updateResults(null, 1, 1)
+                    tvNoCameraInfo.visibility = View.VISIBLE
+                }
+            }
+        }
+        
+        viewLifecycleOwner.lifecycleScope.launch {
+            CameraSharedState.uiConfidence.collectLatest { confidence ->
+                overlayView.updateConfidence(confidence)
+            }
+        }
     }
 
     override fun onPause() {

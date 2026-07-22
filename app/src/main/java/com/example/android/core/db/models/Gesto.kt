@@ -39,6 +39,9 @@ data class Gesto(
     @SerializedName("sk_aparato_id")
     val aparatoId: Int?,
 
+    @SerializedName("contacto_outlet")
+    val contactoOutlet: Int? = null,
+
     @SerializedName("icono")
     val icono: String? = "lucide_star",
 
@@ -49,6 +52,6 @@ data class Gesto(
     @SerializedName("pasos")
     val pasos: List<GestoPaso>? = null
 ) {
-    constructor(id: Int, bkId: Int, nombre: String?, identificadorIa: Int, nivelConfianzaMinimo: Double, tipoDisparadorNombre: String?, aparatoId: Int?, icono: String?, fraseVozActivadora: String?) :
-            this(id, bkId, nombre, identificadorIa, nivelConfianzaMinimo, tipoDisparadorNombre, aparatoId, icono, fraseVozActivadora, null)
+    constructor(id: Int, bkId: Int, nombre: String?, identificadorIa: Int, nivelConfianzaMinimo: Double, tipoDisparadorNombre: String?, aparatoId: Int?, contactoOutlet: Int?, icono: String?, fraseVozActivadora: String?) :
+            this(id, bkId, nombre, identificadorIa, nivelConfianzaMinimo, tipoDisparadorNombre, aparatoId, contactoOutlet, icono, fraseVozActivadora, null)
 }

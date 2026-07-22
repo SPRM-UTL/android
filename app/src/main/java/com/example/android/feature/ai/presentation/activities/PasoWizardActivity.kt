@@ -1,7 +1,7 @@
 package com.example.android.feature.ai.presentation.activities
 import com.example.android.feature.ai.domain.analyzer.ManoObjetivo
 import com.example.android.feature.ai.presentation.activities.PasoWizardActivity
-import com.example.android.feature.ai.domain.models.HandMetrics
+import com.example.android.feature.ai.domain.models.HandPose
 import com.example.android.feature.ai.presentation.adapters.WizardPagerAdapter
 import com.example.android.core.ui.adapters.WizardSelectionAdapter
 import com.example.android.core.ui.adapters.GestureDropdownAdapter
@@ -35,7 +35,7 @@ class PasoWizardActivity : AppCompatActivity() {
     private var selectedHand: ManoObjetivo = ManoObjetivo.ANY
     private var selectedFrames: Int = 15
 
-    private val allPoses = HandMetrics.HandPose.values().map { it.name.replace("_", " ") }
+    private val allPoses = HandPose.values().map { it.name.replace("_", " ") }
     private val handOptions = listOf("Cualquier Mano", "Mano Izquierda", "Mano Derecha")
 
     override fun onCreate(savedInstanceState: Bundle?) {

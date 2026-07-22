@@ -126,8 +126,8 @@ class RastreadorCombo(val combo: Combo, private val onComboCompleted: (Combo) ->
     }
 
     private fun isPoseMatching(leftPose: String, rightPose: String, expected: PasoSecuencia): Boolean {
-        val leftMatch = leftPose.contains(expected.nombreGesto, ignoreCase = true)
-        val rightMatch = rightPose.contains(expected.nombreGesto, ignoreCase = true)
+        val leftMatch = HandGestureMatcher.matches(leftPose, expected.nombreGesto)
+        val rightMatch = HandGestureMatcher.matches(rightPose, expected.nombreGesto)
 
         return when (expected.manoObjetivo) {
             ManoObjetivo.LEFT -> leftMatch

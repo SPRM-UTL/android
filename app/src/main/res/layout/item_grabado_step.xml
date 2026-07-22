@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginBottom="8dp"
+    app:cardCornerRadius="14dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="#E0E8F0"
+    app:cardBackgroundColor="#F0FDF4">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="14dp"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/tvStepNumber"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="1."
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#1565C0"
+            android:layout_marginEnd="12dp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvStepPose"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ROCK"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="#073F4C" />
+
+            <TextView
+                android:id="@+id/tvStepHand"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Mano Derecha"
+                android:textSize="12sp"
+                android:textColor="#6F7E8E"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/lucide_check_circle"
+            app:tint="#16a34a"
+            android:contentDescription="Capturado" />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

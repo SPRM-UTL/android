@@ -69,7 +69,8 @@ class DeviceAdapter(
             tvName.text = dispositivo.nombre
             val isMultiSocket = dispositivo.tipo?.let { tipo ->
                 tipo.contains("MultiSocket", ignoreCase = true) ||
-                    tipo.contains("Regleta", ignoreCase = true)
+                    tipo.contains("Regleta", ignoreCase = true) ||
+                    tipo.contains("Ventilador Inteligente", ignoreCase = true)
             } == true
             
             val isConnected = when (dispositivo.metodoVinculacion) {
@@ -98,7 +99,11 @@ class DeviceAdapter(
                 statusDot.setCardBackgroundColor(android.graphics.Color.parseColor("#6F7EA8"))
             }
             
-            ivIcon.setImageResource(if (isMultiSocket) R.drawable.plug else R.drawable.ic_power)
+            ivIcon.setImageResource(when {
+                isMultiSocket -> R.drawable.plug
+                dispositivo.tipo?.contains("ventilador", ignoreCase = true) == true -> R.drawable.wind
+                else -> R.drawable.ic_power
+            })
 
             val isOn = deviceStates[dispositivo.id] ?: dispositivo.estadoEncendido ?: false
             switchDevice.setOnCheckedChangeListener(null)

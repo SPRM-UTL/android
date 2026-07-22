@@ -41,9 +41,26 @@ class OverlayView(context: Context, attrs: AttributeSet?) : View(context, attrs)
         isAntiAlias = true
     }
 
+    private val confidencePaint = Paint().apply {
+        color = Color.YELLOW
+        textSize = 35f
+        textAlign = Paint.Align.RIGHT
+        style = Paint.Style.FILL
+        isAntiAlias = true
+    }
+
+    private var currentConfidence: Float = 0f
+
     fun updateAction(action: String) {
         if (currentAction != action) {
             currentAction = action
+            invalidate()
+        }
+    }
+
+    fun updateConfidence(confidence: Float) {
+        if (currentConfidence != confidence) {
+            currentConfidence = confidence
             invalidate()
         }
     }
@@ -102,6 +119,11 @@ class OverlayView(context: Context, attrs: AttributeSet?) : View(context, attrs)
                     canvas.drawCircle(x, y, 8f, pointPaint)
                 }
             }
+        }
+
+        if (currentConfidence > 0f) {
+            val confidenceText = "Conf: %.0f%%".format(currentConfidence * 100)
+            canvas.drawText(confidenceText, width - 20f, 40f, confidencePaint)
         }
 
         if (PrefsManager.isShowAction(context) && currentAction != "Ninguno" && currentAction.isNotBlank()) {

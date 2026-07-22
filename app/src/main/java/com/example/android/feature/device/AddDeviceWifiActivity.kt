@@ -509,7 +509,7 @@ class AddDeviceWifiActivity : AppCompatActivity() {
             listOf("MULTISOCKET", "MULTI SOCKET", "REGLETA", "POWERSTRIP", "POWER STRIP", "MULTIENCHUFE", "CONTACTOS") to "MultiSocket",
             listOf("BULB", "FOCO", "LIGHT", "LAMP", "STRIP", "LED") to "Focos",
             listOf("SPEAKER", "BOCINA", "AUDIO", "SOUND") to "Bocinas",
-            listOf("FAN", "VENTILADOR") to "Ventilador",
+            listOf("FAN", "VENTILADOR") to "Ventilador Inteligente",
             listOf("TV", "TELEVISION", "TELEVISIÓN", "TELEVISOR") to "Televisión",
             listOf("HEADPHONE", "AUDIFONO", "AUDÍFONO", "EARBUD") to "Audífonos",
             listOf("PLUG", "ENCHUFE", "SOCKET", "OUTLET") to "Enchufe",
@@ -547,18 +547,18 @@ class AddDeviceWifiActivity : AppCompatActivity() {
             ivTipoIcono.setImageResource(resId)
             ivTipoIcono.visibility = View.VISIBLE
         } else {
-            val iconRes = when (tipo) {
-                "Audífonos"  -> R.drawable.headphones
-                "Bocinas"    -> R.drawable.speaker
-                "Focos"      -> R.drawable.lightbulb
-                "Luces"      -> R.drawable.lamp_floor
-                "Ventilador" -> R.drawable.wind
-                "Televisión" -> R.drawable.tv_minimal
-                "Enchufe", "MultiSocket", "Sockets Inteligentes" -> R.drawable.plug
-                "Cámara", "Cámaras" -> R.drawable.camera
-                "Asistente"  -> R.drawable.ic_input_add
-                else         -> R.drawable.circle_question
-            }
+        val iconRes = when (tipo) {
+            "Audífonos"  -> R.drawable.headphones
+            "Bocinas"    -> R.drawable.speaker
+            "Focos"      -> R.drawable.lightbulb
+            "Luces"      -> R.drawable.lamp_floor
+            "Ventilador Inteligente" -> R.drawable.wind
+            "Televisión" -> R.drawable.tv_minimal
+            "Enchufe", "MultiSocket", "Sockets Inteligentes" -> R.drawable.plug
+            "Cámara", "Cámaras" -> R.drawable.camera
+            "Asistente"  -> R.drawable.ic_input_add
+            else         -> R.drawable.circle_question
+        }
             ivTipoIcono.setImageResource(iconRes)
             ivTipoIcono.visibility = View.VISIBLE
         }

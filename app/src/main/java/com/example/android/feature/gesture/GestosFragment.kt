@@ -18,6 +18,7 @@ import android.widget.TextView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -28,6 +29,7 @@ import com.google.android.material.snackbar.Snackbar
 
 import java.util.UUID
 import com.example.android.feature.profile.ProfileActivity
+import kotlinx.coroutines.launch
 import com.example.android.core.ui.adapters.AddGestoAdapter
 import com.example.android.core.ui.adapters.GestosAdminAdapter
 
@@ -96,7 +98,9 @@ class GestosFragment : Fragment() {
         val addGestoAdapter = AddGestoAdapter {
             val newCombo = Combo(id = UUID.randomUUID().toString(), name = "Nuevo Gesto")
             adapter.combos.add(newCombo)
-            SecuenciaConfigManager.saveCombos(requireContext(), adapter.combos)
+            viewLifecycleOwner.lifecycleScope.launch {
+                SecuenciaConfigManager.saveCombos(requireContext(), adapter.combos)
+            }
 
             val intent = Intent(requireContext(), SecuenciaConfigActivity::class.java).apply {
                 putExtra("COMBO_ID", newCombo.id)
@@ -120,7 +124,9 @@ class GestosFragment : Fragment() {
                 if (position != -1) {
                     adapter.combos.removeAt(position)
                     adapter.notifyItemRemoved(position)
-                    SecuenciaConfigManager.saveCombos(requireContext(), adapter.combos)
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        SecuenciaConfigManager.saveCombos(requireContext(), adapter.combos)
+                    }
 
                     view?.let { v ->
                         Snackbar.make(v, "Gesto '${combo.name}' eliminado", Snackbar.LENGTH_SHORT).show()
@@ -137,9 +143,11 @@ class GestosFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         cargarFotoPerfil()
-        val combos = SecuenciaConfigManager.loadCombos(requireContext())
-        adapter.combos = combos.toMutableList()
-        adapter.notifyDataSetChanged()
+        viewLifecycleOwner.lifecycleScope.launch {
+            val combos = SecuenciaConfigManager.loadCombos(requireContext())
+            adapter.combos = combos.toMutableList()
+            adapter.notifyDataSetChanged()
+        }
     }
 
     private fun cargarFotoPerfil() {

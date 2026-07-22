@@ -49,4 +49,32 @@ object PrefsManager {
 
     fun isShowAction(context: Context): Boolean = getPrefs(context).getBoolean(KEY_SHOW_ACTION, true)
     fun setShowAction(context: Context, show: Boolean) = getPrefs(context).edit().putBoolean(KEY_SHOW_ACTION, show).apply()
+    
+    private const val KEY_COMBO_RESET_DELAY = "combo_reset_delay"
+    private const val DEFAULT_COMBO_RESET_DELAY = 3000L
+    
+    fun getComboResetDelay(context: Context): Long = getPrefs(context).getLong(KEY_COMBO_RESET_DELAY, DEFAULT_COMBO_RESET_DELAY)
+    fun setComboResetDelay(context: Context, delayMs: Long) = getPrefs(context).edit().putLong(KEY_COMBO_RESET_DELAY, delayMs).apply()
+    
+    private const val KEY_HAND_DETECTION_CONFIDENCE = "hand_detection_confidence"
+    private const val KEY_HAND_PRESENCE_CONFIDENCE = "hand_presence_confidence"
+    private const val KEY_TRACKING_CONFIDENCE = "tracking_confidence"
+    private const val KEY_MIN_HANDEDNESS_SCORE = "min_handedness_score"
+    
+    private const val DEFAULT_HAND_DETECTION_CONFIDENCE = 0.7f
+    private const val DEFAULT_HAND_PRESENCE_CONFIDENCE = 0.7f
+    private const val DEFAULT_TRACKING_CONFIDENCE = 0.5f
+    private const val DEFAULT_MIN_HANDEDNESS_SCORE = 0.6f
+    
+    fun getHandDetectionConfidence(context: Context): Float = getPrefs(context).getFloat(KEY_HAND_DETECTION_CONFIDENCE, DEFAULT_HAND_DETECTION_CONFIDENCE)
+    fun setHandDetectionConfidence(context: Context, value: Float) = getPrefs(context).edit().putFloat(KEY_HAND_DETECTION_CONFIDENCE, value).apply()
+    
+    fun getHandPresenceConfidence(context: Context): Float = getPrefs(context).getFloat(KEY_HAND_PRESENCE_CONFIDENCE, DEFAULT_HAND_PRESENCE_CONFIDENCE)
+    fun setHandPresenceConfidence(context: Context, value: Float) = getPrefs(context).edit().putFloat(KEY_HAND_PRESENCE_CONFIDENCE, value).apply()
+    
+    fun getTrackingConfidence(context: Context): Float = getPrefs(context).getFloat(KEY_TRACKING_CONFIDENCE, DEFAULT_TRACKING_CONFIDENCE)
+    fun setTrackingConfidence(context: Context, value: Float) = getPrefs(context).edit().putFloat(KEY_TRACKING_CONFIDENCE, value).apply()
+    
+    fun getMinHandednessScore(context: Context): Float = getPrefs(context).getFloat(KEY_MIN_HANDEDNESS_SCORE, DEFAULT_MIN_HANDEDNESS_SCORE)
+    fun setMinHandednessScore(context: Context, value: Float) = getPrefs(context).edit().putFloat(KEY_MIN_HANDEDNESS_SCORE, value).apply()
 }

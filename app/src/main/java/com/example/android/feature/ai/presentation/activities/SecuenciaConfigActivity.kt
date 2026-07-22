@@ -173,6 +173,29 @@ class SecuenciaConfigActivity : AppCompatActivity() {
         }
     }
 
+    private val grabarSecuenciaLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val data = result.data ?: return@registerForActivityResult
+            val pasosStr = data.getStringExtra(GrabarSecuenciaActivity.EXTRA_PASOS_JSON) ?: return@registerForActivityResult
+            val nuevoPasos = pasosStr.lines().mapNotNull { line ->
+                val parts = line.split("|")
+                if (parts.size == 3) {
+                    val mano = try { ManoObjetivo.valueOf(parts[1]) } catch (e: Exception) { ManoObjetivo.ANY }
+                    val frames = parts[2].toIntOrNull() ?: 15
+                    PasoSecuencia(parts[0], mano, frames)
+                } else null
+            }
+            if (nuevoPasos.isEmpty()) {
+                Toast.makeText(this, "No se grabaron pasos", Toast.LENGTH_SHORT).show()
+                return@registerForActivityResult
+            }
+            adapter.pasos.addAll(nuevoPasos)
+            adapter.notifyItemRangeInserted(adapter.pasos.size - nuevoPasos.size, nuevoPasos.size)
+            updateHeaders()
+            Toast.makeText(this, "${nuevoPasos.size} paso(s) grabados con cámara — revísalos antes de guardar", Toast.LENGTH_LONG).show()
+        }
+    }
+
     private val dispositivoWizardLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val data = result.data ?: return@registerForActivityResult
@@ -180,26 +203,39 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                 val dispositivoId = data.getIntExtra("DISPOSITIVO_ID", -1)
                 val nombreDispositivo = data.getStringExtra("DISPOSITIVO_NOMBRE") ?: "Dispositivo"
                 val accionTipo = data.getIntExtra("ACCION_TIPO", -1)
+                val contactoOutlet = data.getIntExtra("CONTACTO_OUTLET", 1)
 
                 if (dispositivoId == -1 || accionTipo == -1) {
                     comboActual.aparatoId = null
                     comboActual.accionEncendido = null
+                    comboActual.contactoOutlet = null
                     comboActual.accionVinculada = null
                 } else {
                     val comboDuplicado =
-                        todosCombos.find { it.id != comboActual.id && it.aparatoId == dispositivoId }
+                        todosCombos.find {
+                            it.id != comboActual.id &&
+                            it.aparatoId == dispositivoId &&
+                            (it.contactoOutlet == contactoOutlet || (it.contactoOutlet == null && contactoOutlet == 1))
+                        }
 
                     if (comboDuplicado != null) {
+                        val outletTxt = if (contactoOutlet > 1) " contacto $contactoOutlet" else ""
                         mostrarAdvertenciaDuplicado(
                             "Dispositivo en Uso",
-                            "El dispositivo '$nombreDispositivo' ya está vinculado al combo '${comboDuplicado.name}'. Asigna un dispositivo diferente."
+                            "El dispositivo '$nombreDispositivo'$outletTxt ya está vinculado al combo '${comboDuplicado.name}'. Asigna un contacto diferente."
                         )
                         return@registerForActivityResult
                     }
 
+                    val esMultisocket = nombreDispositivo.lowercase().contains("multisocket") ||
+                            nombreDispositivo.lowercase().contains("regleta") ||
+                            nombreDispositivo.lowercase().contains("socket")
+
+                    val outletInfo = if (esMultisocket && contactoOutlet > 1) " Contacto $contactoOutlet" else ""
+
                     Toast.makeText(
                         this,
-                        "Dispositivo '$nombreDispositivo' asignado con éxito",
+                        "Dispositivo '$nombreDispositivo'$outletInfo asignado con éxito",
                         Toast.LENGTH_SHORT
                     ).show()
 
@@ -209,12 +245,13 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                         1 -> false
                         else -> null
                     }
+                    comboActual.contactoOutlet = if (esMultisocket) contactoOutlet else null
                     val verbo = when (accionTipo) {
                         0 -> "Encender"
                         1 -> "Apagar"
                         else -> "Alternar"
                     }
-                    comboActual.accionVinculada = "$verbo · $nombreDispositivo"
+                    comboActual.accionVinculada = "$verbo · $nombreDispositivo$outletInfo"
                 }
                 updateHeaders()
             }
@@ -251,8 +288,13 @@ class SecuenciaConfigActivity : AppCompatActivity() {
         tvAccionDesc = findViewById(R.id.tvAccionDesc)
         btnSave = findViewById(R.id.btnSave)
 
-        if (!loadCurrentConfig()) return
+        lifecycleScope.launch {
+            if (!loadCurrentConfig()) return@launch
+            setupUI()
+        }
+    }
 
+    private fun setupUI() {
         val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
             ItemTouchHelper.UP or ItemTouchHelper.DOWN,
             ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
@@ -434,6 +476,13 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                 val intent = android.content.Intent(this, VideoGestureImportActivity::class.java)
                 videoImportLauncher.launch(intent)
             }
+            // Botón para grabar secuencia con cámara
+            val btnGrabar = bottomSheetView.findViewById<View?>(R.id.btnGrabarSecuencia)
+            btnGrabar?.setOnClickListener {
+                bottomSheetDialog.dismiss()
+                val intent = android.content.Intent(this, GrabarSecuenciaActivity::class.java)
+                grabarSecuenciaLauncher.launch(intent)
+            }
             bottomSheetDialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
             bottomSheetDialog.show()
         }
@@ -542,9 +591,11 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            SecuenciaConfigManager.saveCombos(this, todosCombos)
-            notificarRecargaCombos()
-            sincronizarGestoConServidor()
+            lifecycleScope.launch {
+                SecuenciaConfigManager.saveCombos(this@SecuenciaConfigActivity, todosCombos)
+                notificarRecargaCombos()
+                sincronizarGestoConServidor()
+            }
         }
     }
 
@@ -560,7 +611,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
         wizardLauncher.launch(intent)
     }
 
-    private fun loadCurrentConfig(): Boolean {
+    private suspend fun loadCurrentConfig(): Boolean {
         val comboId = intent.getStringExtra("COMBO_ID")
         todosCombos = SecuenciaConfigManager.loadCombos(this).toMutableList()
         comboIndex = todosCombos.indexOfFirst { it.id == comboId }
@@ -615,6 +666,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
         val intent = Intent(this, DispositivoWizardActivity::class.java).apply {
             putExtra("INITIAL_DISPOSITIVO_ID", comboActual.aparatoId ?: -1)
             putExtra("INITIAL_ACCION_ENCENDIDO", comboActual.accionEncendido)
+            putExtra("INITIAL_CONTACTO_OUTLET", comboActual.contactoOutlet ?: 1)
         }
         dispositivoWizardLauncher.launch(intent)
     }
@@ -715,7 +767,9 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                     if (guardado != null) {
                         comboActual.backendGestoId = guardado.id
                         todosCombos[comboIndex] = comboActual
-                        SecuenciaConfigManager.saveCombos(this@SecuenciaConfigActivity, todosCombos)
+                        lifecycleScope.launch {
+                            SecuenciaConfigManager.saveCombos(this@SecuenciaConfigActivity, todosCombos)
+                        }
 
                         // Guardamos localmente en Room el Gesto principal
                         lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {

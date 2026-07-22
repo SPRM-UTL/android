@@ -12,6 +12,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -40,6 +41,7 @@ class DispositivoWizardActivity : AppCompatActivity() {
 
     private var dispositivoSeleccionado: Dispositivo? = null
     private var accionSeleccionada: Int = 0 // 0 = Encender, 1 = Apagar, 2 = Alternar
+    private var outletSeleccionado: Int = 1 // 1-4 para multisocket, 1 = default
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -118,6 +120,53 @@ class DispositivoWizardActivity : AppCompatActivity() {
         val ivApagar = view.findViewById<ImageView>(R.id.ivIconApagar)
         val ivAlternar = view.findViewById<ImageView>(R.id.ivIconAlternar)
 
+        val llOutletSection = view.findViewById<LinearLayout>(R.id.llOutletSection)
+        val cardOutlet1 = view.findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardOutlet1)
+        val cardOutlet2 = view.findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardOutlet2)
+        val cardOutlet3 = view.findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardOutlet3)
+        val cardOutlet4 = view.findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardOutlet4)
+
+        val disp = dispositivoSeleccionado
+        val esMultisocket = disp?.tipo?.lowercase()?.contains("multisocket") == true ||
+                disp?.tipo?.lowercase()?.contains("regleta") == true ||
+                disp?.tipo?.lowercase()?.contains("socket") == true
+
+        if (esMultisocket) {
+            llOutletSection.visibility = View.VISIBLE
+            outletSeleccionado = 1
+        } else {
+            llOutletSection.visibility = View.GONE
+            outletSeleccionado = 1
+        }
+
+        fun actualizarOutlets() {
+            val tealPrimary = ContextCompat.getColor(this, R.color.teal_primary)
+            val blanco = Color.parseColor("#FFFFFF")
+            val fondoSeleccionado = Color.parseColor("#E0F2F1")
+            val textoGris = Color.parseColor("#073F4C")
+
+            val cards = listOf(cardOutlet1, cardOutlet2, cardOutlet3, cardOutlet4)
+            cards.forEachIndexed { index, card ->
+                if (outletSeleccionado == index + 1) {
+                    card.setCardBackgroundColor(fondoSeleccionado)
+                    card.strokeColor = tealPrimary
+                    card.strokeWidth = (1.5 * resources.displayMetrics.density).toInt()
+                    card.cardElevation = (5 * resources.displayMetrics.density)
+                    (card.getChildAt(0) as? TextView)?.setTextColor(tealPrimary)
+                } else {
+                    card.setCardBackgroundColor(blanco)
+                    card.strokeWidth = 0
+                    card.cardElevation = (2 * resources.displayMetrics.density)
+                    (card.getChildAt(0) as? TextView)?.setTextColor(textoGris)
+                }
+            }
+        }
+
+        cardOutlet1.setOnClickListener { outletSeleccionado = 1; actualizarOutlets() }
+        cardOutlet2.setOnClickListener { outletSeleccionado = 2; actualizarOutlets() }
+        cardOutlet3.setOnClickListener { outletSeleccionado = 3; actualizarOutlets() }
+        cardOutlet4.setOnClickListener { outletSeleccionado = 4; actualizarOutlets() }
+
         fun actualizarVisuals() {
             val tealPrimary = ContextCompat.getColor(this, R.color.teal_primary)
             val blanco = Color.parseColor("#FFFFFF")
@@ -175,6 +224,7 @@ class DispositivoWizardActivity : AppCompatActivity() {
 
         // Inicializar pintado por primera vez
         actualizarVisuals()
+        if (esMultisocket) actualizarOutlets()
 
         cardEncender.setOnClickListener {
             accionSeleccionada = 0
@@ -221,6 +271,7 @@ class DispositivoWizardActivity : AppCompatActivity() {
                 putExtra("DISPOSITIVO_ID", disp.id)
                 putExtra("DISPOSITIVO_NOMBRE", disp.nombre ?: "Dispositivo ${disp.id}")
                 putExtra("ACCION_TIPO", accionSeleccionada)
+                putExtra("CONTACTO_OUTLET", outletSeleccionado)
             }
 
             setResult(Activity.RESULT_OK, resultIntent)

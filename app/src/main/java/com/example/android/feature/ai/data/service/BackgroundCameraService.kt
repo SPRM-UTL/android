@@ -56,6 +56,9 @@ class BackgroundCameraService : LifecycleService() {
     private var isCameraActuallyRunning = false
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
+    // Bitmap buffer reutilizable para evitar allocación por frame
+    private var bitmapBuffer: Bitmap? = null
+
     private val scheduleHandler = Handler(Looper.getMainLooper())
     private val scheduleRunnable = object : Runnable {
         override fun run() {
@@ -72,6 +75,8 @@ class BackgroundCameraService : LifecycleService() {
         const val ACTION_UPDATE_SCHEDULE = "ACTION_UPDATE_SCHEDULE"
         const val EXTRA_CAMERA_MODE = "EXTRA_CAMERA_MODE"
         const val EXTRA_IP_URL = "EXTRA_IP_URL"
+        const val MEDIAPIPE_MAX_WIDTH = 320
+        const val MEDIAPIPE_MAX_HEIGHT = 240
     }
 
     override fun onCreate() {
@@ -167,8 +172,11 @@ class BackgroundCameraService : LifecycleService() {
     }
 
     private fun loadCombos() {
-        val combos = SecuenciaConfigManager.loadCombos(this)
-        gestureAnalyzer.sequenceDetector.updateCombos(combos)
+        serviceScope.launch {
+            val combos = SecuenciaConfigManager.loadCombos(this@BackgroundCameraService)
+            gestureAnalyzer.sequenceDetector.updateCombos(combos)
+            gestureAnalyzer.minHandednessScore = PrefsManager.getMinHandednessScore(this@BackgroundCameraService)
+        }
     }
 
     private fun startForegroundService(text: String) {
@@ -219,6 +227,9 @@ class BackgroundCameraService : LifecycleService() {
             .setBaseOptions(handBaseOptions)
             .setRunningMode(RunningMode.LIVE_STREAM)
             .setNumHands(2)
+            .setMinHandDetectionConfidence(PrefsManager.getHandDetectionConfidence(this))
+            .setMinHandPresenceConfidence(PrefsManager.getHandPresenceConfidence(this))
+            .setMinTrackingConfidence(PrefsManager.getTrackingConfidence(this))
             .setResultListener { result, _ ->
                 CameraSharedState.lastHandResult = result
                 analyzeGestures()
@@ -255,7 +266,7 @@ class BackgroundCameraService : LifecycleService() {
 
             Handler(Looper.getMainLooper()).postDelayed({
                 gestureAnalyzer.sequenceDetector.resetAll()
-            }, 3000)
+            }, PrefsManager.getComboResetDelay(this@BackgroundCameraService))
         }
     }
 
@@ -337,15 +348,20 @@ class BackgroundCameraService : LifecycleService() {
     }
 
     private fun processImageProxy(imageProxy: ImageProxy) {
-        val bitmapBuffer = Bitmap.createBitmap(
-            imageProxy.width,
-            imageProxy.height,
-            Bitmap.Config.ARGB_8888
-        )
+        // Reutilizar bitmap buffer si las dimensiones coinciden
+        val currentBuffer = bitmapBuffer
+        if (currentBuffer == null || currentBuffer.width != imageProxy.width || currentBuffer.height != imageProxy.height) {
+            bitmapBuffer = Bitmap.createBitmap(
+                imageProxy.width,
+                imageProxy.height,
+                Bitmap.Config.ARGB_8888
+            )
+        }
+        val buffer = bitmapBuffer!!
         val rotationDegrees = imageProxy.imageInfo.rotationDegrees
-        imageProxy.use { bitmapBuffer.copyPixelsFromBuffer(imageProxy.planes[0].buffer) }
+        imageProxy.use { buffer.copyPixelsFromBuffer(imageProxy.planes[0].buffer) }
 
-        processBitmap(bitmapBuffer, rotationDegrees)
+        processBitmap(buffer, rotationDegrees)
     }
 
     private fun processBitmap(bitmap: Bitmap, rotationDegrees: Int = 0) {
@@ -360,10 +376,23 @@ class BackgroundCameraService : LifecycleService() {
             bitmap
         }
 
-        // 2) Pasar el displayBitmap a MediaPipe. 
+        // 2) Downsample para MediaPipe: reducir a 320x240 para inferencia más rápida
+        val mediaPipeBitmap = if (displayBitmap.width > MEDIAPIPE_MAX_WIDTH || displayBitmap.height > MEDIAPIPE_MAX_HEIGHT) {
+            val scale = minOf(
+                MEDIAPIPE_MAX_WIDTH.toFloat() / displayBitmap.width,
+                MEDIAPIPE_MAX_HEIGHT.toFloat() / displayBitmap.height
+            )
+            val newWidth = (displayBitmap.width * scale).toInt()
+            val newHeight = (displayBitmap.height * scale).toInt()
+            Bitmap.createScaledBitmap(displayBitmap, newWidth, newHeight, true)
+        } else {
+            displayBitmap
+        }
+
+        // 3) Pasar el displayBitmap a MediaPipe. 
         // Ya está rotado (y en espejo), así que las coordenadas de los landmarks 
         // coincidirán perfectamente con la vista, y el handedness será el esperado.
-        val mpImage = BitmapImageBuilder(displayBitmap).build()
+        val mpImage = BitmapImageBuilder(mediaPipeBitmap).build()
         val timestamp = System.currentTimeMillis()
         val processingOptions = ImageProcessingOptions.builder().build() // Sin rotación adicional
         

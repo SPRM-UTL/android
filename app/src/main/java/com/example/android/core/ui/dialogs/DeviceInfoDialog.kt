@@ -15,6 +15,7 @@ import androidx.lifecycle.lifecycleScope
 import com.example.android.feature.device.DeviceControlsActivity
 import com.example.android.feature.device.EditDeviceFragment
 import com.example.android.feature.device.MultiSocketActivity
+import com.example.android.feature.device.VentiladorInteligenteActivity
 import com.example.android.R
 import com.example.android.feature.device.DeviceConsumptionFragment
 import com.example.android.core.db.models.Dispositivo
@@ -240,19 +241,22 @@ class DeviceInfoDialog(
 
         dialogView.findViewById<View>(R.id.btnDialogControles).setOnClickListener {
             dialog.dismiss()
-            val isMultiSocket = dispositivo.tipo?.let { tipo ->
+            val tipo = dispositivo.tipo ?: ""
+
+            val intent = when {
+                tipo.contains("Ventilador Inteligente", ignoreCase = true) ->
+                    Intent(fragment.requireContext(), VentiladorInteligenteActivity::class.java).apply {
+                        putExtra("EXTRA_DEVICE_ID", dispositivo.id)
+                    }
                 tipo.contains("MultiSocket", ignoreCase = true) ||
-                tipo.contains("Regleta", ignoreCase = true)
-            } == true
-            
-            val intent = if (isMultiSocket) {
-                Intent(fragment.requireContext(), MultiSocketActivity::class.java).apply {
-                    putExtra("EXTRA_DEVICE_ID", dispositivo.id)
-                }
-            } else {
-                Intent(fragment.requireContext(), DeviceControlsActivity::class.java).apply {
-                    putExtra("EXTRA_DEVICE_ID", dispositivo.id)
-                }
+                tipo.contains("Regleta", ignoreCase = true) ->
+                    Intent(fragment.requireContext(), MultiSocketActivity::class.java).apply {
+                        putExtra("EXTRA_DEVICE_ID", dispositivo.id)
+                    }
+                else ->
+                    Intent(fragment.requireContext(), DeviceControlsActivity::class.java).apply {
+                        putExtra("EXTRA_DEVICE_ID", dispositivo.id)
+                    }
             }
             fragment.startActivity(intent)
         }

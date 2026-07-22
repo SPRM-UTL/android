@@ -21,10 +21,16 @@ object GestureActionExecutor {
             return false
         }
 
-        val encendido = resolveTargetState(aparatoId, combo.accionEncendido)
+        val encendido = resolveTargetState(aparatoId, combo.accionEncendido, combo.contactoOutlet)
         return withContext(Dispatchers.IO) {
             try {
-                val response = RetrofitClient.deviceService.toggleAparato(aparatoId, encendido, combo.backendGestoId)
+                val response = if (combo.contactoOutlet != null && combo.contactoOutlet!! >= 1 && combo.contactoOutlet!! <= 4) {
+                    Log.i(TAG, "Combo '${combo.name}' → multisocket outlet ${combo.contactoOutlet}")
+                    RetrofitClient.deviceService.toggleAparatoContacto(aparatoId, combo.contactoOutlet!!, encendido)
+                } else {
+                    RetrofitClient.deviceService.toggleAparato(aparatoId, encendido, combo.backendGestoId)
+                }
+
                 if (!response.isSuccessful) {
                     Log.w(TAG, "Toggle falló (${response.code()}) para aparato $aparatoId")
                     return@withContext false
@@ -34,10 +40,11 @@ object GestureActionExecutor {
                 actualizarEstadoLocal(context, aparatoId, estadoConfirmado)
                 
                 val nombreDispositivo = obtenerNombreDispositivo(context, aparatoId)
-                val mensaje = if (estadoConfirmado) "Encendí $nombreDispositivo" else "Apagué $nombreDispositivo"
+                val outlet = if (combo.contactoOutlet != null) " contacto ${combo.contactoOutlet}" else ""
+                val mensaje = if (estadoConfirmado) "Encendí $nombreDispositivo$outlet" else "Apagué $nombreDispositivo$outlet"
                 TtsManager.anunciar(mensaje)
 
-                Log.i(TAG, "Combo '${combo.name}' → aparato $aparatoId ${if (estadoConfirmado) "ON" else "OFF"}")
+                Log.i(TAG, "Combo '${combo.name}' → aparato $aparatoId ${if (estadoConfirmado) "ON" else "OFF"}$outlet")
                 true
             } catch (e: Exception) {
                 Log.e(TAG, "Error ejecutando acción del combo '${combo.name}'", e)
@@ -46,13 +53,24 @@ object GestureActionExecutor {
         }
     }
 
-    private suspend fun resolveTargetState(aparatoId: Int, accionEncendido: Boolean?): Boolean {
+    private suspend fun resolveTargetState(aparatoId: Int, accionEncendido: Boolean?, contactoOutlet: Int? = null): Boolean {
         if (accionEncendido != null) return accionEncendido
 
         return try {
             val response = RetrofitClient.deviceService.getAparatoEstado(aparatoId)
             if (response.isSuccessful) {
-                !(response.body()?.estadoEncendido ?: false)
+                val body = response.body()
+                if (contactoOutlet != null && body != null) {
+                    when (contactoOutlet) {
+                        1 -> !(body.estadoEncendido ?: false)
+                        2 -> !(body.estadoEncendido2 ?: false)
+                        3 -> !(body.estadoEncendido3 ?: false)
+                        4 -> !(body.estadoEncendido4 ?: false)
+                        else -> !(body.estadoEncendido ?: false)
+                    }
+                } else {
+                    !(body?.estadoEncendido ?: false)
+                }
             } else {
                 true
             }
