@@ -322,7 +322,7 @@ class DeviceActivity : AppCompatActivity() {
         Log.d("DeviceActivity", "reportarEstadoAlBackend: Reportando estado $encendido para dispositivo ${dispositivo.id}")
         lifecycleScope.launch {
             try {
-                val preferencias = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
+                val preferencias = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
                 val token = preferencias.getString("apiToken", "") ?: ""
                 
                 val request = com.example.android.core.network.api.EstadoLocalRequest(encendido)
@@ -521,37 +521,56 @@ class DeviceActivity : AppCompatActivity() {
 
     private fun guardarDispositivo(dispositivo: Dispositivo, esActualizacion: Boolean) {
         lifecycleScope.launch {
-            ApiHandler.safeApiCall(
-                activity = this@DeviceActivity,
-                showLoading = true,
-                loadingTitle = "Guardando",
-                loadingMessage = "Sincronizando dispositivo...",
-                apiCall = {
-                    val preferencias = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
-                    val encabezado = "Bearer ${preferencias.getString("apiToken", "") ?: ""}"
-                    
-                    if (esActualizacion) {
+            if (esActualizacion) {
+                ApiHandler.safeApiCall(
+                    activity = this@DeviceActivity,
+                    showLoading = true,
+                    loadingTitle = "Guardando",
+                    loadingMessage = "Sincronizando dispositivo...",
+                    apiCall = {
+                        val preferencias = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+                        val encabezado = "Bearer ${preferencias.getString("apiToken", "") ?: ""}"
                         RetrofitClient.deviceService.updateDispositivo(encabezado, dispositivo.id, dispositivo)
-                        retrofit2.Response.success(com.example.android.core.network.client.ApiResponse(true, 200, dispositivo))
-                    } else {
-                        RetrofitClient.deviceService.createDispositivo(encabezado, dispositivo)
-                    }
-                },
-                onSuccess = { respuesta ->
-                    val guardado = respuesta.data
-                    if (guardado != null) {
+                    },
+                    onSuccess = {
                         withContext(Dispatchers.IO) {
-                            baseDatos.dispositivoDao().insertDispositivo(guardado)
+                            baseDatos.dispositivoDao().insertDispositivo(dispositivo)
                         }
                         Toast.makeText(this@DeviceActivity, "Guardado exitoso", Toast.LENGTH_SHORT).show()
+                    },
+                    onError = { errorMsg ->
+                        if (errorMsg != "Sesión expirada") {
+                            Toast.makeText(this@DeviceActivity, errorMsg, Toast.LENGTH_SHORT).show()
+                        }
                     }
-                },
-                onError = { errorMsg ->
-                    if (errorMsg != "Sesión expirada") {
-                        Toast.makeText(this@DeviceActivity, errorMsg, Toast.LENGTH_SHORT).show()
+                )
+            } else {
+                ApiHandler.safeApiCall(
+                    activity = this@DeviceActivity,
+                    showLoading = true,
+                    loadingTitle = "Guardando",
+                    loadingMessage = "Sincronizando dispositivo...",
+                    apiCall = {
+                        val preferencias = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+                        val encabezado = "Bearer ${preferencias.getString("apiToken", "") ?: ""}"
+                        RetrofitClient.deviceService.createDispositivo(encabezado, dispositivo)
+                    },
+                    onSuccess = { respuesta ->
+                        val guardado = respuesta.data
+                        if (guardado != null) {
+                            withContext(Dispatchers.IO) {
+                                baseDatos.dispositivoDao().insertDispositivo(guardado)
+                            }
+                            Toast.makeText(this@DeviceActivity, "Guardado exitoso", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    onError = { errorMsg ->
+                        if (errorMsg != "Sesión expirada") {
+                            Toast.makeText(this@DeviceActivity, errorMsg, Toast.LENGTH_SHORT).show()
+                        }
                     }
-                }
-            )
+                )
+            }
         }
     }
 
