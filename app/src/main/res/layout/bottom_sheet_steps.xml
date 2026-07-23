@@ -44,7 +44,7 @@
             android:paddingHorizontal="16dp"
             android:paddingBottom="100dp"
             tools:listitem="@layout/item_sequence_step"/>
-            
+
     </LinearLayout>
 
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
@@ -68,7 +68,7 @@
         android:layout_marginBottom="24dp"
         android:contentDescription="Importar desde video"
         android:src="@drawable/lucide_video"
-        app:backgroundTint="#FF0A5E73"
+        app:backgroundTint="@color/teal_primary"
         app:tint="@android:color/white" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -80,7 +80,7 @@
         android:layout_marginBottom="24dp"
         android:contentDescription="Grabar secuencia con cámara"
         android:src="@drawable/lucide_circle_dot"
-        app:backgroundTint="#DC2626"
+        app:backgroundTint="@color/teal_primary"
         app:tint="@android:color/white" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -9,8 +9,10 @@ import com.example.android.feature.ai.domain.analyzer.GestureClassifier
 import com.example.android.feature.ai.domain.models.HandPose
 import com.example.android.R
 
+import android.Manifest
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.os.Bundle
@@ -21,10 +23,12 @@ import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
+import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
@@ -72,6 +76,17 @@ class GrabarSecuenciaActivity : AppCompatActivity() {
 
     private var bitmapBuffer: Bitmap? = null
 
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            startCamera()
+        } else {
+            Toast.makeText(this, "Se requiere permiso de cámara para esta función", Toast.LENGTH_SHORT).show()
+            finish()
+        }
+    }
+
     companion object {
         const val EXTRA_PASOS_JSON = "EXTRA_PASOS_JSON"
         private const val MEDIAPIPE_MAX_WIDTH = 320
@@ -108,12 +123,15 @@ class GrabarSecuenciaActivity : AppCompatActivity() {
 
         setupInsets()
         setupMediaPipe()
-        startCamera()
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            startCamera()
+        } else {
+            requestPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
 
         findViewById<ImageButton>(R.id.btnBack).setOnClickListener { finish() }
-
         fabRecord.setOnClickListener { toggleRecording() }
-
         btnUseSteps.setOnClickListener { returnSteps() }
     }
 
@@ -161,6 +179,14 @@ class GrabarSecuenciaActivity : AppCompatActivity() {
         cameraProviderFuture.addListener({
             val cameraProvider = cameraProviderFuture.get()
 
+            // 1. Configuración de Preview para visualizar la cámara en el PreviewView
+            val preview = Preview.Builder()
+                .build()
+                .also {
+                    it.setSurfaceProvider(previewView.surfaceProvider)
+                }
+
+            // 2. Configuración del formateador de ImageAnalysis
             val resolutionSelector = androidx.camera.core.resolutionselector.ResolutionSelector.Builder()
                 .setResolutionStrategy(
                     androidx.camera.core.resolutionselector.ResolutionStrategy(
@@ -172,7 +198,6 @@ class GrabarSecuenciaActivity : AppCompatActivity() {
 
             val imageAnalyzer = ImageAnalysis.Builder()
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
                 .setResolutionSelector(resolutionSelector)
                 .build()
                 .also {
@@ -185,7 +210,8 @@ class GrabarSecuenciaActivity : AppCompatActivity() {
 
             try {
                 cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(this, cameraSelector, imageAnalyzer)
+                // Vincular AMBOS use-cases: Preview e ImageAnalysis
+                cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalyzer)
             } catch (e: Exception) {
                 Log.e("GrabarSecuencia", "Camera bind failed", e)
             }
@@ -193,23 +219,22 @@ class GrabarSecuenciaActivity : AppCompatActivity() {
     }
 
     private fun processImageProxy(imageProxy: ImageProxy) {
-        val currentBuffer = bitmapBuffer
-        if (currentBuffer == null || currentBuffer.width != imageProxy.width || currentBuffer.height != imageProxy.height) {
-            bitmapBuffer = Bitmap.createBitmap(imageProxy.width, imageProxy.height, Bitmap.Config.ARGB_8888)
+        val bitmap = imageProxy.toBitmap() ?: run {
+            imageProxy.close()
+            return
         }
-        val buffer = bitmapBuffer!!
-        val rotationDegrees = imageProxy.imageInfo.rotationDegrees
-        imageProxy.use { buffer.copyPixelsFromBuffer(it.planes[0].buffer) }
 
-        val displayBitmap = if (rotationDegrees != 0) {
+        val rotationDegrees = imageProxy.imageInfo.rotationDegrees
+        imageProxy.close()
+
+        val displayBitmap = if (rotationDegrees != 0 || true) {
             val matrix = Matrix().apply {
-                postRotate(rotationDegrees.toFloat())
-                postScale(-1f, 1f)
+                if (rotationDegrees != 0) postRotate(rotationDegrees.toFloat())
+                postScale(-1f, 1f) // Espejo horizontal para frontal
             }
-            Bitmap.createBitmap(buffer, 0, 0, buffer.width, buffer.height, matrix, false)
+            Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, false)
         } else {
-            val matrix = Matrix().apply { postScale(-1f, 1f) }
-            Bitmap.createBitmap(buffer, 0, 0, buffer.width, buffer.height, matrix, false)
+            bitmap
         }
 
         val mediaPipeBitmap = if (displayBitmap.width > MEDIAPIPE_MAX_WIDTH || displayBitmap.height > MEDIAPIPE_MAX_HEIGHT) {
@@ -323,14 +348,19 @@ class GrabarSecuenciaActivity : AppCompatActivity() {
         isRecording = !isRecording
         if (isRecording) {
             fabRecord.setImageResource(android.R.drawable.ic_media_pause)
-            fabRecord.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#DC2626"))
+            // Mantener el color teal_primary con tono más oscuro o igual al grabar
+            fabRecord.backgroundTintList = android.content.res.ColorStateList.valueOf(
+                androidx.core.content.ContextCompat.getColor(this, R.color.teal_primary)
+            )
             tvRecordStatus.text = "Grabando..."
             tvRecordStatus.setTextColor(android.graphics.Color.WHITE)
             lastCapturedPose = ""
             lastCaptureTime = 0L
         } else {
             fabRecord.setImageResource(R.drawable.lucide_circle_dot)
-            fabRecord.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#1565C0"))
+            fabRecord.backgroundTintList = android.content.res.ColorStateList.valueOf(
+                androidx.core.content.ContextCompat.getColor(this, R.color.teal_primary)
+            )
             tvRecordStatus.text = "Pausado"
             tvRecordStatus.setTextColor(android.graphics.Color.parseColor("#94A3B8"))
         }

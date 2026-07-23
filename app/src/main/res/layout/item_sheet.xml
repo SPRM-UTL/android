@@ -58,13 +58,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Mayordomo"
+                    android:textColor="@color/black"
                     android:textStyle="bold"
                     android:textSize="20sp"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="3 dispositivos en funcionamiento"/>
+                    android:text="Gestión y control"/>
 
             </LinearLayout>
 

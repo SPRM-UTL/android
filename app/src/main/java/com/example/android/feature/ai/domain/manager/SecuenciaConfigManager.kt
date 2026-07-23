@@ -44,36 +44,22 @@ object SecuenciaConfigManager {
     suspend fun saveCombos(context: Context, combos: List<Combo>) {
         val userId = getCurrentUserId(context)
         val dao = getComboDao(context)
-        
+
         dao.deleteAllCombosByUserId(userId)
-        
+
         val entities = combos.map { comboToEntity(it, userId) }
         dao.insertAll(entities)
-        
+
         migrateFromPrefsIfNeeded(context, userId)
     }
 
     suspend fun loadCombos(context: Context): List<Combo> {
         val userId = getCurrentUserId(context)
         val dao = getComboDao(context)
-        
+
         val entities = dao.getCombosByUserId(userId)
-        
-        if (entities.isEmpty()) {
-            val defaultCombo = Combo(
-                id = "default-combo",
-                name = "Ataque Base",
-                activador = PasoSecuencia("TE AMO ILY", ManoObjetivo.ANY, 15),
-                pasos = mutableListOf(
-                    PasoSecuencia("L", ManoObjetivo.ANY, 10),
-                    PasoSecuencia("ROCK", ManoObjetivo.ANY, 10),
-                    PasoSecuencia("L", ManoObjetivo.ANY, 10)
-                ),
-                accionVinculada = "Encender Luces Sala"
-            )
-            return listOf(defaultCombo)
-        }
-        
+
+        // Retorna únicamente los registros reales en BD sin recrear "Ataque Base" si está vacía
         return entities.map { entityToCombo(it) }
     }
 
@@ -120,7 +106,7 @@ object SecuenciaConfigManager {
             icono = entity.icono,
             fraseVozActivadora = entity.fraseVozActivadora
         )
-        
+
         entity.activadorJson?.let {
             try {
                 combo.activador = stepFromJson(JSONObject(it))
@@ -128,7 +114,7 @@ object SecuenciaConfigManager {
                 e.printStackTrace()
             }
         }
-        
+
         try {
             val pasosArray = JSONArray(entity.pasosJson)
             for (j in 0 until pasosArray.length()) {
@@ -137,18 +123,18 @@ object SecuenciaConfigManager {
         } catch (e: Exception) {
             e.printStackTrace()
         }
-        
+
         return combo
     }
 
     private fun migrateFromPrefsIfNeeded(context: Context, userId: Int) {
         val prefs = context.getSharedPreferences("${PREFS_NAME_BASE}_user_$userId", Context.MODE_PRIVATE)
         val combosStr = prefs.getString(KEY_COMBOS, null) ?: return
-        
+
         try {
             val combosArray = JSONArray(combosStr)
             val dao = runBlocking { getComboDao(context) }
-            
+
             for (i in 0 until combosArray.length()) {
                 val comboObj = combosArray.getJSONObject(i)
                 val combo = Combo(
@@ -182,11 +168,11 @@ object SecuenciaConfigManager {
                         combo.pasos.add(stepFromJson(pasosArray.getJSONObject(j)))
                     }
                 }
-                
+
                 val entity = comboToEntity(combo, userId)
                 runBlocking { dao.insertCombo(entity) }
             }
-            
+
             prefs.edit().remove(KEY_COMBOS).apply()
         } catch (e: Exception) {
             e.printStackTrace()

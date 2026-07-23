@@ -22,7 +22,6 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         val localProperties = Properties()
@@ -33,7 +32,7 @@ android {
 
         val apiUrl = project.findProperty("API_BASE_URL")?.toString()
             ?: System.getenv("ORG_GRADLE_PROJECT_API_BASE_URL")
-            ?: localProperties.getProperty("API_BASE_URL") 
+            ?: localProperties.getProperty("API_BASE_URL")
             ?: "http://0.0.0.0:5295/"
         buildConfigField("String", "BASE_URL", "\"$apiUrl\"")
     }
@@ -51,6 +50,7 @@ android {
             isMinifyEnabled = false
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -60,6 +60,13 @@ android {
         viewBinding = true
         buildConfig = true
         compose = true
+    }
+
+    // Configuración de empaquetado para atenuar la incompatibilidad de librerías nativas de 4 KB
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
     }
 }
 
@@ -75,7 +82,6 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.fragment)
-    //implementation(libs.cardview.v7)
     implementation(libs.androidx.biometric)
     implementation("androidx.recyclerview:recyclerview:1.3.2")
 
@@ -85,12 +91,16 @@ dependencies {
     implementation("androidx.room:room-ktx:$room_version")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
 
-    val camerax_version = "1.3.3"
+    // CameraX actualizada a versión reciente
+    val camerax_version = "1.4.1"
     implementation("androidx.camera:camera-core:${camerax_version}")
     implementation("androidx.camera:camera-camera2:${camerax_version}")
     implementation("androidx.camera:camera-lifecycle:${camerax_version}")
     implementation("androidx.camera:camera-view:${camerax_version}")
     implementation("androidx.camera:camera-video:${camerax_version}")
+
+    // Corrección para libandroidx.graphics.path.so (Alineado a 16 KB)
+    implementation("androidx.graphics:graphics-path:1.0.1")
 
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
@@ -122,12 +132,12 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.material.icons.extended)
     debugImplementation(libs.androidx.ui.tooling)
-    
-    // MediaPipe for AI Gesture Detection
-    implementation("com.google.mediapipe:tasks-vision:0.10.14")
+
+    // MediaPipe
+    implementation("com.google.mediapipe:tasks-vision:0.10.20")
     implementation("androidx.lifecycle:lifecycle-service:2.6.2")
-    
-    // TapTargetView for App Tutorial
+
+    // TapTargetView
     implementation("com.getkeepsafe.taptargetview:taptargetview:1.13.3")
 
     // MPAndroidChart

@@ -1,19 +1,14 @@
 package com.example.android.feature.ai.presentation.activities
+
 import com.example.android.feature.ai.domain.analyzer.ManoObjetivo
-import com.example.android.feature.ai.presentation.activities.PasoWizardActivity
 import com.example.android.feature.ai.domain.models.HandPose
 import com.example.android.feature.ai.presentation.adapters.WizardPagerAdapter
-import com.example.android.core.ui.adapters.WizardSelectionAdapter
-import com.example.android.core.ui.adapters.GestureDropdownAdapter
-import com.example.android.core.db.models.Gesto
-
-
 import com.example.android.R
+
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
-import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.SeekBar
 import android.widget.TextView
@@ -21,7 +16,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.viewpager2.widget.ViewPager2
 
@@ -33,7 +27,7 @@ class PasoWizardActivity : AppCompatActivity() {
 
     private var selectedPoseName: String = ""
     private var selectedHand: ManoObjetivo = ManoObjetivo.ANY
-    private var selectedFrames: Int = 15
+    private var selectedFrames: Int = 3 // Inicializado por defecto en 3
 
     private val allPoses = HandPose.values().map { it.name.replace("_", " ") }
     private val handOptions = listOf("Cualquier Mano", "Mano Izquierda", "Mano Derecha")
@@ -51,8 +45,8 @@ class PasoWizardActivity : AppCompatActivity() {
 
         val mainLayout = findViewById<View>(R.id.mainStepWizard)
         ViewCompat.setOnApplyWindowInsetsListener(mainLayout) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            val systemBars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            val ime = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.ime())
             v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom + ime.bottom)
             val cardBack = findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardBack)
             cardBack?.getChildAt(0)?.setPadding(0, systemBars.top, 0, 0)
@@ -68,7 +62,7 @@ class PasoWizardActivity : AppCompatActivity() {
             selectedPoseName = initialPose
             val handStr = intent.getStringExtra("INITIAL_HAND") ?: ManoObjetivo.ANY.name
             selectedHand = ManoObjetivo.valueOf(handStr)
-            selectedFrames = intent.getIntExtra("INITIAL_FRAMES", 15)
+            selectedFrames = intent.getIntExtra("INITIAL_FRAMES", 3) // Cambiado a 3
         } else {
             if (allPoses.isNotEmpty()) selectedPoseName = allPoses[0]
         }
@@ -115,7 +109,7 @@ class PasoWizardActivity : AppCompatActivity() {
             ManoObjetivo.RIGHT -> 2
         }
         val currentHandStr = handOptions[handIndex]
-        
+
         val adapter = com.example.android.core.ui.adapters.WizardSelectionAdapter(
             items = handOptions,
             iconProvider = { mano -> if (mano.contains("Cualquier")) null else R.drawable.ic_manordomo_sin_fondo },
