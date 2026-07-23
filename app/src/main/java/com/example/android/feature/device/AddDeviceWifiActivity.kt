@@ -419,31 +419,54 @@ class AddDeviceWifiActivity : AppCompatActivity() {
         headerSubtitle.text = "Conectando y vinculando..."
         progressCargando.visibility = View.VISIBLE
 
-        connectionManager.connectToWifiAp(apSsid)
-
         lifecycleScope.launch(Dispatchers.IO) {
-            delay(5000)
 
-            socketClient.provisionMagicHome("10.10.123.3", homeSsid, homePass)
+            withContext(Dispatchers.Main) {
+                headerSubtitle.text = "Conectando a la red del dispositivo..."
+            }
+            val conectado = connectionManager.connectToWifiApAndWait(apSsid, timeoutMs = 15_000)
+            if (!conectado) {
+                withContext(Dispatchers.Main) {
+                    progressCargando.visibility = View.INVISIBLE
+                    Toast.makeText(
+                        this@AddDeviceWifiActivity,
+                        "No se pudo conectar a la red del socket ($apSsid). Verifica que el dispositivo esté en modo AP y cerca del teléfono.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    headerSubtitle.text = "Conexión fallida"
+                }
+                return@launch
+            }
+
+            delay(1500)
+
+            withContext(Dispatchers.Main) { headerSubtitle.text = "Enviando credenciales..." }
+
             socketClient.provisionMagicHome("192.168.4.1", homeSsid, homePass)
+            socketClient.provisionMagicHome("10.10.123.3",  homeSsid, homePass)
 
             connectionManager.disconnectWifi()
 
-            // Esperar a que el dispositivo se una a la red doméstica
-            // El socket LEDnet puede tardar 10-20s en conectarse; intentamos hasta 3 veces
-            delay(8000)
+            withContext(Dispatchers.Main) { headerSubtitle.text = "Esperando que el dispositivo se conecte a tu red..." }
+            delay(15_000)
+
             var intentos = 0
             var coincidencia: Pair<String, String>? = null
             val bssidObjetivo = currentDispositivoAProvisionar?.BSSID?.uppercase()
 
-            while (intentos < 3 && coincidencia == null) {
+            while (intentos < 6 && coincidencia == null) {
                 intentos++
-                android.util.Log.d("AddDeviceWifiActivity", "Scan post-provisioning: intento $intentos/3")
+                android.util.Log.d("AddDeviceWifiActivity", "Scan post-provisioning: intento $intentos/6")
+                withContext(Dispatchers.Main) {
+                    headerSubtitle.text = "Buscando dispositivo en la red... ($intentos/6)"
+                }
                 val dispositivosEnRed = socketClient.scanLocalNetworkSuspend()
+
                 coincidencia = dispositivosEnRed.find { (_, mac) ->
                     !bssidObjetivo.isNullOrEmpty() && mac.uppercase() == bssidObjetivo
                 } ?: dispositivosEnRed.firstOrNull()
-                if (coincidencia == null && intentos < 3) delay(3000)
+
+                if (coincidencia == null && intentos < 6) delay(5000)
             }
 
             dispositivoDescubiertoIp  = coincidencia?.first
@@ -457,12 +480,14 @@ class AddDeviceWifiActivity : AppCompatActivity() {
                         "Dispositivo detectado en ${dispositivoDescubiertoIp}",
                         Toast.LENGTH_LONG
                     ).show()
+                    headerSubtitle.text = "¡Dispositivo encontrado!"
                 } else {
                     Toast.makeText(
                         this@AddDeviceWifiActivity,
-                        "Credenciales enviadas. No se detectó IP. Puedes ingresarla manualmente.",
+                        "Credenciales enviadas. No se detectó IP automáticamente. Puedes ingresarla manualmente.",
                         Toast.LENGTH_LONG
                     ).show()
+                    headerSubtitle.text = "Registro manual disponible"
                 }
                 mostrarAlertaConfiguracion(currentDispositivoAProvisionar)
             }

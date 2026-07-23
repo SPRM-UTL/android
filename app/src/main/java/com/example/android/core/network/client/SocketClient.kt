@@ -186,7 +186,7 @@ class SocketClient(private val onLog: (String) -> Unit) {
         var socket: DatagramSocket? = null
         try {
             socket = DatagramSocket()
-            socket.soTimeout = 3000
+            socket.soTimeout = 5000
             socket.broadcast = true
             val address = InetAddress.getByName("255.255.255.255")
             val port = 48899
