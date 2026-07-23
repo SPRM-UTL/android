@@ -16,13 +16,9 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.Fragment
 import android.view.View
-import android.content.Context
-import android.content.Intent
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.example.android.core.ui.components.BottomBarWithFab
 import androidx.viewpager2.widget.ViewPager2
 import androidx.viewpager2.adapter.FragmentStateAdapter
-import com.example.android.feature.network_config.EspConfigActivity
+import com.example.android.core.ui.components.BottomBarWithFab
 import com.example.android.feature.gesture.GestosFragment
 import com.example.android.core.ui.dialogs.MenuBottomSheetDialog
 
@@ -53,38 +49,6 @@ class HomeActivity : AppCompatActivity() {
         configurarBottomBar()
     }
 
-    override fun onResume() {
-        super.onResume()
-        verificarControladorConfigurado()
-    }
-
-    private var skipCameraConfig = false
-
-    private fun verificarControladorConfigurado() {
-        if (skipCameraConfig) return
-        val prefs = getSharedPreferences("EspConfigPrefs", Context.MODE_PRIVATE)
-        val mac = prefs.getString("saved_mac_address", null)
-        if (mac.isNullOrEmpty()) {
-            MaterialAlertDialogBuilder(this)
-                .setTitle("Controlador no configurado")
-                .setMessage("Es recomendable configurar tu ESP32 (SocketWebServer) para controlar tus dispositivos. Puedes hacerlo ahora o más tarde.")
-                .setCancelable(false)
-                .setPositiveButton("Configurar ahora") { _, _ ->
-                    startActivity(
-                        Intent(this, EspConfigActivity::class.java).apply {
-                            putExtra(EspConfigActivity.EXTRA_MODO_SOCKET, true)
-                            putExtra(EspConfigActivity.EXTRA_TIPO_DISPOSITIVO, "ESP32 Socket")
-                        }
-                    )
-                }
-                .setNegativeButton("Continuar sin configurar") { dialog, _ ->
-                    skipCameraConfig = true
-                    dialog.dismiss()
-                }
-                .show()
-        }
-    }
-
     private fun configurarInsets() {
         val rootView = findViewById<View>(R.id.mainHomeActivity)
         val bottomBarContainer = findViewById<FrameLayout>(R.id.bottom_bar_container)
@@ -93,10 +57,7 @@ class HomeActivity : AppCompatActivity() {
         ViewCompat.setOnApplyWindowInsetsListener(rootView) { _, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
 
-            // Padding a la barra inferior para que suba según la Navigation Bar del sistema
             bottomBarContainer.setPadding(0, 0, 0, systemBars.bottom)
-
-            // Pasar los insets al contenedor de fragmentos para que la parte superior respete el Status Bar
             ViewCompat.dispatchApplyWindowInsets(viewPagerView, insets)
 
             insets
@@ -131,8 +92,6 @@ class HomeActivity : AppCompatActivity() {
         }
         container.addView(composeView)
     }
-
-
 
     private fun abrirMenuPrincipal(onDismiss: () -> Unit = {}) {
         if (supportFragmentManager.findFragmentByTag("MenuBottomSheet") != null) return

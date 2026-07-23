@@ -556,7 +556,7 @@ class AddDeviceWifiActivity : AppCompatActivity() {
             "Televisión" -> R.drawable.tv_minimal
             "Enchufe", "MultiSocket", "Sockets Inteligentes" -> R.drawable.plug
             "Cámara", "Cámaras" -> R.drawable.camera
-            "Asistente"  -> R.drawable.ic_input_add
+            "Asistente"  -> R.drawable.ic_manordomo_sin_fondo
             else         -> R.drawable.circle_question
         }
             ivTipoIcono.setImageResource(iconRes)

@@ -5,12 +5,13 @@ import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
 import androidx.cardview.widget.CardView
 import com.example.android.R
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.progressindicator.CircularProgressIndicator
 
 object CustomDialog {
@@ -32,6 +33,7 @@ object CustomDialog {
     private lateinit var progressBar: CircularProgressIndicator
     private lateinit var statusIcon: ImageView
     private lateinit var logoCard: CardView
+    private lateinit var rootCard: MaterialCardView
 
     private lateinit var btnPositive: MaterialButton
     private lateinit var btnNegative: MaterialButton
@@ -49,9 +51,19 @@ object CustomDialog {
 
         dismissDialog()
 
+        // 1. Instanciar el diálogo
+        dialog = android.app.Dialog(activity)
+
+        // 2. Hacer transparente la ventana para que el CardView controle el fondo y los bordes
+        dialog.window?.apply {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            decorView.setPadding(0, 0, 0, 0)
+        }
+
         val view = LayoutInflater.from(activity)
             .inflate(R.layout.custom_dialog, null)
 
+        rootCard = view as MaterialCardView
         title = view.findViewById(R.id.textView)
         subtitle = view.findViewById(R.id.textView2)
 
@@ -68,7 +80,8 @@ object CustomDialog {
         title.text = titleDialog
         subtitle.text = subtitleDialog
 
-        // Reset elements
+        // Reset de elementos y forzado de fondo blanco puro (evita el tinte azul/verde de Material 3)
+        rootCard.setCardBackgroundColor(Color.WHITE)
         progressBar.visibility = View.GONE
         statusIcon.visibility = View.VISIBLE
         logoCard.visibility = View.VISIBLE
@@ -81,6 +94,7 @@ object CustomDialog {
                 progressBar.show()
                 statusIcon.setImageResource(R.drawable.ic_manordomo_icono)
                 statusIcon.clearColorFilter()
+
                 logoCard.setCardBackgroundColor(Color.WHITE)
                 btnPositive.setBackgroundColor(color)
                 title.setTextColor(color)
@@ -89,7 +103,7 @@ object CustomDialog {
             DialogType.SUCCESS -> {
                 val color = Color.parseColor("#4CAF50")
                 statusIcon.setImageResource(R.drawable.success)
-                statusIcon.setColorFilter(Color.WHITE) 
+                statusIcon.setColorFilter(Color.WHITE)
                 logoCard.setCardBackgroundColor(color)
                 btnPositive.setBackgroundColor(color)
                 title.setTextColor(color)
@@ -123,16 +137,14 @@ object CustomDialog {
             }
         }
 
-        dialog = android.app.Dialog(activity)
         dialog.setContentView(view)
         dialog.setCancelable(cancelable)
-        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         dialog.show()
 
-        // Ajustar el ancho del diálogo para que sea responsivo (90% del ancho de pantalla)
+        // 3. Ajuste responsivo del ancho (90% de la pantalla)
         val metrics = activity.resources.displayMetrics
         val width = (metrics.widthPixels * 0.90).toInt()
-        dialog.window?.setLayout(width, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
+        dialog.window?.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT)
     }
 
     fun showErrorDialog(

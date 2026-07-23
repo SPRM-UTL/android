@@ -1,11 +1,4 @@
 package com.example.android.feature.home
-import com.example.android.feature.home.LugaresActivity
-import com.example.android.core.ui.adapters.HabitacionesEditAdapter
-import com.example.android.core.network.client.RetrofitClient
-import com.example.android.core.network.api.ApiHandler
-import com.example.android.core.db.models.Habitacion
-import com.example.android.core.db.models.Casa
-import com.example.android.core.db.init.AppDatabase
 
 import android.content.Context
 import android.os.Bundle
@@ -16,14 +9,23 @@ import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.android.R
+import com.example.android.core.db.init.AppDatabase
+import com.example.android.core.db.models.Casa
+import com.example.android.core.db.models.Habitacion
+import com.example.android.core.network.api.ApiHandler
+import com.example.android.core.network.client.RetrofitClient
+import com.example.android.core.ui.adapters.HabitacionesEditAdapter
 import com.example.android.databinding.ActivityLugaresBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -34,17 +36,25 @@ class LugaresActivity : AppCompatActivity() {
     private lateinit var db: AppDatabase
     private lateinit var habitacionAdapter: HabitacionesEditAdapter
     private var currentCasaId: Int? = null
-    private var habitacionesJob: kotlinx.coroutines.Job? = null
+    private var habitacionesJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+
+        // Configurar iconos claros en la barra de estado sobre el fondo teal
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightStatusBars = false
+        }
+
         binding = ActivityLugaresBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+        // Aplicar el inset superior directamente al contenedor interno del cardBack
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            binding.cardBack.getChildAt(0)?.setPadding(0, systemBars.top, 0, 0)
             insets
         }
 
@@ -71,7 +81,7 @@ class LugaresActivity : AppCompatActivity() {
         lifecycleScope.launch {
             db.casaDao().getAllCasas().collectLatest { casas ->
                 binding.tabLayoutCasas.removeAllTabs()
-                
+
                 if (casas.isEmpty()) {
                     binding.layoutCasaActions.visibility = View.GONE
                     binding.tvHabitacionesTitle.visibility = View.GONE
@@ -112,7 +122,7 @@ class LugaresActivity : AppCompatActivity() {
                     currentCasaId = casas[0].id
                     binding.tabLayoutCasas.getTabAt(0)?.select()
                 }
-                
+
                 observarHabitaciones()
             }
         }
@@ -141,9 +151,12 @@ class LugaresActivity : AppCompatActivity() {
 
     private fun mostrarDialogoAgregarCasa() {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_casa, null)
-        val dialog = MaterialAlertDialogBuilder(this, com.google.android.material.R.style.Theme_Material3_Light_Dialog)
+        val dialog = MaterialAlertDialogBuilder(this)
             .setView(dialogView)
-            .show()
+            .create()
+
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog.show()
 
         val etNombreCasa = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etNombreCasa)
         val btnCancel = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnCancel)
@@ -171,7 +184,6 @@ class LugaresActivity : AppCompatActivity() {
                 loadingTitle = "Creando...",
                 apiCall = { RetrofitClient.casaService.createCasa("Bearer ${getToken()}", nuevaCasa) },
                 onSuccess = { response ->
-                    // Navegar a la nueva casa tras la sincronización
                     val nuevaId = response.data?.id
                     if (nuevaId != null && nuevaId > 0) currentCasaId = nuevaId
                     sincronizarCasasYHabitaciones()
@@ -185,9 +197,12 @@ class LugaresActivity : AppCompatActivity() {
             val casa = withContext(Dispatchers.IO) { db.casaDao().getCasaById(casaId) } ?: return@launch
 
             val dialogView = LayoutInflater.from(this@LugaresActivity).inflate(R.layout.dialog_add_casa, null)
-            val dialog = MaterialAlertDialogBuilder(this@LugaresActivity, com.google.android.material.R.style.Theme_Material3_Light_Dialog)
+            val dialog = MaterialAlertDialogBuilder(this@LugaresActivity)
                 .setView(dialogView)
-                .show()
+                .create()
+
+            dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+            dialog.show()
 
             val title = dialogView.findViewById<TextView>(R.id.tvDialogTitle)
             title.text = "Editar Casa"
@@ -254,16 +269,18 @@ class LugaresActivity : AppCompatActivity() {
 
     private fun mostrarDialogoAgregarHabitacion(casaId: Int) {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_habitacion, null)
-        val dialog = MaterialAlertDialogBuilder(this, com.google.android.material.R.style.Theme_Material3_Light_Dialog)
+        val dialog = MaterialAlertDialogBuilder(this)
             .setView(dialogView)
-            .show()
+            .create()
+
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog.show()
 
         val etNombreHabitacion = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etNombreHabitacion)
-        
         val btnCancel = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnCancel)
         val btnConfirm = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnConfirm)
         btnConfirm.text = "Crear"
-        
+
         btnCancel.setOnClickListener { dialog.dismiss() }
         btnConfirm.setOnClickListener {
             val nombre = etNombreHabitacion.text?.toString()?.trim() ?: ""
@@ -291,9 +308,12 @@ class LugaresActivity : AppCompatActivity() {
 
     private fun mostrarDialogoEditarHabitacion(habitacion: Habitacion) {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_habitacion, null)
-        val dialog = MaterialAlertDialogBuilder(this, com.google.android.material.R.style.Theme_Material3_Light_Dialog)
+        val dialog = MaterialAlertDialogBuilder(this)
             .setView(dialogView)
-            .show()
+            .create()
+
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog.show()
 
         val title = dialogView.findViewById<TextView>(R.id.tvDialogTitle)
         title.text = "Editar Habitación"
@@ -312,7 +332,7 @@ class LugaresActivity : AppCompatActivity() {
                 editarHabitacion(habitacion.copy(nombre = nombre))
                 dialog.dismiss()
             } else {
-                Toast.makeText(this, "Ingresa un nombre válido", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@LugaresActivity, "Ingresa un nombre válido", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -352,7 +372,7 @@ class LugaresActivity : AppCompatActivity() {
                 onSuccess = { _ ->
                     withContext(Dispatchers.IO) {
                         val hab = db.habitacionDao().getHabitacionById(habitacionId)
-                        if(hab != null) db.habitacionDao().delete(hab)
+                        if (hab != null) db.habitacionDao().delete(hab)
                     }
                 }
             )
@@ -371,7 +391,7 @@ class LugaresActivity : AppCompatActivity() {
                         db.casaDao().deleteAllCasas()
                         if (response.data != null) db.casaDao().insertAll(response.data)
                         db.habitacionDao().deleteAllHabitaciones()
-                        
+
                         response.data?.forEach { casa ->
                             try {
                                 val habRes = RetrofitClient.habitacionService.getHabitacionesByCasa("Bearer ${getToken()}", casa.id)

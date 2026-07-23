@@ -31,12 +31,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.android.R
 import com.example.android.core.db.init.AppDatabase
 import com.example.android.core.db.models.Gesto
-import com.example.android.core.db.models.GestoDetalle
-import com.example.android.core.db.models.GestoPaso
 import com.example.android.core.network.api.ApiHandler
-import com.example.android.core.network.client.ApiResponse
 import com.example.android.core.network.client.RetrofitClient
-import com.google.android.material.floatingactionbutton.FloatingActionButton
+import java.util.UUID
 import kotlinx.coroutines.launch
 
 class SecuenciaConfigActivity : AppCompatActivity() {
@@ -54,6 +51,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
     private var todosCombos: MutableList<Combo> = mutableListOf()
     private lateinit var comboActual: Combo
     private var comboIndex: Int = -1
+    private var isNewCombo: Boolean = false
 
     private val wizardLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -132,7 +130,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                             if (esIgualAlActivador || yaExisteEnOtrosPasos) {
                                 mostrarAdvertenciaDuplicado(
                                     "Gesto Duplicado",
-                                    "No puedes cambiar el paso al gesto '$nombreGesto' because ya está en uso en este combo."
+                                    "No puedes cambiar el paso al gesto '$nombreGesto' porque ya está en uso en este combo."
                                 )
                                 return@registerForActivityResult
                             }
@@ -146,10 +144,6 @@ class SecuenciaConfigActivity : AppCompatActivity() {
             }
         }
 
-    /**
-     * Recibe los pasos detectados desde VideoGestureImportActivity y los añade al combo actual.
-     * El usuario puede seguir editando/eliminando los pasos antes de guardar.
-     */
     private val videoImportLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val data = result.data ?: return@registerForActivityResult
@@ -200,62 +194,62 @@ class SecuenciaConfigActivity : AppCompatActivity() {
         if (result.resultCode == Activity.RESULT_OK) {
             val data = result.data ?: return@registerForActivityResult
 
-                val dispositivoId = data.getIntExtra("DISPOSITIVO_ID", -1)
-                val nombreDispositivo = data.getStringExtra("DISPOSITIVO_NOMBRE") ?: "Dispositivo"
-                val accionTipo = data.getIntExtra("ACCION_TIPO", -1)
-                val contactoOutlet = data.getIntExtra("CONTACTO_OUTLET", 1)
+            val dispositivoId = data.getIntExtra("DISPOSITIVO_ID", -1)
+            val nombreDispositivo = data.getStringExtra("DISPOSITIVO_NOMBRE") ?: "Dispositivo"
+            val accionTipo = data.getIntExtra("ACCION_TIPO", -1)
+            val contactoOutlet = data.getIntExtra("CONTACTO_OUTLET", 1)
 
-                if (dispositivoId == -1 || accionTipo == -1) {
-                    comboActual.aparatoId = null
-                    comboActual.accionEncendido = null
-                    comboActual.contactoOutlet = null
-                    comboActual.accionVinculada = null
-                } else {
-                    val comboDuplicado =
-                        todosCombos.find {
-                            it.id != comboActual.id &&
-                            it.aparatoId == dispositivoId &&
-                            (it.contactoOutlet == contactoOutlet || (it.contactoOutlet == null && contactoOutlet == 1))
-                        }
-
-                    if (comboDuplicado != null) {
-                        val outletTxt = if (contactoOutlet > 1) " contacto $contactoOutlet" else ""
-                        mostrarAdvertenciaDuplicado(
-                            "Dispositivo en Uso",
-                            "El dispositivo '$nombreDispositivo'$outletTxt ya está vinculado al combo '${comboDuplicado.name}'. Asigna un contacto diferente."
-                        )
-                        return@registerForActivityResult
+            if (dispositivoId == -1 || accionTipo == -1) {
+                comboActual.aparatoId = null
+                comboActual.accionEncendido = null
+                comboActual.contactoOutlet = null
+                comboActual.accionVinculada = null
+            } else {
+                val comboDuplicado =
+                    todosCombos.find {
+                        it.id != comboActual.id &&
+                                it.aparatoId == dispositivoId &&
+                                (it.contactoOutlet == contactoOutlet || (it.contactoOutlet == null && contactoOutlet == 1))
                     }
 
-                    val esMultisocket = nombreDispositivo.lowercase().contains("multisocket") ||
-                            nombreDispositivo.lowercase().contains("regleta") ||
-                            nombreDispositivo.lowercase().contains("socket")
-
-                    val outletInfo = if (esMultisocket && contactoOutlet > 1) " Contacto $contactoOutlet" else ""
-
-                    Toast.makeText(
-                        this,
-                        "Dispositivo '$nombreDispositivo'$outletInfo asignado con éxito",
-                        Toast.LENGTH_SHORT
-                    ).show()
-
-                    comboActual.aparatoId = dispositivoId
-                    comboActual.accionEncendido = when (accionTipo) {
-                        0 -> true
-                        1 -> false
-                        else -> null
-                    }
-                    comboActual.contactoOutlet = if (esMultisocket) contactoOutlet else null
-                    val verbo = when (accionTipo) {
-                        0 -> "Encender"
-                        1 -> "Apagar"
-                        else -> "Alternar"
-                    }
-                    comboActual.accionVinculada = "$verbo · $nombreDispositivo$outletInfo"
+                if (comboDuplicado != null) {
+                    val outletTxt = if (contactoOutlet > 1) " contacto $contactoOutlet" else ""
+                    mostrarAdvertenciaDuplicado(
+                        "Dispositivo en Uso",
+                        "El dispositivo '$nombreDispositivo'$outletTxt ya está vinculado al combo '${comboDuplicado.name}'. Asigna un contacto diferente."
+                    )
+                    return@registerForActivityResult
                 }
-                updateHeaders()
+
+                val esMultisocket = nombreDispositivo.lowercase().contains("multisocket") ||
+                        nombreDispositivo.lowercase().contains("regleta") ||
+                        nombreDispositivo.lowercase().contains("socket")
+
+                val outletInfo = if (esMultisocket && contactoOutlet > 1) " Contacto $contactoOutlet" else ""
+
+                Toast.makeText(
+                    this,
+                    "Dispositivo '$nombreDispositivo'$outletInfo asignado con éxito",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                comboActual.aparatoId = dispositivoId
+                comboActual.accionEncendido = when (accionTipo) {
+                    0 -> true
+                    1 -> false
+                    else -> null
+                }
+                comboActual.contactoOutlet = if (esMultisocket) contactoOutlet else null
+                val verbo = when (accionTipo) {
+                    0 -> "Encender"
+                    1 -> "Apagar"
+                    else -> "Alternar"
+                }
+                comboActual.accionVinculada = "$verbo · $nombreDispositivo$outletInfo"
             }
+            updateHeaders()
         }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -469,14 +463,12 @@ class SecuenciaConfigActivity : AppCompatActivity() {
             itemTouchHelper.attachToRecyclerView(rvBottomSheetSteps)
 
             bottomSheetView.findViewById<View>(R.id.fabAddStep).setOnClickListener { launchWizard("STEP") }
-            // Botón para importar pasos desde un video
             val btnDesdeVideo = bottomSheetView.findViewById<View?>(R.id.btnDesdeVideo)
             btnDesdeVideo?.setOnClickListener {
                 bottomSheetDialog.dismiss()
                 val intent = android.content.Intent(this, VideoGestureImportActivity::class.java)
                 videoImportLauncher.launch(intent)
             }
-            // Botón para grabar secuencia con cámara
             val btnGrabar = bottomSheetView.findViewById<View?>(R.id.btnGrabarSecuencia)
             btnGrabar?.setOnClickListener {
                 bottomSheetDialog.dismiss()
@@ -594,6 +586,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
             lifecycleScope.launch {
                 SecuenciaConfigManager.saveCombos(this@SecuenciaConfigActivity, todosCombos)
                 notificarRecargaCombos()
+                setResult(Activity.RESULT_OK)
                 sincronizarGestoConServidor()
             }
         }
@@ -613,14 +606,25 @@ class SecuenciaConfigActivity : AppCompatActivity() {
 
     private suspend fun loadCurrentConfig(): Boolean {
         val comboId = intent.getStringExtra("COMBO_ID")
+        isNewCombo = intent.getBooleanExtra("IS_NEW_COMBO", false)
+
         todosCombos = SecuenciaConfigManager.loadCombos(this).toMutableList()
-        comboIndex = todosCombos.indexOfFirst { it.id == comboId }
-        if (comboIndex == -1) {
-            Toast.makeText(this, "Error cargando combo", Toast.LENGTH_SHORT).show()
-            finish()
-            return false
+
+        if (isNewCombo) {
+            // Se instancia únicamente en memoria local de la actividad
+            comboActual = Combo(id = comboId ?: UUID.randomUUID().toString(), name = "Nuevo Gesto")
+            todosCombos.add(comboActual)
+            comboIndex = todosCombos.lastIndex
+        } else {
+            comboIndex = todosCombos.indexOfFirst { it.id == comboId }
+            if (comboIndex == -1) {
+                Toast.makeText(this, "Error cargando combo", Toast.LENGTH_SHORT).show()
+                finish()
+                return false
+            }
+            comboActual = todosCombos[comboIndex]
         }
-        comboActual = todosCombos[comboIndex]
+
         updateHeaders()
         return true
     }
@@ -720,7 +724,6 @@ class SecuenciaConfigActivity : AppCompatActivity() {
 
         val idRelacional = comboActual.backendGestoId ?: 0
 
-        // Pasamos los parámetros exactos requeridos por el constructor de Gesto en main
         val gesto = Gesto(
             id = idRelacional,
             bkId = idRelacional,
@@ -771,7 +774,6 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                             SecuenciaConfigManager.saveCombos(this@SecuenciaConfigActivity, todosCombos)
                         }
 
-                        // Guardamos localmente en Room el Gesto principal
                         lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
                             db.gestoDao().insertGesto(guardado)
                         }

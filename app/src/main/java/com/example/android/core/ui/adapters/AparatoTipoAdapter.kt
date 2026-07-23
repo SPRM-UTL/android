@@ -36,53 +36,42 @@ class AparatoTipoAdapter(
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val tipo = tipos[position]
-        
-        var iconName = tipo.icono
-        if (iconName.isNullOrEmpty()) {
-            iconName = when (tipo.nombreTipo) {
-                "Audífonos" -> "headphones"
-                "Bocinas" -> "speaker"
-                "Focos" -> "lightbulb"
-                "Luces" -> "lamp_floor"
-                "Ventilador" -> "wind"
-                "Televisión" -> "tv_minimal"
-                "Sockets Inteligentes" -> "plug"
-                "MultiSocket" -> "plug"
-                "Asistente" -> "ic_input_add"
-                else -> "ic_menu_camera"
-            }
-        }
-        
-        val cleanIconName = iconName.substringBeforeLast(".").replace("-", "_")
 
-        // Obtener ID del recurso de forma dinámica por nombre
-        val resId = holder.itemView.context.resources.getIdentifier(
-            cleanIconName,
-            "drawable",
-            holder.itemView.context.packageName
-        )
+        val esAsistenteObj = tipo.esAsistente || tipo.nombreTipo.equals("Asistente", ignoreCase = true)
 
-        val finalResId = if (resId != 0) {
-            resId
+        val finalResId = if (esAsistenteObj) {
+            R.drawable.ic_manordomo_icono
         } else {
-            when (tipo.nombreTipo) {
-                "Audífonos" -> R.drawable.headphones
-                "Bocinas" -> R.drawable.speaker
-                "Focos" -> R.drawable.lightbulb
-                "Luces" -> R.drawable.lamp_floor
-                "Ventilador" -> R.drawable.wind
-                "Televisión" -> R.drawable.tv_minimal
-                "Sockets Inteligentes", "Enchufe", "MultiSocket" -> R.drawable.plug
-                "Cámaras", "Cámara" -> R.drawable.camera
-                "Asistente" -> R.drawable.ic_input_add
-                else -> android.R.drawable.ic_menu_camera
+            var iconName = tipo.icono
+            if (iconName.isNullOrEmpty()) {
+                iconName = when (tipo.nombreTipo) {
+                    "Audífonos" -> "headphones"
+                    "Bocinas" -> "speaker"
+                    "Focos" -> "lightbulb"
+                    "Luces" -> "lamp_floor"
+                    "Ventilador" -> "wind"
+                    "Televisión" -> "tv_minimal"
+                    "Sockets Inteligentes", "MultiSocket", "Enchufe" -> "plug"
+                    else -> "camera"
+                }
             }
+
+            val cleanIconName = iconName.substringBeforeLast(".").replace("-", "_")
+
+            val resId = holder.itemView.context.resources.getIdentifier(
+                cleanIconName,
+                "drawable",
+                holder.itemView.context.packageName
+            )
+
+            if (resId != 0) resId else R.drawable.camera
         }
 
         if (holder is HeroViewHolder) {
             holder.title.text = tipo.nombreTipo
             holder.icon.setImageResource(finalResId)
-            
+            holder.icon.imageTintList = null // Asegura mostrar los colores nativos del icono
+
             holder.wifiIcon.visibility = if (tipo.soportaWifi) View.VISIBLE else View.GONE
             holder.bluetoothIcon.visibility = if (tipo.soportaBluetooth) View.VISIBLE else View.GONE
             holder.linkIcon.visibility = if (tipo.requiereVinculacionBluetooth) View.VISIBLE else View.GONE

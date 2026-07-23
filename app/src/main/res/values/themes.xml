@@ -20,7 +20,10 @@
     <style name="Theme.AnimatedSplash.MySplash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/white</item>
         <item name="postSplashScreenTheme">@style/Theme.Android</item>
+        <!-- Restaurado a tu drawable animado original -->
         <item name="windowSplashScreenAnimatedIcon">@drawable/avd_manordomo</item>
+        <!-- Fondo verde nativo con esquinas curvas -->
+        <item name="windowSplashScreenIconBackgroundColor">@color/teal_primary</item>
         <item name="windowSplashScreenAnimationDuration">2300</item>
     </style>
 
@@ -150,25 +153,21 @@
         <item name="android:textColor">@color/btn_dialog_selector</item>
         <item name="android:textStyle">normal</item>
     </style>
+
     <style name="Theme.UCrop.Custom" parent="Theme.AppCompat.Light.NoActionBar">
-        <!-- Colores personalizados -->
         <item name="colorPrimary">@color/teal_primary</item>
         <item name="colorPrimaryDark">@color/teal_medium</item>
         <item name="colorAccent">@color/teal_primary</item>
-        
-        <!-- Fondo -->
+
         <item name="android:windowBackground">@color/background</item>
-        
-        <!-- Para edge-to-edge en Android 10+ -->
+
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar">true</item>
         <item name="android:navigationBarColor">@android:color/white</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
-        
-        <!-- Force dark mode off para evitar problemas con UCrop -->
+
         <item name="android:forceDarkAllowed">false</item>
-        
-        <!-- Hacer el toolbar transparente -->
+
         <item name="android:actionBarStyle">@style/Widget.UCrop.ActionBar.Transparent</item>
     </style>
 

@@ -122,8 +122,6 @@
             android:name=".feature.device.DeviceActivity"
             android:exported="false" />
 
-
-
         <activity
             android:name=".feature.device.AddDeviceWifiActivity"
             android:exported="false"
@@ -135,8 +133,6 @@
             android:exported="false"
             android:screenOrientation="portrait"
             tools:ignore="LockedOrientationActivity" />
-
-
 
         <activity
             android:name=".feature.device.MultiSocketActivity"
@@ -176,8 +172,9 @@
             android:name=".feature.extra.MusicActivity"
             android:exported="false" />
 
+        <!-- CORREGIDO: Ruta del paquete actualizada -->
         <activity
-            android:name=".ui.LugaresActivity"
+            android:name=".feature.home.LugaresActivity"
             android:exported="false" />
 
         <activity

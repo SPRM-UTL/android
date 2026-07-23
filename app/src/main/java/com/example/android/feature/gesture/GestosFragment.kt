@@ -1,12 +1,13 @@
 package com.example.android.feature.gesture
+
 import com.example.android.feature.ai.presentation.activities.AIVisionActivity
 import com.example.android.feature.ai.domain.manager.SecuenciaConfigManager
 import com.example.android.feature.ai.domain.manager.Combo
 import com.example.android.feature.ai.presentation.activities.SecuenciaConfigActivity
-import com.example.android.core.db.models.Gesto
 
 import com.example.android.R
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -14,7 +15,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
@@ -38,6 +39,19 @@ class GestosFragment : Fragment() {
     private lateinit var adapter: GestosAdminAdapter
     private lateinit var rvGestos: RecyclerView
     private lateinit var ivProfileGestos: ImageView
+
+    // Launcher para manejar la creación/edición y refrescar la lista SOLO si se guardó
+    private val createGestoLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            viewLifecycleOwner.lifecycleScope.launch {
+                val combos = SecuenciaConfigManager.loadCombos(requireContext())
+                adapter.combos = combos.toMutableList()
+                adapter.notifyDataSetChanged()
+            }
+        }
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_gestos, container, false)
@@ -82,13 +96,14 @@ class GestosFragment : Fragment() {
         rvGestos = view.findViewById(R.id.rvGestos)
         rvGestos.layoutManager = GridLayoutManager(requireContext(), 2)
 
-        // Inicialización con el nuevo callback de click largo intermedio
         adapter = GestosAdminAdapter(
             mutableListOf(),
             { combo ->
-                val intent = Intent(requireContext(), SecuenciaConfigActivity::class.java)
-                intent.putExtra("COMBO_ID", combo.id)
-                startActivity(intent)
+                val intent = Intent(requireContext(), SecuenciaConfigActivity::class.java).apply {
+                    putExtra("COMBO_ID", combo.id)
+                    putExtra("IS_NEW_COMBO", false)
+                }
+                createGestoLauncher.launch(intent)
             },
             { combo ->
                 mostrarDialogoEliminarGesto(combo)
@@ -96,16 +111,12 @@ class GestosFragment : Fragment() {
         )
 
         val addGestoAdapter = AddGestoAdapter {
-            val newCombo = Combo(id = UUID.randomUUID().toString(), name = "Nuevo Gesto")
-            adapter.combos.add(newCombo)
-            viewLifecycleOwner.lifecycleScope.launch {
-                SecuenciaConfigManager.saveCombos(requireContext(), adapter.combos)
-            }
-
+            val newComboId = UUID.randomUUID().toString()
             val intent = Intent(requireContext(), SecuenciaConfigActivity::class.java).apply {
-                putExtra("COMBO_ID", newCombo.id)
+                putExtra("COMBO_ID", newComboId)
+                putExtra("IS_NEW_COMBO", true)
             }
-            startActivity(intent)
+            createGestoLauncher.launch(intent)
         }
 
         rvGestos.adapter = ConcatAdapter(addGestoAdapter, adapter)
@@ -125,7 +136,7 @@ class GestosFragment : Fragment() {
                     adapter.combos.removeAt(position)
                     adapter.notifyItemRemoved(position)
                     viewLifecycleOwner.lifecycleScope.launch {
-                        SecuenciaConfigManager.saveCombos(requireContext(), adapter.combos)
+                        SecuenciaConfigManager.deleteCombo(requireContext(), combo.id)
                     }
 
                     view?.let { v ->

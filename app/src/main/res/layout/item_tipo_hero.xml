@@ -21,9 +21,9 @@
             android:id="@+id/heroIconContainer"
             android:layout_width="56dp"
             android:layout_height="56dp"
-            app:cardBackgroundColor="@color/white"
+            app:cardBackgroundColor="@color/teal_card"
             app:cardCornerRadius="28dp"
-            app:cardElevation="2dp"
+            app:cardElevation="0dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -31,11 +31,11 @@
 
             <ImageView
                 android:id="@+id/ivIconHero"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:layout_gravity="center"
-                android:src="@android:drawable/ic_input_add"
-                app:tint="@color/teal_primary" />
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_manordomo_icono" />
         </com.google.android.material.card.MaterialCardView>
 
         <TextView

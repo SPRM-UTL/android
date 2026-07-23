@@ -510,12 +510,12 @@ class MainActivity : AppCompatActivity() {
                     mostrarCarga()
                     val sharedPref = getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
                     val token = sharedPref.getString("apiToken", "") ?: ""
-                    
+
                     val response = RetrofitClient.casaService.getCasas("Bearer $token")
                     val tieneCasas = response.isSuccessful && !response.body()?.data.isNullOrEmpty()
-                    
+
                     CustomDialog.dismissDialog()
-                    
+
                     if (!tieneCasas) {
                         val intent = Intent(this@MainActivity, InitialSetupActivity::class.java)
                         startActivity(intent)
