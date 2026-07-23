@@ -221,11 +221,20 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                     return@registerForActivityResult
                 }
 
+                val esVentilador = nombreDispositivo.lowercase().contains("ventilador")
                 val esMultisocket = nombreDispositivo.lowercase().contains("multisocket") ||
                         nombreDispositivo.lowercase().contains("regleta") ||
-                        nombreDispositivo.lowercase().contains("socket")
+                        nombreDispositivo.lowercase().contains("socket") ||
+                        esVentilador
 
-                val outletInfo = if (esMultisocket && contactoOutlet > 1) " Contacto $contactoOutlet" else ""
+                val esEncender = accionTipo == 0
+                val outletInfo = if (esVentilador && esEncender) {
+                     " (Velocidad $contactoOutlet)"
+                } else if (esVentilador) {
+                     ""
+                } else if (esMultisocket && contactoOutlet > 1) {
+                    " Contacto $contactoOutlet"
+                } else ""
 
                 Toast.makeText(
                     this,
@@ -240,12 +249,21 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                     else -> null
                 }
                 comboActual.contactoOutlet = if (esMultisocket) contactoOutlet else null
-                val verbo = when (accionTipo) {
-                    0 -> "Encender"
-                    1 -> "Apagar"
-                    else -> "Alternar"
+                val verbo = if (esVentilador && esEncender) {
+                    "Velocidad $contactoOutlet"
+                } else {
+                    when (accionTipo) {
+                        0 -> "Encender"
+                        1 -> "Apagar"
+                        else -> "Alternar"
+                    }
                 }
-                comboActual.accionVinculada = "$verbo · $nombreDispositivo$outletInfo"
+                
+                comboActual.accionVinculada = if (esVentilador && esEncender) {
+                    "$verbo · $nombreDispositivo"
+                } else {
+                    "$verbo · $nombreDispositivo$outletInfo"
+                }
             }
             updateHeaders()
         }

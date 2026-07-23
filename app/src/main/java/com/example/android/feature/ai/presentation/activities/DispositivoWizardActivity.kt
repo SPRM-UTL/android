@@ -127,13 +127,22 @@ class DispositivoWizardActivity : AppCompatActivity() {
         val cardOutlet4 = view.findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardOutlet4)
 
         val disp = dispositivoSeleccionado
+        val esVentilador = disp?.tipo?.lowercase()?.contains("ventilador") == true
         val esMultisocket = disp?.tipo?.lowercase()?.contains("multisocket") == true ||
                 disp?.tipo?.lowercase()?.contains("regleta") == true ||
-                disp?.tipo?.lowercase()?.contains("socket") == true
+                disp?.tipo?.lowercase()?.contains("socket") == true ||
+                esVentilador
 
         if (esMultisocket) {
             llOutletSection.visibility = View.VISIBLE
             outletSeleccionado = 1
+            if (esVentilador) {
+                (llOutletSection.getChildAt(0) as? TextView)?.text = "Velocidad a controlar"
+                cardOutlet4.visibility = View.GONE
+            } else {
+                (llOutletSection.getChildAt(0) as? TextView)?.text = "Contacto a controlar"
+                cardOutlet4.visibility = View.VISIBLE
+            }
         } else {
             llOutletSection.visibility = View.GONE
             outletSeleccionado = 1
