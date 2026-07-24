@@ -1,4 +1,5 @@
 package com.example.android.feature.home
+
 import com.example.android.core.ui.adapters.DeviceAdapter
 import com.example.android.feature.home.LugaresActivity
 import com.example.android.feature.home.HomeTutorialHelper
@@ -83,7 +84,7 @@ class HomeFragment : Fragment() {
     private var isLoggingOut = false
     private var pollingJob: kotlinx.coroutines.Job? = null
     private var pollCount = 0
-    
+
     private var dispositivosJob: kotlinx.coroutines.Job? = null
 
     override fun onCreateView(
@@ -147,7 +148,7 @@ class HomeFragment : Fragment() {
             if (response.isSuccessful) {
                 val macs = response.body()?.connectedDevices ?: emptyList()
                 val activeIdentifiers = macs.toMutableSet()
-                
+
                 // Hacer ping en paralelo a los dispositivos WIFI/LAN locales
                 val localDevices = deviceAdapter.currentList.filter { it.metodoVinculacion == "WIFI" || it.metodoVinculacion == "LAN" }
                 val onlineIps = withContext(Dispatchers.IO) {
@@ -169,7 +170,7 @@ class HomeFragment : Fragment() {
 
                 deviceAdapter.actualizarEstados(activeIdentifiers)
                 actualizarDialogoInformacion(activeIdentifiers)
-                
+
                 // Actualizar UI del Estado Red (Cámara)
                 val sharedPref = requireContext().getSharedPreferences("EspConfigPrefs", Context.MODE_PRIVATE)
                 val savedMac = sharedPref.getString("saved_mac_address", "") ?: ""
@@ -228,7 +229,7 @@ class HomeFragment : Fragment() {
         btnConfigurarRed   = view.findViewById(R.id.btnConfigurarRed)
         tvUsuario          = view.findViewById(R.id.tvUsuario)
         ivProfile          = view.findViewById(R.id.ivProfile)
-        
+
         val redContainer = view.findViewById<View>(R.id.tvRedEstado)?.parent as? View
         redContainer?.setOnClickListener {
             val sharedPref = requireContext().getSharedPreferences("EspConfigPrefs", Context.MODE_PRIVATE)
@@ -284,6 +285,7 @@ class HomeFragment : Fragment() {
             }
         )
     }
+
     /* Controla sockets WI-FI/lan directamente por TCP sin pasar por el servidor */
     private fun toggleDispositivoTcp(dispositivo: com.example.android.core.db.models.Dispositivo, encendido: Boolean) {
         val ip = dispositivo.ipAddress
@@ -423,15 +425,13 @@ class HomeFragment : Fragment() {
     private fun configurarUI() {
         configurarInsets()
         cargarIconos()
-        
+
         val sharedPreferences = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
         val nombreUsuario = sharedPreferences.getString("userName", "Mayordomo")
         if (!nombreUsuario.isNullOrBlank()) {
             tvUsuario.text = nombreUsuario
         }
-        
-        // La foto de perfil se carga ahora en onResume()
-        
+
         configurarAnimacionInicial()
         mostrarMensajeBienvenida()
         mostrarTutorial()
@@ -464,16 +464,15 @@ class HomeFragment : Fragment() {
             val headerBg = view.findViewById<View>(R.id.headerBackground)
             if (headerBg != null && view is androidx.constraintlayout.motion.widget.MotionLayout) {
                 val newHeight = bars.top + (165 * resources.displayMetrics.density).toInt()
-                
+
                 val startSet = view.getConstraintSet(R.id.start)
                 startSet?.constrainHeight(R.id.headerBackground, newHeight)
                 if (startSet != null) view.updateState(R.id.start, startSet)
-                
+
                 val endSet = view.getConstraintSet(R.id.end)
                 endSet?.constrainHeight(R.id.headerBackground, newHeight)
                 if (endSet != null) view.updateState(R.id.end, endSet)
-                
-                // Actualizar de inmediato
+
                 val bgParams = headerBg.layoutParams
                 bgParams.height = newHeight
                 headerBg.layoutParams = bgParams
@@ -508,13 +507,6 @@ class HomeFragment : Fragment() {
         }
     }
 
-    // ==========================================================
-    // FIX: el Snackbar se muestra anclado a "mainHome" (que ya
-    // respeta los insets) en lugar de android.R.id.content, y se
-    // le agrega un margen inferior calculado según la altura real
-    // de bottom_bar_container, para que no quede pegado al borde
-    // ni tapado por la barra de navegación inferior.
-    // ==========================================================
     private fun mostrarMensajeBienvenida() {
         if (!isAdded) return
 
@@ -526,18 +518,13 @@ class HomeFragment : Fragment() {
             vistaRaiz.post {
                 if (!isAdded) return@post
 
-                // 1. Creamos el snackbar normal de Material Design
                 val snackbar = Snackbars.info(mainHome, "Bienvenido", Snackbar.LENGTH_SHORT)
 
-                // 2. Buscamos el contenedor de la barra inferior de la Activity
                 val bottomBar = activity.findViewById<View>(R.id.bottom_bar_container)
 
                 if (bottomBar != null) {
-                    // 3. Lo anclamos directamente sobre el contenedor.
-                    // Esto lo posiciona automáticamente arriba de la barra y del botón '+' sin romper el diseño.
                     snackbar.setAnchorView(bottomBar)
                 } else {
-                    // Respaldo manual usando padding en caso de que no se encuentre la vista en el layout actual
                     val bottomBarHeight = bottomBar?.height ?: 0
                     val params = snackbar.view.layoutParams as ViewGroup.MarginLayoutParams
                     params.bottomMargin = bottomBarHeight + (16 * resources.displayMetrics.density).toInt()
@@ -553,7 +540,7 @@ class HomeFragment : Fragment() {
         btnConfigurarRed.setOnClickListener {
             abrirConfiguracionRed()
         }
-        
+
         vistaRaiz.findViewById<View>(R.id.profileCircle)?.setOnClickListener {
             val intent = Intent(requireContext(), ProfileActivity::class.java)
             startActivity(intent)
@@ -589,11 +576,10 @@ class HomeFragment : Fragment() {
             val flow = db.dispositivoDao().getAllDispositivos()
             flow.collectLatest { dispositivos ->
                 if (!isLoggingOut) {
-                    // Filtrar cámaras para que no aparezcan en la lista "Mis dispositivos"
-                    val dispositivosFiltrados = dispositivos.filter { 
-                        !it.tipo.equals("Cámara", ignoreCase = true) && 
-                        !it.tipo.equals("Cámara ESP32", ignoreCase = true) && 
-                        !it.tipo.equals("ESP32-CAM", ignoreCase = true) 
+                    val dispositivosFiltrados = dispositivos.filter {
+                        !it.tipo.equals("Cámara", ignoreCase = true) &&
+                                !it.tipo.equals("Cámara ESP32", ignoreCase = true) &&
+                                !it.tipo.equals("ESP32-CAM", ignoreCase = true)
                     }
                     deviceAdapter.sincronizarEstadosDesdeDispositivos(dispositivosFiltrados)
                     deviceAdapter.submitList(dispositivosFiltrados)
@@ -622,11 +608,10 @@ class HomeFragment : Fragment() {
                         val nombre = response.body()?.data?.nombre ?: ""
                         val primerNombre = nombre.split(" ").firstOrNull() ?: "Mayordomo"
                         tvUsuario.text = "Hola, $primerNombre"
-                        // Guardar para que esté cacheado en próximos inicios
                         sharedPref.edit().putString("userName", primerNombre).apply()
                     }
                 } catch (e: Exception) {
-                    // Ignorar error de red silenciosamente en el Home
+                    // Ignorar error de red silenciosamente
                 }
             }
         }
@@ -674,12 +659,11 @@ class HomeFragment : Fragment() {
                                     db.habitacionDao().deleteAllHabitaciones()
                                 }
                             }
-                            
+
                             if (!casas.isNullOrEmpty()) {
-                                // Sincronizar Habitaciones para cada casa
                                 val sharedPref = requireContext().getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
                                 val token = sharedPref.getString("apiToken", "") ?: ""
-                                
+
                                 viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
                                     casas.forEach { casa ->
                                         try {
@@ -696,7 +680,7 @@ class HomeFragment : Fragment() {
                         }
                     )
 
-                    // Sincronizar Gestos
+                    // Sincronizar Gestos y Convertirlos a Combos (ComboEntity)
                     ApiHandler.safeApiCall(
                         activity = requireActivity(),
                         showLoading = false,
@@ -707,19 +691,18 @@ class HomeFragment : Fragment() {
                         },
                         onSuccess = { gestosResponse ->
                             val gestos = gestosResponse.data
-                            withContext(Dispatchers.IO) {
+                            viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                                // 1. Guardar en la tabla de gestos en Room
                                 db.gestoDao().deleteAllGestos()
                                 db.gestoDao().insertAll(gestos)
-                            }
-                            
-                            // Limpiar los combos locales eliminados en el backend
-                            val combosLocales = SecuenciaConfigManager.loadCombos(requireContext()).toMutableList()
-                            val gestosIds = gestos.map { it.id }
-                            val combosValidos = combosLocales.filter { combo ->
-                                combo.backendGestoId == null || gestosIds.contains(combo.backendGestoId)
-                            }
-                            if (combosLocales.size != combosValidos.size) {
-                                SecuenciaConfigManager.saveCombos(requireContext(), combosValidos)
+
+                                // 2. Transformar gestos a objetos Combo
+                                val combosConvertidos = gestos.map { gesto ->
+                                    SecuenciaConfigManager.gestoToCombo(gesto)
+                                }
+
+                                // 3. Guardar en la tabla 'combos' (ComboEntity)
+                                SecuenciaConfigManager.saveCombos(requireContext(), combosConvertidos)
                             }
                         }
                     )

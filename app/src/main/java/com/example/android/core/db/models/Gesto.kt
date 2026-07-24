@@ -2,6 +2,8 @@ package com.example.android.core.db.models
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Ignore
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.google.gson.annotations.SerializedName
 
@@ -14,44 +16,69 @@ import com.google.gson.annotations.SerializedName
             childColumns = ["aparatoId"],
             onDelete = ForeignKey.SET_NULL
         )
-    ]
+    ],
+    indices = [Index("aparatoId")]
 )
 data class Gesto(
     @PrimaryKey
-    @SerializedName("sk_gesto_id")
-    val id: Int,
+    @SerializedName("sk_gesto_id", alternate = ["id"])
+    val id: Int = 0,
 
     @SerializedName("bk_gesto_id")
-    val bkId: Int,
+    val bkId: Int = 0,
 
-    @SerializedName("nombre_gesto")
-    val nombre: String?,
+    @SerializedName("nombre_gesto", alternate = ["nombre"])
+    val nombre: String? = null,
 
     @SerializedName("identificador_ia")
-    val identificadorIa: Int,
+    val identificadorIa: Int = 0,
 
     @SerializedName("nivel_confianza_minimo")
-    val nivelConfianzaMinimo: Double,
+    val nivelConfianzaMinimo: Double = 0.5,
 
     @SerializedName("tipo_disparador_nombre")
-    val tipoDisparadorNombre: String?,
+    val tipoDisparadorNombre: String? = null,
 
-    @SerializedName("sk_aparato_id")
-    val aparatoId: Int?,
+    @SerializedName("sk_aparato_id", alternate = ["aparato_id"])
+    val aparatoId: Int? = null,
 
-    @SerializedName("contacto_outlet")
+    @SerializedName("contacto_outlet", alternate = ["contacto_outlet_id", "outlet"])
     val contactoOutlet: Int? = null,
 
     @SerializedName("icono")
     val icono: String? = "lucide_star",
 
     @SerializedName("frase_voz_activadora")
-    val fraseVozActivadora: String? = null,
-
-    @androidx.room.Ignore
-    @SerializedName("pasos")
-    val pasos: List<GestoPaso>? = null
+    val fraseVozActivadora: String? = null
 ) {
-    constructor(id: Int, bkId: Int, nombre: String?, identificadorIa: Int, nivelConfianzaMinimo: Double, tipoDisparadorNombre: String?, aparatoId: Int?, contactoOutlet: Int?, icono: String?, fraseVozActivadora: String?) :
-            this(id, bkId, nombre, identificadorIa, nivelConfianzaMinimo, tipoDisparadorNombre, aparatoId, contactoOutlet, icono, fraseVozActivadora, null)
+    @Ignore
+    @SerializedName("pasos")
+    var pasos: List<GestoPaso>? = null
+
+    constructor(
+        id: Int = 0,
+        bkId: Int = 0,
+        nombre: String? = null,
+        identificadorIa: Int = 0,
+        nivelConfianzaMinimo: Double = 0.5,
+        tipoDisparadorNombre: String? = null,
+        aparatoId: Int? = null,
+        contactoOutlet: Int? = null,
+        icono: String? = "lucide_star",
+        fraseVozActivadora: String? = null,
+        pasos: List<GestoPaso>? = null
+    ) : this(
+        id,
+        bkId,
+        nombre,
+        identificadorIa,
+        nivelConfianzaMinimo,
+        tipoDisparadorNombre,
+        aparatoId,
+        contactoOutlet,
+        icono,
+        fraseVozActivadora
+    ) {
+        this.pasos = pasos
+    }
 }
