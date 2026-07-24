@@ -59,7 +59,6 @@ object SecuenciaConfigManager {
 
         val entities = dao.getCombosByUserId(userId)
 
-        // Retorna únicamente los registros reales en BD sin recrear "Ataque Base" si está vacía
         return entities.map { entityToCombo(it) }
     }
 
@@ -75,10 +74,36 @@ object SecuenciaConfigManager {
         dao.deleteComboById(comboId)
     }
 
+    suspend fun deleteComboFull(context: Context, combo: Combo): Boolean {
+        // 1. Borrado en la BD Local (Room / ComboEntity)
+        deleteCombo(context, combo.id)
+
+        // 2. Si tiene ID asignado por el backend, eliminar en la API
+        val backendId = combo.backendGestoId
+        if (backendId != null && backendId > 0) {
+            val prefs = context.getSharedPreferences("SesionApp", Context.MODE_PRIVATE)
+            val token = prefs.getString("apiToken", "") ?: ""
+            if (token.isNotEmpty()) {
+                try {
+                    val response = RetrofitClient.gestureService.deleteGesto("Bearer $token", backendId)
+                    if (response.isSuccessful) {
+                        // Limpiar también de la tabla 'gestos'
+                        val db = AppDatabase.getDatabase(context)
+                        db.gestoDao().deleteGestoById(backendId)
+                        return true
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+        return true
+    }
+
     private fun comboToEntity(combo: Combo, userId: Int): ComboEntity {
         return ComboEntity(
             id = combo.id,
-            name = combo.name,
+            name = combo.name.ifBlank { "Nuevo Combo" },
             activadorJson = combo.activador?.let { stepToJson(it).toString() },
             pasosJson = JSONArray().apply {
                 combo.pasos.forEach { put(stepToJson(it)) }
@@ -97,7 +122,7 @@ object SecuenciaConfigManager {
     private fun entityToCombo(entity: ComboEntity): Combo {
         val combo = Combo(
             id = entity.id,
-            name = entity.name,
+            name = entity.name.ifBlank { "Nuevo Combo" },
             accionVinculada = entity.accionVinculada,
             aparatoId = entity.aparatoId,
             accionEncendido = entity.accionEncendido,
@@ -153,6 +178,9 @@ object SecuenciaConfigManager {
                 if (comboObj.has("accionEncendido")) {
                     combo.accionEncendido = comboObj.getBoolean("accionEncendido")
                 }
+                if (comboObj.has("contactoOutlet")) {
+                    combo.contactoOutlet = comboObj.optInt("contactoOutlet").takeIf { it > 0 }
+                }
                 if (comboObj.has("backendGestoId")) {
                     combo.backendGestoId = comboObj.getInt("backendGestoId")
                 }
@@ -195,20 +223,36 @@ object SecuenciaConfigManager {
         )
     }
 
-    private fun comboToGesto(combo: Combo): Gesto {
+    fun comboToGesto(combo: Combo): Gesto {
         val pasosList = mutableListOf<GestoPaso>()
         var order = 1
         if (combo.activador != null) {
-            pasosList.add(GestoPaso(orden = order++, esActivador = true, nombreGesto = combo.activador!!.nombreGesto, manoObjetivo = combo.activador!!.manoObjetivo.name, cuadrosRequeridos = combo.activador!!.cuadrosRequeridos))
+            pasosList.add(
+                GestoPaso(
+                    orden = order++,
+                    esActivador = true,
+                    nombreGesto = combo.activador!!.nombreGesto,
+                    manoObjetivo = combo.activador!!.manoObjetivo.name,
+                    cuadrosRequeridos = combo.activador!!.cuadrosRequeridos
+                )
+            )
         }
         combo.pasos.forEach { paso ->
-            pasosList.add(GestoPaso(orden = order++, esActivador = false, nombreGesto = paso.nombreGesto, manoObjetivo = paso.manoObjetivo.name, cuadrosRequeridos = paso.cuadrosRequeridos))
+            pasosList.add(
+                GestoPaso(
+                    orden = order++,
+                    esActivador = false,
+                    nombreGesto = paso.nombreGesto,
+                    manoObjetivo = paso.manoObjetivo.name,
+                    cuadrosRequeridos = paso.cuadrosRequeridos
+                )
+            )
         }
 
         return Gesto(
             id = combo.backendGestoId ?: 0,
             bkId = 0,
-            nombre = combo.name,
+            nombre = combo.name.ifBlank { "Nuevo Combo" },
             identificadorIa = 0,
             nivelConfianzaMinimo = 0.5,
             tipoDisparadorNombre = if (combo.fraseVozActivadora != null && combo.activador == null && combo.pasos.isEmpty()) "VOZ" else "COMBO",
@@ -218,6 +262,43 @@ object SecuenciaConfigManager {
             pasos = pasosList,
             fraseVozActivadora = combo.fraseVozActivadora
         )
+    }
+
+    fun gestoToCombo(gesto: Gesto): Combo {
+        val combo = Combo(
+            id = UUID.randomUUID().toString(),
+            name = gesto.nombre.orEmpty().ifBlank { "Nuevo Combo" },
+            aparatoId = gesto.aparatoId,
+            contactoOutlet = gesto.contactoOutlet,
+            backendGestoId = gesto.id,
+            icono = gesto.icono ?: "lucide_star",
+            fraseVozActivadora = gesto.fraseVozActivadora
+        )
+
+        gesto.pasos?.sortedBy { it.orden }?.forEach { paso ->
+            val pasoSecuencia = PasoSecuencia(
+                nombreGesto = paso.nombreGesto,
+                manoObjetivo = try { ManoObjetivo.valueOf(paso.manoObjetivo) } catch (e: Exception) { ManoObjetivo.ANY },
+                cuadrosRequeridos = paso.cuadrosRequeridos
+            )
+            if (paso.esActivador) {
+                combo.activador = pasoSecuencia
+            } else {
+                combo.pasos.add(pasoSecuencia)
+            }
+        }
+
+        if (gesto.aparatoId != null) {
+            val canal = gesto.contactoOutlet ?: 1
+            combo.accionVinculada = if (canal > 1) {
+                "Velocidad $canal · Dispositivo #${gesto.aparatoId}"
+            } else {
+                "Encender · Dispositivo #${gesto.aparatoId}"
+            }
+            combo.accionEncendido = true
+        }
+
+        return combo
     }
 
     suspend fun pushComboToBackend(context: Context, combo: Combo): Boolean {

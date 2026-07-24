@@ -229,9 +229,9 @@ class SecuenciaConfigActivity : AppCompatActivity() {
 
                 val esEncender = accionTipo == 0
                 val outletInfo = if (esVentilador && esEncender) {
-                     " (Velocidad $contactoOutlet)"
+                    " (Velocidad $contactoOutlet)"
                 } else if (esVentilador) {
-                     ""
+                    ""
                 } else if (esMultisocket && contactoOutlet > 1) {
                     " Contacto $contactoOutlet"
                 } else ""
@@ -258,7 +258,7 @@ class SecuenciaConfigActivity : AppCompatActivity() {
                         else -> "Alternar"
                     }
                 }
-                
+
                 comboActual.accionVinculada = if (esVentilador && esEncender) {
                     "$verbo · $nombreDispositivo"
                 } else {
@@ -629,7 +629,6 @@ class SecuenciaConfigActivity : AppCompatActivity() {
         todosCombos = SecuenciaConfigManager.loadCombos(this).toMutableList()
 
         if (isNewCombo) {
-            // Se instancia únicamente en memoria local de la actividad
             comboActual = Combo(id = comboId ?: UUID.randomUUID().toString(), name = "Nuevo Gesto")
             todosCombos.add(comboActual)
             comboIndex = todosCombos.lastIndex
@@ -710,50 +709,11 @@ class SecuenciaConfigActivity : AppCompatActivity() {
     private fun sincronizarGestoConServidor() {
         val nombreRepresentativo =
             comboActual.activador?.nombreGesto ?: comboActual.pasos.firstOrNull()?.nombreGesto
-            ?: comboActual.name
-        val nombreValido = comboActual.name.ifBlank { nombreRepresentativo }
-        val tipoDisparador = if (comboActual.activador != null) "COMBO_SECUENCIA" else "COMBO_LIBRE"
+            ?: "Nuevo Combo"
 
-        val pasosList = mutableListOf<com.example.android.core.db.models.GestoPaso>()
-        var order = 1
+        comboActual.name = comboActual.name.ifBlank { nombreRepresentativo }
 
-        if (comboActual.activador != null) {
-            pasosList.add(
-                com.example.android.core.db.models.GestoPaso(
-                    orden = order++,
-                    esActivador = true,
-                    nombreGesto = comboActual.activador!!.nombreGesto,
-                    manoObjetivo = comboActual.activador!!.manoObjetivo.name,
-                    cuadrosRequeridos = comboActual.activador!!.cuadrosRequeridos
-                )
-            )
-        }
-        comboActual.pasos.forEach { paso ->
-            pasosList.add(
-                com.example.android.core.db.models.GestoPaso(
-                    orden = order++,
-                    esActivador = false,
-                    nombreGesto = paso.nombreGesto,
-                    manoObjetivo = paso.manoObjetivo.name,
-                    cuadrosRequeridos = paso.cuadrosRequeridos
-                )
-            )
-        }
-
-        val idRelacional = comboActual.backendGestoId ?: 0
-
-        val gesto = Gesto(
-            id = idRelacional,
-            bkId = idRelacional,
-            nombre = nombreValido,
-            identificadorIa = 0,
-            nivelConfianzaMinimo = 0.5,
-            tipoDisparadorNombre = tipoDisparador,
-            aparatoId = comboActual.aparatoId,
-            icono = comboActual.icono ?: "lucide_star",
-            fraseVozActivadora = comboActual.fraseVozActivadora,
-            pasos = pasosList
-        )
+        val gesto = SecuenciaConfigManager.comboToGesto(comboActual)
 
         lifecycleScope.launch {
             ApiHandler.safeApiCall(

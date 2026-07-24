@@ -40,7 +40,6 @@ class GestosFragment : Fragment() {
     private lateinit var rvGestos: RecyclerView
     private lateinit var ivProfileGestos: ImageView
 
-    // Launcher para manejar la creación/edición y refrescar la lista SOLO si se guardó
     private val createGestoLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -135,8 +134,9 @@ class GestosFragment : Fragment() {
                 if (position != -1) {
                     adapter.combos.removeAt(position)
                     adapter.notifyItemRemoved(position)
+
                     viewLifecycleOwner.lifecycleScope.launch {
-                        SecuenciaConfigManager.deleteCombo(requireContext(), combo.id)
+                        SecuenciaConfigManager.deleteComboFull(requireContext(), combo)
                     }
 
                     view?.let { v ->
